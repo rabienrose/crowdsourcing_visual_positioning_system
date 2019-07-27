@@ -28,7 +28,7 @@
   - Math library: eigen
 ## Algorithm Flow
   - ![alt text](https://github.com/rabienrose/crowdsourcing_visual_positioning_system/blob/master/doc/algo_process.png "Workflow")
-  - The green box represents the input data, which can be a sequence of pictures arranged in time, or it can be a single picture. And a approximate location obtained by coarse positioning is required for all data, which is used to put the data into the corresponding map block.
+  - The green box represents the input data, which can be a sequence of pictures arranged in time, or it can be a single picture. And an approximate location obtained by global positioning is required for all data, which is used to put the data into the corresponding map block.
   - The purple box represents the processing flow on the clinet end. The final piece of data is split into multiple LocalMaps according to the covisibilities.
   - The blue box represents the processing flow on the server end.
   - The red box represents the data stored on the server after all processing.
