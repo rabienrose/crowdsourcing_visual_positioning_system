@@ -6,12 +6,12 @@
   - The specific goal in the near future is to establish a location system based on the map which is formed by feature points. And all data used to create map are from mobile phone level sensors (monocular camera, imu, gps). And provide a positioning service that give position with gps coordinate system. The accuracy is expected around 20 cm.
 ## Main Content
   - Video data collection and LocalMap creation on the mobile phone.
-  - Image data collection and feature point extraction. These means the system supports both sequence frame and single picture map creation and update.
+  - Image data collection and feature point extraction. These means the system supports both sequence frame and single picture update.
   - After uploading the LocalMap or image feature points to the server, the server merges the data.
   - The merging process includes the culling of map to maintain trackable map size.
   - New data that is not matched by the map will be stored, waiting for matching with future data.
 ## RoadMap
-| Date | Traget |
+| Date | Target |
 | ------ | ------ |
 | August 11th | Serialization and visualization of GlobalMap |
 | August 25th| Generate LocalMap |
