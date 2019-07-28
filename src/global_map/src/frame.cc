@@ -3,7 +3,9 @@
 namespace gm {
 Frame::Frame()
 {
-    imu_next_frame == nullptr;
+    imu_next_frame = nullptr;
+    gps_avg_count=0;
+    isfix=false;
 }
 Eigen::Matrix4d Frame::getPose()
 {

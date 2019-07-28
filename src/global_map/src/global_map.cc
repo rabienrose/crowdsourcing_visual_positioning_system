@@ -2,19 +2,20 @@
 #include <glog/logging.h>
 
 namespace gm{
-    void GlobalMap::ComputeUniqueId(){
-        for(size_t i=0; i<frames.size(); i++){
-            frames[i]->id=i;
-        }
-        for(size_t i=0; i<mappoints.size(); i++){
-            mappoints[i]->id=i;
-        }
-    }
     
-    std::shared_ptr< MapPoint> GlobalMap::getMPById(int id){
+    std::shared_ptr<MapPoint> GlobalMap::getMPById(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
             if(id==mappoints[i]->id){
                 return mappoints[i];
+            }
+        }
+        return nullptr;
+    }
+    
+    std::shared_ptr<Frame> GlobalMap::getFrameById(long unsigned int id){
+        for(size_t i=0; i<frames.size(); i++){
+            if(id==frames[i]->id){
+                return frames[i];
             }
         }
         return nullptr;
@@ -29,87 +30,6 @@ namespace gm{
         pose_graph_e_posi.push_back(posi);
         pose_graph_e_rot.push_back(rot);
     }
-    
-    
-    void GlobalMap::CreateSubMap(int startframe_id, int endframe_id, GlobalMap& submap){
-        std::cout<<"[CreateSubMap]"<<startframe_id<<":"<<endframe_id<<std::endl;
-        ComputeUniqueId();
-        submap=*(this);
-        submap.frames.clear();
-        submap.mappoints.clear();
-        std::vector<int> old_to_new_id_map;
-        for(size_t i=0; i<frames.size(); i++){
-            old_to_new_id_map.push_back(-1);
-        }
-        for(int i=startframe_id; i<endframe_id; i++){
-            std::shared_ptr< Frame> frame_p;
-            frame_p.reset(new  Frame);
-            *(frame_p)=*(frames[i]);
-            for(size_t j=0; j<frame_p->obss.size(); j++){
-                frame_p->obss[j]=nullptr;
-            }
-            submap.frames.push_back(frame_p);
-            old_to_new_id_map[i]=submap.frames.size()-1;
-        }
-        for(size_t i=0; i<submap.frames.size(); i++){
-            if(submap.frames[i]->imu_next_frame!=nullptr){
-                int old_frame_id=submap.frames[i]->imu_next_frame->id;
-                if(old_to_new_id_map[old_frame_id]!=-1){
-                    submap.frames[i]->imu_next_frame=submap.frames[old_to_new_id_map[old_frame_id]];
-                }else{
-                    submap.frames[i]->imu_next_frame=nullptr;
-                    submap.frames[i]->acces.clear();
-                    submap.frames[i]->gyros.clear();
-                    submap.frames[i]->imu_times.clear();
-                }
-            }
-        }
-        
-        for(size_t i=0; i<mappoints.size(); i++){
-            for(size_t j=0; j<mappoints[i]->track.size(); j++){
-                if((size_t)mappoints[i]->track[j].frame->id>=old_to_new_id_map.size()){
-                    std::cout<<"[CreateSubMap][error]mappoints[i]->track[j].frame->id"<<std::endl;
-                    exit(0);
-                }
-                int new_frameid=old_to_new_id_map[mappoints[i]->track[j].frame->id];
-                if(new_frameid!=-1){
-                    std::shared_ptr< MapPoint> mappoint_p= submap.getMPById(mappoints[i]->id);
-                    if(mappoint_p==nullptr){
-                        mappoint_p.reset(new  MapPoint);
-                        *(mappoint_p)=*(mappoints[i]);
-                        mappoint_p->track.clear();
-                        submap.mappoints.push_back(mappoint_p);
-                    }
-                    
-                    if((size_t)new_frameid>=submap.frames.size()){
-                        std::cout<<"[CreateSubMap][error]new_frameid: "<<new_frameid<<":"<<submap.frames.size()<<std::endl;
-                        exit(0);
-                    }
-                    submap.frames[new_frameid]->obss[mappoints[i]->track[j].kp_ind]=mappoint_p;                
-                }
-            }
-        }
-        submap.pose_graph_v1.clear();
-        submap.pose_graph_v2.clear();
-        submap.pose_graph_e_posi.clear();
-        submap.pose_graph_e_rot.clear();
-        submap.pose_graph_e_scale.clear();
-        submap.pose_graph_weight.clear();
-        for(size_t i=0; i<pose_graph_v1.size(); i++){
-            if(old_to_new_id_map[pose_graph_v1[i]->id]!=-1){
-                if(old_to_new_id_map[pose_graph_v2[i]->id]!=-1){
-                    submap.pose_graph_v1.push_back(submap.frames[old_to_new_id_map[pose_graph_v1[i]->id]]);
-                    submap.pose_graph_v2.push_back(submap.frames[old_to_new_id_map[pose_graph_v2[i]->id]]);
-                    submap.pose_graph_e_posi.push_back(pose_graph_e_posi[i]);
-                    submap.pose_graph_e_rot.push_back(pose_graph_e_rot[i]);
-                    submap.pose_graph_e_scale.push_back(pose_graph_e_scale[i]);
-                    submap.pose_graph_weight.push_back(pose_graph_weight[i]);
-                }
-            }
-        }
-        submap.AssignKpToMp();
-    }
-    
     void GlobalMap::UpdatePoseEdge(){
         for(size_t i=0; i<pose_graph_v1.size(); i++){
             Eigen::Matrix4d r_pose = pose_graph_v2[i]->getPose().inverse()*pose_graph_v1[i]->getPose();
@@ -118,7 +38,7 @@ namespace gm{
         }
     }
     
-    void GlobalMap::DelMappoint(int id){
+    void GlobalMap::DelMappoint(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
             if(mappoints[i]->id==id){
                 std::shared_ptr<MapPoint> mp_p = mappoints[i];
@@ -127,14 +47,13 @@ namespace gm{
                     CHECK_GT(frame_p->obss.size(), mp_p->track[j].kp_ind);
                     frame_p->obss[mp_p->track[j].kp_ind]=nullptr; 
                 }
-            
                 mappoints.erase(mappoints.begin()+i);
                 break;
             }
         }
     }
     
-    void GlobalMap::DelFrame(int id){
+    void GlobalMap::DelFrame(long unsigned int id){
         for(size_t i=0; i<frames.size(); i++){
             if(frames[i]->id==id){
                 for(int j=(int)pose_graph_v1.size()-1; j>=0; j--){

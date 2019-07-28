@@ -12,7 +12,9 @@ public:
 
 class MapPoint {
 public:
-    int id = -1;
+    MapPoint();
+    long unsigned int id = -1;
+    bool isfix;
     int match_count=0;
     Eigen::Vector3d position;
     std::vector<TrackItem> track;

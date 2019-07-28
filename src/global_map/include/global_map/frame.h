@@ -6,20 +6,27 @@ class MapPoint;
 class Frame {
 public:
     Frame();
-    int id;
+    long unsigned int id;
+    bool isfix;
     double time_stamp;
     std::string frame_file_name;
     std::vector<cv::KeyPoint> kps;
     Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> descriptors;
     std::vector<std::shared_ptr<MapPoint>> obss;
+    std::vector<long unsigned int> obss_ids; //temp variable used in loading data
     std::vector<Eigen::Vector3d> acces;
     std::vector<Eigen::Vector3d> gyros;
     std::vector<double> imu_times;
     std::shared_ptr<Frame> imu_next_frame;
+    long unsigned int imu_next_frame_id; //temp variable used in loading data
     Eigen::Vector3d position;
     Eigen::Quaterniond direction;
     Eigen::Vector3d gps_position;
     float gps_accu;
+    int gps_avg_count;
+    
+    Eigen::Vector3d Tbc_posi;
+    Eigen::Quaterniond Tbc_qua;
 
     float fx;
     float fy;

@@ -58,5 +58,9 @@ void TrackItem::getUV(float& x, float& y, int& octave)
         }
         return min_diff;
     }
+    
+    MapPoint::MapPoint(){
+        isfix=false;
+    }
 
 }  // namespace gm
