@@ -1,0 +1,12 @@
+<package format="2">
+  <name>dbow2</name>
+  <version>0.0.0</version>
+  <description>dbow2</description>
+  <maintainer email="helenoleynikova@gmail.com">Helen Oleynikova</maintainer>
+
+  <license>See package</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+  <build_depend>opencv3_catkin</build_depend>
+</package>

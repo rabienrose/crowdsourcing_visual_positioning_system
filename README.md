@@ -10,16 +10,14 @@
   - After uploading the LocalMap or image feature points to the server, the server merges the data.
   - The merging process includes the culling of map to maintain trackable map size.
   - New data that is not matched by the map will be stored, waiting for matching with future data.
-## RoadMap
-| Date | Target |
+## Backlog
+| Sprint | Target |
 | ------ | ------ |
-| August 11th | Serialization and visualization of GlobalMap |
-| August 25th| Generate LocalMap |
-| September 1st | Matching with GlobalMap |
-| September 8th | Optimize affected frames |
-| September 29th | Implenment on IOS |
-| October 6th | Self-calibration function |
-| October 27th | Apple store online |
+| August 11th | Generate merged map |
+| August 18th | Locate image on APP |
+| August 25st | Use covisibility to choose update candidators |
+| September 1th | Merge GPS in frame culling |
+| September 8th | Preview map on APP |
 ## Technical Details
   - Compilation framework: catkin
   - Serialization method: custom format based on fstream read and write
