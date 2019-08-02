@@ -27,12 +27,14 @@ public:
     void AssignKpToMp();
     void CalPoseEdgeVal();
     void UpdatePoseEdge();
+    void CreateSubMap(int startframe_id, int endframe_id, GlobalMap& submap);
     void AddConnection(std::shared_ptr<Frame> v1,
                        std::shared_ptr<Frame> v2,
                        Eigen::Vector3d& posi,
                        Eigen::Matrix3d& rot,
                        double scale,
                        double weight);
+    void CalConnections();
     void FilterTrack(); //remove the track that connect to the same frame. Keep the one with smallest reprojection error.
 };
 }  // namespace gm

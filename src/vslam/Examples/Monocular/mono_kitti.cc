@@ -12,9 +12,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include <rosbag/view.h>
 #include <cv_bridge/cv_bridge.h>
-#include "visualization/color-palette.h"
-#include "visualization/color.h"
-#include "visualization/common-rviz-visualization.h"
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
@@ -27,44 +24,19 @@ DEFINE_int32(min_frame, 100000, "First frame to be processed.");
 DEFINE_int32(max_frame, 0, "Last frame to be processed.");
 DEFINE_int32(step_frame, 1, "The number of frames to be skiped.");
 
-void show_pose_as_marker(std::vector<Eigen::Quaterniond>& rots, std::vector<Eigen::Vector3d>& posis, std::string topic){
-    visualization::PoseVector poses_vis;
-    for(int i=0; i<rots.size(); i=i+1){
-        visualization::Pose pose;
-        pose.G_p_B = posis[i];
-        pose.G_q_B = rots[i];
-
-        pose.id =poses_vis.size();
-        pose.scale = 0.2;
-        pose.line_width = 0.02;
-        pose.alpha = 1;
-        poses_vis.push_back(pose);
-    }
-    visualization::publishVerticesFromPoseVector(poses_vis, visualization::kDefaultMapFrame, "vertices", topic);
-}
-
-void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
-    Eigen::Matrix3Xd points;
-    points.resize(3,mp_posis.size());
-    for(int i=0; i<mp_posis.size(); i++){
-        points.block<3,1>(0,i)=mp_posis[i];
-    }    
-    publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
-}
-
 int main(int argc, char **argv)
 {
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
     google::ParseCommandLineFlags(&argc, &argv, true);
-    visualization::RVizVisualizationSink::init();
-    std::shared_ptr<ORB_SLAM2::System> sys_p=std::make_shared<ORB_SLAM2::System>;
     std::string bag_str=FLAGS_bag_addr;
     std::string out_str=FLAGS_output_addr;
     std::string img_topic=FLAGS_image_topic;
     int min_frame=FLAGS_min_frame;
     int max_frame=FLAGS_max_frame;
     int step=FLAGS_step_frame;
+    LOG(INFO)<<"max frame:"<<max_frame;
+    std::shared_ptr<ORB_SLAM2::System> sys_p=std::make_shared<ORB_SLAM2::System>();
     rosbag::Bag bag;
     bag.open(bag_str,rosbag::bagmode::Read);
     std::vector<std::string> topics;
@@ -73,7 +45,7 @@ int main(int argc, char **argv)
     rosbag::View view(bag, rosbag::TopicQuery(topics));
     int img_count=-1;
     rosbag::View::iterator it= view.begin();
-    LOG(INFO)<<"max frame:"<<max_frame;
+    
     int map_count=0;
     for(;it!=view.end();it++){
         rosbag::MessageInstance m =*it;
@@ -90,7 +62,6 @@ int main(int argc, char **argv)
             if(img_count >max_frame){
                 break;
             }
-            //LOG(INFO)<<img_count;
             try{
                 
                 std::stringstream ss;
@@ -110,10 +81,10 @@ int main(int argc, char **argv)
                     int mp_count_t;
                     int kf_count_t;
                     cv::Mat img_display;
-                    sys.getDebugImg(img_display, reproject_err_t, match_count_t, mp_count_t, kf_count_t);
+                    sys_p->getDebugImg(img_display, reproject_err_t, match_count_t, mp_count_t, kf_count_t);
                     if(!img_display.empty()){
                         cv::imshow("chamo", img_display);
-                        show_mp_as_cloud(posis, "vslam_output_posi");
+                        //show_mp_as_cloud(posis, "vslam_output_posi");
                         cv::waitKey(1);
                     }
                 }else{
@@ -123,10 +94,10 @@ int main(int argc, char **argv)
                     if(posis.size()>10){
                         std::stringstream ss;
                         ss<<map_count;
-                        out_str=out_str+"/"+"submap_"+ss.str()+".map";
-                        sys_p->saveToVisualMap(out_str);
+                        sys_p->saveToVisualMap(out_str+"/"+"submap_"+ss.str()+".map");
+                        map_count++;
                     }
-                    sys_p=std::make_shared<ORB_SLAM2::System>;
+                    sys_p=std::make_shared<ORB_SLAM2::System>();
                 }
                 
                                 
@@ -136,6 +107,10 @@ int main(int argc, char **argv)
             }
         }
     }
+    std::stringstream ss;
+    ss<<map_count;
+    out_str=out_str+"/"+"submap_"+ss.str()+".map";
+    sys_p->saveToVisualMap(out_str);
     
     return 0;
 }

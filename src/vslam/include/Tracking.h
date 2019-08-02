@@ -50,10 +50,8 @@ public:
     Tracking(ORBVocabulary* pVoc, Map* pMap,
              KeyFrameDatabase* pKFDB, const int sensor, bool bReuse);
 
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
+    bool GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
     cv::Mat GrabImageMonocular(Frame mframe);
-    cv::Mat Loc(const cv::Mat &im, const double &timestamp, std::string file_name="");
-
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
 
@@ -126,8 +124,6 @@ protected:
     bool TrackReferenceKeyFrame();
     void UpdateLastFrame();
     bool TrackWithMotionModel();
-
-    bool Relocalization();
 
     void UpdateLocalMap();
     void UpdateLocalPoints();

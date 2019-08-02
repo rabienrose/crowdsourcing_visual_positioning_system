@@ -21,8 +21,47 @@ namespace gm{
         return nullptr;
     }
     
+    void gm::GlobalMap::CalConnections(){
+        
+        for(int i=0; i<frames.size(); i++){
+            std::map<std::shared_ptr<Frame>, int> frame_list;
+            for(int j=0; j<frames[i]->obss.size(); j++){
+                if(frames[i]->obss[j]!= nullptr){
+                    std::shared_ptr<MapPoint> temp_tar_mp = frames[i]->obss[j];
+                    for(int k=0; k<temp_tar_mp->track.size(); k++){
+                        if(frame_list.count(temp_tar_mp->track[k].frame)==0){
+                            frame_list[temp_tar_mp->track[k].frame]=1;
+                        }else{
+                            frame_list[temp_tar_mp->track[k].frame]=frame_list[temp_tar_mp->track[k].frame]+1;
+                        }
+                    }
+                }
+                
+            }
+            for(std::map<std::shared_ptr<Frame>, int>::iterator it=frame_list.begin(); it!=frame_list.end(); it++){
+                if(it->second>20){
+                    Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*it->first->getPose();
+                    Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
+                    Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
+                    AddConnection(it->first, frames[i] , posi, rot, 1, it->second*0.5);
+                }
+            }
+        }
+    }
+
+    
     void GlobalMap::AddConnection(std::shared_ptr<Frame> v1, std::shared_ptr<Frame> v2, Eigen::Vector3d& posi, Eigen::Matrix3d& rot,
         double scale, double weight){
+        bool dup=false;
+        for(int i=0; i<pose_graph_v1.size(); i++){
+            if(pose_graph_v1[i]->id== v1->id && pose_graph_v2[i]->id== v2->id){
+                dup=true;
+                break;
+            }
+        }
+        if(dup){
+            return;
+        }
         pose_graph_v1.push_back(v1);
         pose_graph_v2.push_back(v2);
         pose_graph_weight.push_back(weight);
@@ -30,6 +69,7 @@ namespace gm{
         pose_graph_e_posi.push_back(posi);
         pose_graph_e_rot.push_back(rot);
     }
+    
     void GlobalMap::UpdatePoseEdge(){
         for(size_t i=0; i<pose_graph_v1.size(); i++){
             Eigen::Matrix4d r_pose = pose_graph_v2[i]->getPose().inverse()*pose_graph_v1[i]->getPose();
@@ -176,6 +216,54 @@ namespace gm{
             }
         }
     }
+    
+    void GlobalMap::CreateSubMap(int startframe_id, int endframe_id, GlobalMap& submap){
+        submap=*(this);
+        submap.frames.clear();
+        submap.mappoints.clear();
+        std::map<std::shared_ptr<gm::Frame>, std::shared_ptr<gm::Frame>> old_to_new_frame_map;
+        for(int i=startframe_id; i<endframe_id; i++){
+            std::shared_ptr<gm::Frame> frame_p;
+            frame_p.reset(new gm::Frame);
+            *(frame_p)=*(frames[i]);
+            for(size_t j=0; j<frame_p->obss.size(); j++){
+                frame_p->obss[j]=nullptr;
+            }
+            submap.frames.push_back(frame_p);
+            old_to_new_frame_map[frames[i]]=frame_p;
+        }
+        for(size_t i=0; i<submap.frames.size(); i++){
+            if(submap.frames[i]->imu_next_frame!=nullptr){
+                int old_frame_id=submap.frames[i]->imu_next_frame->id;
+                if(old_to_new_frame_map.count(submap.frames[i]->imu_next_frame)!=0){
+                    submap.frames[i]->imu_next_frame=old_to_new_frame_map[submap.frames[i]->imu_next_frame];
+                }else{
+                    submap.frames[i]->imu_next_frame=nullptr;
+                    submap.frames[i]->acces.clear();
+                    submap.frames[i]->gyros.clear();
+                    submap.frames[i]->imu_times.clear();
+                }
+            }
+        }
+        
+        for(size_t i=0; i<mappoints.size(); i++){
+            for(size_t j=0; j<mappoints[i]->track.size(); j++){
+                if(old_to_new_frame_map.count(mappoints[i]->track[j].frame)!=0){
+                    std::shared_ptr<gm::MapPoint> mappoint_p= submap.getMPById(mappoints[i]->id);
+                    if(mappoint_p==nullptr){
+                        mappoint_p.reset(new gm::MapPoint);
+                        *(mappoint_p)=*(mappoints[i]);
+                        mappoint_p->track.clear();
+                        submap.mappoints.push_back(mappoint_p);
+                    }
+                    std::shared_ptr<gm::Frame> new_frame_temp=old_to_new_frame_map[mappoints[i]->track[j].frame];
+                    new_frame_temp->obss[mappoints[i]->track[j].kp_ind]=mappoint_p;                
+                }
+            }
+        }
+        submap.AssignKpToMp();
+    }
+    
     void GlobalMap::FilterTrack(){
         int dup_count=0;
         for(int i=0; i<mappoints.size(); i++){

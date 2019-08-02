@@ -18,6 +18,7 @@
 | August 25st | Use covisibility to choose update candidators |
 | September 1th | Merge GPS in frame culling |
 | September 8th | Preview map on APP |
+| September 15th | Self-calibration on APP |
 ## Technical Details
   - Compilation framework: catkin
   - Serialization method: custom format based on fstream read and write

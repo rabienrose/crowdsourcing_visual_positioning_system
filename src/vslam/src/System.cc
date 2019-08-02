@@ -14,28 +14,12 @@
 #include <glog/logging.h>
 #include "global_map/global_map.h"
 #include "global_map/global_map_seri.h"
+#include "chamo_common/common.h"
 
 DEFINE_string(voc_addr, "", "Vocabulary file address.");
-DEFINE_string(map_addr, "", "map file address.");
 
 namespace ORB_SLAM2
 {
-    std::vector<std::string> split(const std::string& str, const std::string& delim)
-    {
-        std::vector<std::string> tokens;
-        size_t prev = 0, pos = 0;
-        do
-        {
-            pos = str.find(delim, prev);
-            if (pos == std::string::npos) pos = str.length();
-            std::string token = str.substr(prev, pos-prev);
-            if (!token.empty()) tokens.push_back(token);
-            prev = pos + delim.length();
-        }
-        while (pos < str.length() && prev < str.length());
-        return tokens;
-    }
-    
     System::System(bool do_loop_detect_flag)
     {
         mpVocabulary = new ORBVocabulary();
@@ -46,11 +30,7 @@ namespace ORB_SLAM2
             mpVocabulary->load(FLAGS_voc_addr);
         }
         mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-        if(FLAGS_map_addr!=""){
-            LoadORBMap(FLAGS_map_addr, mpVocabulary,  mpKeyFrameDatabase, mpMap);
-        }else{
-            mpMap = new Map();
-        }
+        mpMap = new Map();
         mpTracker = new Tracking(mpVocabulary, mpMap, mpKeyFrameDatabase,0 ,false);
         mpLocalMapper = new LocalMapping(mpMap, true);
         mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, false);
@@ -64,10 +44,9 @@ namespace ORB_SLAM2
         last_kfcount=0;
     }
     
-    cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name)
+    bool System::TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name)
     {
-        cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp, file_name);
-        return Tcw;
+        return mpTracker->GrabImageMonocular(im,timestamp, file_name);
     }
     
     Frame System::getCurrentFrame()
@@ -187,7 +166,6 @@ namespace ORB_SLAM2
         gm::GlobalMap map;
         vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
         sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
-        cv::Mat Two = vpKFs[0]->GetPoseInverse();
         for(int i=0; i<vpKFs.size(); i++)
         {
             ORB_SLAM2::KeyFrame* pKF = vpKFs[i];
@@ -197,13 +175,13 @@ namespace ORB_SLAM2
                 continue;
             }
 
-            cv::Mat Trw = pKF->GetPose()*Two;
+            cv::Mat Trw = pKF->GetPose();
             cv::Mat Rwc = Trw.rowRange(0,3).colRange(0,3).t();
             cv::Mat twc = -Rwc*Trw.rowRange(0,3).col(3);
             Eigen::Vector3d posi(twc.at<float>(0),twc.at<float>(1),twc.at<float>(2));
             Eigen::Quaterniond rot(ORB_SLAM2::Converter::toMatrix3d(Rwc));
             //LOG(INFO)<<pKF->file_name_;
-            std::vector<std::string> splited = split(pKF->file_name_, "/");
+            std::vector<std::string> splited = chamo::split(pKF->file_name_, "/");
             std::string filename= splited.back();
             std::shared_ptr<gm::Frame> frame_p;
             frame_p.reset(new gm::Frame);
@@ -272,7 +250,7 @@ namespace ORB_SLAM2
             }
         }
         LOG(INFO)<<"save map: "<<map_filename;
-        gm::save_global_map(map, map_filename);
+        gm::save_submap(map, map_filename);
     }
 
 } //namespace ORB_SLAM

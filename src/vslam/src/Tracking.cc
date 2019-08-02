@@ -13,7 +13,7 @@
 #include<iostream>
 #include <gflags/gflags.h>
 #include<mutex>
-
+#include "chamo_common/common.h"
 DEFINE_bool(use_orb, false, "Choose use orb or freak descriptor. Set to true if use orb.");
 DEFINE_string(camera_config, "", "Config file of camera calibiration.");
 DEFINE_int32(max_step_KF, 15, "The max number of frame between two KeyFrames.");
@@ -27,26 +27,11 @@ using namespace std;
 namespace ORB_SLAM2
 {
     
-std::vector<std::string> split(const std::string& str, const std::string& delim){
-    std::vector<std::string> tokens;
-    size_t prev = 0, pos = 0;
-    do
-    {
-        pos = str.find(delim, prev);
-        if (pos == std::string::npos) pos = str.length();
-        std::string token = str.substr(prev, pos-prev);
-        if (!token.empty()) tokens.push_back(token);
-        prev = pos + delim.length();
-    }
-    while (pos < str.length() && prev < str.length());
-    return tokens;
-}
-    
 void read_cam_info(std::string cam_addr, Eigen::Matrix3d& cam_inter, Eigen::Vector4d& cam_distort){
     std::string line;
     std::ifstream infile_camera(cam_addr.c_str()); 
     std::getline(infile_camera, line);
-    std::vector<std::string> splited = split(line, ",");
+    std::vector<std::string> splited = chamo::split(line, ",");
     cam_inter=Eigen::Matrix3d::Identity();
     cam_inter(0,0)=atof(splited[0].c_str());
     cam_inter(1,1)=atof(splited[1].c_str());
@@ -106,7 +91,7 @@ void Tracking::SetLoopClosing(LoopClosing *pLoopClosing)
     mpLoopClosing=pLoopClosing;
 }
 
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string file_name)
+bool Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string file_name)
 {
     cv::undistort(im, mImGray, mK, mDistCoef);
     cv::Mat distCoefZero=cv::Mat::zeros(mDistCoef.rows, mDistCoef.cols, mDistCoef.type());
@@ -116,8 +101,12 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,distCoefZero,mbf,mThDepth,file_name, FLAGS_use_orb);
     Track();
-
-    return mCurrentFrame.mTcw.clone();
+    if(mState==LOST){
+        return false;
+    }else{
+        return true;
+    }
+    
 }
 
 cv::Mat Tracking::GrabImageMonocular(Frame mframe)
@@ -125,96 +114,6 @@ cv::Mat Tracking::GrabImageMonocular(Frame mframe)
     mCurrentFrame = mframe;
     Track();
 
-    return mCurrentFrame.mTcw.clone();
-}
-cv::Mat Tracking::Loc(const cv::Mat &im, const double &timestamp, std::string file_name)
-{
-    cv::undistort(im, mImGray, mK, mDistCoef);
-    cv::Mat distCoefZero=cv::Mat::zeros(mDistCoef.rows, mDistCoef.cols, mDistCoef.type());
-    mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,distCoefZero,mbf,mThDepth,file_name, FLAGS_use_orb);
-    bool bOK=true;
-//     bOK = Relocalization();
-//     std::cout<<"OK0: "<<bOK<<std::endl;
-//     return mCurrentFrame.mTcw.clone();
-    if(mState!=OK){
-        bOK = Relocalization();
-        UpdateLocalKeyFrames();
-        mLastFrame = Frame(mCurrentFrame);
-        std::cout<<"OK0: "<<bOK<<std::endl;
-    }
-    if(bOK){
-        CheckReplacedInLastFrame();
-        if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2){
-            bOK = TrackReferenceKeyFrame();
-            std::cout<<"OK4: "<<bOK<<std::endl;
-        }else{
-            bOK = TrackWithMotionModel();
-            std::cout<<"OK2: "<<bOK<<std::endl;
-            if(!bOK){
-                bOK = TrackReferenceKeyFrame();
-                std::cout<<"OK5: "<<bOK<<std::endl;
-            } 
-        }
-        if(bOK){
-            bOK = TrackLocalMap();
-            std::cout<<"OK1: "<<bOK<<std::endl;
-        }
-        
-        if(bOK)
-            mState = OK;
-        else
-            mState=LOST;
-        
-        if(bOK){
-            // Update motion model
-            if(!mLastFrame.mTcw.empty()){
-                cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
-                mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
-                mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
-                mVelocity = mCurrentFrame.mTcw*LastTwc;
-            }
-            else
-                mVelocity = cv::Mat();
-
-            // Clean VO matches
-            for(int i=0; i<mCurrentFrame.N; i++){
-                MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
-                if(pMP){
-                    if(pMP->Observations()<1){
-                        mCurrentFrame.mvbOutlier[i] = false;
-                        mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-                    }
-                }
-            }
-
-            // Check if we need to insert a new keyframe
-            if(NeedNewKeyFrame()){
-                CreateNewKeyFrame();
-                mKfImage=mImGray;
-                last_kf=mCurrentFrame.mpReferenceKF;
-            }
-                
-            for(int i=0; i<mCurrentFrame.N;i++){
-                if(mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
-                    mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
-            }
-        }
-
-        if(!mCurrentFrame.mpReferenceKF)
-            mCurrentFrame.mpReferenceKF = mpReferenceKF;
-
-        mLastFrame = Frame(mCurrentFrame);
-    }
-    
-    if(!mCurrentFrame.mTcw.empty()){
-        cv::Mat Tcr = mCurrentFrame.mTcw*mCurrentFrame.mpReferenceKF->GetPoseInverse();
-        mlRelativeFramePoses.push_back(Tcr);
-    }else{
-        std::cout<<"mCurrentFrame.mTcw.empty()"<<std::endl;
-        // This can happen if tracking is lost
-//         mlRelativeFramePoses.push_back(mlRelativeFramePoses.back());
-    }
-    
     return mCurrentFrame.mTcw.clone();
 }
 
@@ -260,34 +159,12 @@ void Tracking::Track()
                     
             }
         }
-        else
-        {
-            
-            bOK = Relocalization();
-        }
 
         mCurrentFrame.mpReferenceKF = mpReferenceKF;
-
-        // If we have an initial estimation of the camera pose and matching. Track the local map.
-        if(!mbOnlyTracking)
-        {
-            
-            if(bOK){
-                bOK = TrackLocalMap();
-                //std::cout<<"OK1: "<<bOK<<std::endl;
-            }
-            
-                
+        if(bOK){
+            bOK = TrackLocalMap();
+            //std::cout<<"OK1: "<<bOK<<std::endl;
         }
-        else
-        {
-            // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
-            // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
-            // the camera we will use the local map again.
-            if(bOK && !mbVO)
-                bOK = TrackLocalMap();
-        }
-
         if(bOK)
             mState = OK;
         else
@@ -438,8 +315,6 @@ void Tracking::MonocularInitialization()
 
         if(mpInitializer->Initialize(mCurrentFrame, mvIniMatches, Rcw, tcw, mvIniP3D, vbTriangulated))
         {
-            std::cout<<Rcw<<std::endl;
-            std::cout<<tcw<<std::endl;
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
                 if(mvIniMatches[i]>=0 && !vbTriangulated[i])

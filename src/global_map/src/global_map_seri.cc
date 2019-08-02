@@ -76,7 +76,6 @@ namespace gm{
             std::shared_ptr<MapPoint> mappoint_p = map.mappoints[i];
             putToFile(mappoint_p->id, output);
             putToFileD2F(mappoint_p->position.x(), output);
-            putToFileD2F(mappoint_p->position.x(), output);
             putToFileD2F(mappoint_p->position.y(), output);
             putToFileD2F(mappoint_p->position.z(), output);
             //putToFile(mappoint_p->match_count, output);
@@ -90,6 +89,7 @@ namespace gm{
             std::shared_ptr<Frame> frame_p=map.frames[i];
             putToFile(frame_p->id, output);
             putToFile(frame_p->frame_file_name, output);
+            
             putToFile(frame_p->time_stamp, output);
             
             putToFileD2F(frame_p->Tbc_posi.x(), output);
@@ -134,7 +134,7 @@ namespace gm{
                 if(frame_p->obss[j]!=nullptr){
                     putToFile(frame_p->obss[j]->id, output);
                 }else{
-                    putToFile(-1, output);
+                    putToFile((long unsigned int)-1, output);
                 }
                 putToFile(keypoints1[j].octave, output);
             }
@@ -158,7 +158,7 @@ namespace gm{
                 putToFile(frame_p->imu_times[j], output);
             }
             if(frame_p->imu_next_frame==nullptr){
-                putToFile((int)-1, output);
+                putToFile((long unsigned int)-1, output);
             }else{
                 putToFile(frame_p->imu_next_frame->id, output);
             }
@@ -167,7 +167,7 @@ namespace gm{
         output.close();
     }
 
-    bool loader_submap(GlobalMap& map, std::string file_addr){
+    bool load_submap(GlobalMap& map, std::string file_addr){
         std::fstream input(file_addr.c_str(), std::ios::in | std::ios::binary);
         if(!input.is_open()){
             return false;
@@ -182,7 +182,7 @@ namespace gm{
             mappoint_p->position.y()=getFromFileF2D(input);
             mappoint_p->position.z()=getFromFileF2D(input);
             //mappoint_p->match_count=getFromFileI(input);
-            //std::cout<<mappoint_p->match_count<<std::endl;
+            //std::cout<<mappoint_p->id<<std::endl;
             map.mappoints.push_back(mappoint_p);
         }
         
@@ -195,6 +195,7 @@ namespace gm{
             std::shared_ptr< Frame> frame_p;
             frame_p.reset(new  Frame);
             frame_p->id = getFromFileLI(input);
+            
             frame_p->frame_file_name = getFromFileS(input);
             frame_p->time_stamp=getFromFileD(input);
             
@@ -214,7 +215,6 @@ namespace gm{
             frame_p->direction.y()=getFromFileF2D(input);
             frame_p->direction.z()=getFromFileF2D(input);
             
-            
             frame_p->fx=getFromFileF(input);
             frame_p->fy=getFromFileF(input);
             frame_p->cx=getFromFileF(input);
@@ -229,9 +229,10 @@ namespace gm{
             frame_p->gps_position.y()=getFromFileF2D(input);
             frame_p->gps_position.z()=getFromFileF2D(input);
             frame_p->gps_accu=getFromFileF(input);
-            
+            frame_p->gps_avg_count=getFromFileI(input);
             int kps_size;
             kps_size=getFromFileI(input);
+            
             frame_p->obss.resize(kps_size);
             frame_p->obss_ids.resize(kps_size);
             for(int j=0; j<kps_size; j++){
@@ -253,6 +254,7 @@ namespace gm{
                     frame_p->descriptors(k, j)=temp_c;
                 }
             }
+            
             int imu_count=getFromFileI(input);
             for(int j=0; j<imu_count; j++){
                 Eigen::Vector3d acce;
@@ -271,11 +273,24 @@ namespace gm{
             map.frames.push_back(frame_p);
         }
         std::cout<<"kp count: "<<kp_count<<std::endl;
+        
+        for(int i=0; i<map.frames.size(); i++){
+            if(map.frames[i]->imu_next_frame_id!=-1){
+                map.frames[i]->imu_next_frame=map.getFrameById(map.frames[i]->imu_next_frame_id);
+            }
+            for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
+                if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
+                    map.frames[i]->obss[j]=map.getMPById(map.frames[i]->obss_ids[j]);
+                }
+            }
+        }
         return true;
     }
     
     void save_global_map(GlobalMap& map, std::string file_addr){
         std::map<unsigned int, std::shared_ptr<GlobalMap>> submaps;
+        
+        std::cout<<"global map: "<<map.frames.size()<<std::endl;
         for(int i=0; i<map.frames.size(); i++){
             unsigned int block_id = getMapBlockId(map.frames[i]->id);
             if(submaps.count(block_id)==0){
@@ -303,7 +318,7 @@ namespace gm{
             std::stringstream ss;
             ss<<map_id_temp;
             GlobalMap map_temp;
-            if(loader_submap(map_temp, file_addr+"/"+ss.str()+".map")){
+            if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
                 map.frames.insert(map.frames.end(), map_temp.frames.begin(), map_temp.frames.end());
                 map.mappoints.insert(map.mappoints.end(), map_temp.mappoints.begin(), map_temp.mappoints.end());
             }

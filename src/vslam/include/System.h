@@ -19,7 +19,7 @@ class System
 public:
     System(bool do_loop_detect_flag=true);
     void saveResult(string map_filename);
-    cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
+    bool TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
     void getPC(std::vector<Eigen::Vector3d>& pcs);
     void getTraj(std::vector<Eigen::Vector3d>& posis, std::vector<Eigen::Quaterniond>& quas);
     void getDebugImg(cv::Mat& img, float& err, int& count, int & mp_count_, int& kf_count_);
@@ -27,11 +27,6 @@ public:
     Frame getCurrentFrame(); 
     Map*  getMapPointer();
     Tracking* getTrackPointer();
-    void LoadORBMap(std::string map_name, 
-                                 ORB_SLAM2::ORBVocabulary*& mpVocabulary, 
-                                 ORB_SLAM2::KeyFrameDatabase*& mpKeyFrameDatabase, 
-                                 ORB_SLAM2::Map*& mpMap
-                   );
 private:
     ORBVocabulary* mpVocabulary;
     KeyFrameDatabase* mpKeyFrameDatabase;

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package format="2">
+  <name>imu_visual_lib</name>
+  <version>0.0.0</version>
+  <description>A plugin to show how to add new console plugins</description>
+  <maintainer email="your-email@domain.tld">Maplab user</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin_simple</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>eigen_catkin</depend>
+  <depend>opencv3_catkin</depend>
+  <depend>g2o_catkin</depend>
+
+</package>

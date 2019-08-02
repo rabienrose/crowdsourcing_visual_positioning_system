@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>global_match</name>
+  <version>0.0.0</version>
+  <description>
+
+	chamo
+
+  </description>
+  <url></url>
+  <author>bloeschm</author>
+  <maintainer email="bloeschm@ethz.ch">bloeschm</maintainer>
+  <license>BSD License</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>glog_catkin</depend>
+  <depend>opencv3_catkin</depend>
+  <depend>eigen_catkin</depend>
+  <depend>inverted_multi_index</depend>
+  <depend>descriptor_projection</depend>
+  <depend>global_map</depend>
+</package>
