@@ -187,7 +187,9 @@ void extract_bag(std::string out_addr_, std::string bag_addr_, std::string img_t
         new_gps_frame(0)=i_gps_x;
         new_gps_frame(1)=i_gps_y;
         new_gps_frame(2)=i_gps_z;
-        img_gpss.push_back(new_gps_frame);
+        Eigen::Vector3d latlon_gps;
+        convert_to_lonlat(new_gps_frame, latlon_gps, anchorGps);
+        img_gpss.push_back(latlon_gps);
         new_gps_confid.push_back(inter_confid);
         img_to_gps_ids.push_back(img_gpss.size()-1);
     }
@@ -201,9 +203,8 @@ void extract_bag(std::string out_addr_, std::string bag_addr_, std::string img_t
             <<std::endl;
         }else{
             Eigen::Vector3d gps_temp= img_gpss[gps_id];
-            outfile_gps_align<<img_names[i]<<","<<i
-            <<","<<gps_temp(0)<<","<<gps_temp(1)<<","<<gps_temp(2)<<","<<new_gps_confid[gps_id]
-            <<std::endl;
+            outfile_gps_align<<std::setprecision (15)<<img_names[i]<<","<<i
+            <<","<<gps_temp(0)<<","<<gps_temp(1)<<","<<gps_temp(2)<<","<<new_gps_confid[gps_id]<<std::endl;
         }
     }
     outfile_gps_align.close();

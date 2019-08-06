@@ -18,6 +18,8 @@ typedef struct tagWGS84Corr
 }WGS84Corr;
 
 void convert_to_coor(Eigen::Vector3d ori_gps, Eigen::Vector3d& coor_gps, Eigen::Vector3d anchor_gps);
+void convert_to_lonlat(Eigen::Vector3d ori_xyz, Eigen::Vector3d& latlon_gps, Eigen::Vector3d anchor_gps);
+void convert_to_another_anchor(Eigen::Vector3d ori_anchor, Eigen::Vector3d tar_anchor, Eigen::Vector3d& in_ori_xyz, Eigen::Vector3d& out_tar_xyz);
 
 class GpsConverter
 {

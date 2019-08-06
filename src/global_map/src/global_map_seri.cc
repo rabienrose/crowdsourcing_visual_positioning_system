@@ -1,6 +1,6 @@
 #include "global_map/global_map_seri.h"
 #include <glog/logging.h>
-
+#include "CoorConv.h"
 #define ID_LEN 1000000000
 
 namespace gm{
@@ -61,11 +61,6 @@ namespace gm{
             str.push_back(c);
         }
         return str;
-    }
-    
-    unsigned int getMapBlockId(long unsigned int whole_id){
-        unsigned int block_id = whole_id>>ID_LEN;
-        return block_id;
     }
 
     void save_submap(GlobalMap& map, std::string file_addr){
@@ -292,22 +287,35 @@ namespace gm{
         
         std::cout<<"global map: "<<map.frames.size()<<std::endl;
         for(int i=0; i<map.frames.size(); i++){
-            unsigned int block_id = getMapBlockId(map.frames[i]->id);
+            unsigned int block_id;
+            get_map_block_id_from_id(block_id, map.frames[i]->id);
             if(submaps.count(block_id)==0){
                 submaps[block_id].reset(new GlobalMap);
             }
+            Eigen::Vector3d temp_anchor=map.gps_anchor;
+            get_gps_from_block_id(temp_anchor, block_id);
+            Eigen::Vector3d out_tar_xyz;
+            convert_to_another_anchor(map.gps_anchor, temp_anchor, map.frames[i]->position, out_tar_xyz);
+            map.frames[i]->position=out_tar_xyz;
             submaps[block_id]->frames.push_back(map.frames[i]);
         }
         for(int i=0; i<map.mappoints.size(); i++){
-            unsigned int block_id = getMapBlockId(map.mappoints[i]->id);
+            unsigned int block_id;
+            get_map_block_id_from_id(block_id, map.mappoints[i]->id);
             if(submaps.count(block_id)==0){
                 submaps[block_id].reset(new GlobalMap);
             }
+            Eigen::Vector3d temp_anchor=map.gps_anchor;
+            get_gps_from_block_id(temp_anchor, block_id);
+            Eigen::Vector3d out_tar_xyz;
+            convert_to_another_anchor(map.gps_anchor, temp_anchor, map.mappoints[i]->position, out_tar_xyz);
+            map.mappoints[i]->position=out_tar_xyz;
             submaps[block_id]->mappoints.push_back(map.mappoints[i]);
         }
         for(std::map<unsigned int, std::shared_ptr<GlobalMap>>::iterator it=submaps.begin(); it!=submaps.end(); it++){
             std::stringstream ss;
             ss<<it->first;
+            std::cout<<"save submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
             save_submap(*(it->second), file_addr+"/"+ss.str()+".map");
         }
     }
@@ -319,8 +327,23 @@ namespace gm{
             ss<<map_id_temp;
             GlobalMap map_temp;
             if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
-                map.frames.insert(map.frames.end(), map_temp.frames.begin(), map_temp.frames.end());
-                map.mappoints.insert(map.mappoints.end(), map_temp.mappoints.begin(), map_temp.mappoints.end());
+                if(map.frames.size()==0){
+                    get_gps_from_block_id(map.gps_anchor, map_ids[i]);
+                }
+                get_gps_from_block_id(map_temp.gps_anchor, map_ids[i]);
+                std::cout<<map.frames.size()<<std::endl;
+                for(int j=0; j<map_temp.frames.size(); j++){
+                    Eigen::Vector3d out_tar_xyz;
+                    convert_to_another_anchor(map_temp.gps_anchor, map.gps_anchor, map_temp.frames[j]->position, out_tar_xyz);
+                    map_temp.frames[j]->position=out_tar_xyz;
+                    map.frames.push_back(map_temp.frames[j]);
+                }
+                for(int j=0; j<map_temp.mappoints.size(); j++){
+                    Eigen::Vector3d out_tar_xyz;
+                    convert_to_another_anchor(map_temp.gps_anchor, map.gps_anchor, map_temp.mappoints[j]->position, out_tar_xyz);
+                    map_temp.mappoints[j]->position=out_tar_xyz;
+                    map.mappoints.push_back(map_temp.mappoints[j]);
+                }
             }
         }
         for(int i=0; i<map.frames.size(); i++){

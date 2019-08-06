@@ -3,6 +3,33 @@
 
 namespace gm{
     
+    void get_map_block_id_from_gps(unsigned int& block_id, Eigen::Vector3d gps_latlon){
+        
+        block_id=floor(gps_latlon(0)*100)*360*100+floor(gps_latlon(1)*100);
+        //std::cout<<gps_latlon(0)<<":"<<floor(gps_latlon(0)*360*100)<<":"<<floor(gps_latlon(1)*100)<<":"<<block_id<<std::endl;
+    }
+
+    void get_new_global_id(long unsigned int& new_id, Eigen::Vector3d gps_latlon){
+        unsigned int block_id;
+        get_map_block_id_from_gps(block_id, gps_latlon);
+        
+        new_id=block_id;
+       // std::cout<<new_id<<std::endl;
+        new_id=new_id<<32;
+        //std::cout<<new_id<<std::endl;
+        new_id=new_id+std::rand()+std::rand(); //rand belong to 0 : max int, here use two rands to get rand number from 0 to max uint
+    }
+    
+    void get_map_block_id_from_id(unsigned int& block_id, long unsigned int id){
+        block_id = id>>32;
+    }
+    
+    void get_gps_from_block_id(Eigen::Vector3d& gps_latlon, unsigned int block_id){
+        gps_latlon(0)=block_id/(360*100);
+        gps_latlon(0)=gps_latlon(0)/(double)100;
+        gps_latlon(1)=(block_id-gps_latlon(0)*(360*100*100))/(double)100;
+    }
+    
     std::shared_ptr<MapPoint> GlobalMap::getMPById(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
             if(id==mappoints[i]->id){
@@ -221,7 +248,7 @@ namespace gm{
         submap=*(this);
         submap.frames.clear();
         submap.mappoints.clear();
-        std::map<std::shared_ptr<gm::Frame>, std::shared_ptr<gm::Frame>> old_to_new_frame_map;
+        std::map<long unsigned int, std::shared_ptr<gm::Frame>> old_to_new_frame_map;
         for(int i=startframe_id; i<endframe_id; i++){
             std::shared_ptr<gm::Frame> frame_p;
             frame_p.reset(new gm::Frame);
@@ -230,13 +257,13 @@ namespace gm{
                 frame_p->obss[j]=nullptr;
             }
             submap.frames.push_back(frame_p);
-            old_to_new_frame_map[frames[i]]=frame_p;
+            old_to_new_frame_map[frames[i]->id]=frame_p;
         }
         for(size_t i=0; i<submap.frames.size(); i++){
             if(submap.frames[i]->imu_next_frame!=nullptr){
                 int old_frame_id=submap.frames[i]->imu_next_frame->id;
-                if(old_to_new_frame_map.count(submap.frames[i]->imu_next_frame)!=0){
-                    submap.frames[i]->imu_next_frame=old_to_new_frame_map[submap.frames[i]->imu_next_frame];
+                if(old_to_new_frame_map.count(submap.frames[i]->imu_next_frame->id)!=0){
+                    submap.frames[i]->imu_next_frame=old_to_new_frame_map[submap.frames[i]->imu_next_frame->id];
                 }else{
                     submap.frames[i]->imu_next_frame=nullptr;
                     submap.frames[i]->acces.clear();
@@ -248,15 +275,16 @@ namespace gm{
         
         for(size_t i=0; i<mappoints.size(); i++){
             for(size_t j=0; j<mappoints[i]->track.size(); j++){
-                if(old_to_new_frame_map.count(mappoints[i]->track[j].frame)!=0){
+                if(old_to_new_frame_map.count(mappoints[i]->track[j].frame->id)!=0){
                     std::shared_ptr<gm::MapPoint> mappoint_p= submap.getMPById(mappoints[i]->id);
+                    
                     if(mappoint_p==nullptr){
                         mappoint_p.reset(new gm::MapPoint);
                         *(mappoint_p)=*(mappoints[i]);
                         mappoint_p->track.clear();
                         submap.mappoints.push_back(mappoint_p);
                     }
-                    std::shared_ptr<gm::Frame> new_frame_temp=old_to_new_frame_map[mappoints[i]->track[j].frame];
+                    std::shared_ptr<gm::Frame> new_frame_temp=old_to_new_frame_map[mappoints[i]->track[j].frame->id];
                     new_frame_temp->obss[mappoints[i]->track[j].kp_ind]=mappoint_p;                
                 }
             }

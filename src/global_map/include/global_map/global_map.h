@@ -4,6 +4,12 @@
 #include "global_map/global_map_common.h"
 
 namespace gm {
+    
+void get_map_block_id_from_gps(unsigned int& block_id, Eigen::Vector3d gps_latlon);
+void get_new_global_id(long unsigned int& new_id, Eigen::Vector3d gps_latlon);
+void get_map_block_id_from_id(unsigned int& block_id, long unsigned int id);
+void get_gps_from_block_id(Eigen::Vector3d& gps_latlon, unsigned int block_id);
+    
 class GlobalMap {
 public:
     std::vector<std::shared_ptr<Frame>> frames;

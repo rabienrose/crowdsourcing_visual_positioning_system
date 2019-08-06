@@ -36,9 +36,12 @@ int main(int argc, char* argv[]){
     google::ParseCommandLineFlags(&argc, &argv, true);
     visualization::RVizVisualizationSink::init();
     std::string res_root=argv[1];
+    unsigned int map_id=std::stoul(argv[2]);
+    std::vector<unsigned int> map_ids;
+    map_ids.push_back(map_id);
 
     gm::GlobalMap map;
-    gm::load_submap(map, res_root);
+    gm::load_global_map(map, res_root,map_ids);
     
     std::cout<<map.gps_anchor.transpose()<<std::endl;
     std::vector<Eigen::Vector3d> traj_posi;

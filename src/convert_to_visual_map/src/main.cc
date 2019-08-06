@@ -14,6 +14,7 @@
 #include "imu_tools.h"
 #include "NavState.h"
 #include "IMUConverter.h"
+#include "CoorConv.h"
 
 DEFINE_string(res_root, "", "Folder contain the resource.");
 DEFINE_string(global_root, "", "");
@@ -66,53 +67,47 @@ void alignToIMU(gm::GlobalMap& map){
             sycn_imu_datas[i].push_back(imu_data);
         }
     }
-    for(int i=0; i<map.frames.size(); i++){
-        Eigen::Vector3d bg=Eigen::Vector3d::Zero();
-        Eigen::Vector3d ba=Eigen::Vector3d::Zero();
-        std::vector<chamo::IMUPreintegrator> preints;
-        updatePreInt(preints, sycn_imu_datas, ba, bg);
-        Eigen::Vector3d new_bg = OptimizeInitialGyroBias(pose_vec_mat, preints, Tbc);
-        bg=new_bg;
-        preints.clear();
-        updatePreInt(preints, sycn_imu_datas, ba, bg);
-        double sstar;
-        cv::Mat gwstar;
-        double scale_confi;
-        double grav_confi;
-        CalGravityAndScale(pose_vec_mat, preints, chamo::Converter::toCvMat(Tbc), sstar, gwstar, scale_confi, grav_confi);
-        cv::Mat gI = cv::Mat::zeros(3,1,CV_32F);
-        gI.at<float>(2) = 1;
-        cv::Mat gwn = gwstar/cv::norm(gwstar);
-        cv::Mat gIxgwn = gI.cross(gwn);
-        double normgIxgwn = cv::norm(gIxgwn);
-        cv::Mat vhat = gIxgwn/normgIxgwn;
-        double theta = std::atan2(normgIxgwn,gI.dot(gwn));
-        Eigen::Vector3d vhateig = chamo::Converter::toVector3d(vhat);
-        Eigen::Matrix3d Rwi_ = Sophus::SO3::exp(vhateig*theta).matrix();
-        Eigen::Vector3d bias_a=Eigen::Vector3d::Zero();
-        CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
-        cv::Mat Tbc_mat=chamo::Converter::toCvMat(Tbc);
-        cv::Mat Rwi_mat=chamo::Converter::toCvMat(Rwi_);
-        Eigen::Matrix4d Twi = Eigen::Matrix4d::Identity();
-        Twi.block(0,0,3,3)=Rwi_;
-        cv::Mat Twi_mat=chamo::Converter::toCvMat(Twi);
-        cv::Mat Rbc = Tbc_mat.rowRange(0,3).colRange(0,3);
-        cv::Mat pbc = Tbc_mat.rowRange(0,3).col(3);
-        cv::Mat Rcb = Rbc.t();
-        cv::Mat pcb = -Rcb*pbc;
-        Eigen::Vector3d last_v;
-        for(int i=0; i<pose_vec_mat.size(); i++){
-            pose_vec_mat[i].col(3).rowRange(0,3)=pose_vec_mat[i].col(3).rowRange(0,3)*sstar;
-            pose_vec_mat[i]=Twi_mat.t()*pose_vec_mat[i];
-            cv::Mat wPc = pose_vec_mat[i].rowRange(0,3).col(3);                   // wPc
-            cv::Mat Rwc = pose_vec_mat[i].rowRange(0,3).colRange(0,3);            // Rwc
-            map.frames[i]->position=chamo::Converter::toVector3d(wPc);
-            Eigen::Matrix3d tempm=chamo::Converter::toMatrix3d(Rwc);
-            map.frames[i]->direction=Eigen::Quaterniond(tempm);
-        }
-        for(int i=0; i<map.mappoints.size(); i++){
-            map.mappoints[i]->position=Rwi_.transpose()*map.mappoints[i]->position*sstar;
-        }
+    Eigen::Vector3d bg=Eigen::Vector3d::Zero();
+    Eigen::Vector3d ba=Eigen::Vector3d::Zero();
+    std::vector<chamo::IMUPreintegrator> preints;
+    updatePreInt(preints, sycn_imu_datas, ba, bg);
+    Eigen::Vector3d new_bg = OptimizeInitialGyroBias(pose_vec_mat, preints, Tbc);
+    bg=new_bg;
+    preints.clear();
+    updatePreInt(preints, sycn_imu_datas, ba, bg);
+    double sstar;
+    cv::Mat gwstar;
+    double scale_confi;
+    double grav_confi;
+    CalGravityAndScale(pose_vec_mat, preints, chamo::Converter::toCvMat(Tbc), sstar, gwstar, scale_confi, grav_confi);
+    cv::Mat gI = cv::Mat::zeros(3,1,CV_32F);
+    gI.at<float>(2) = 1;
+    cv::Mat gwn = gwstar/cv::norm(gwstar);
+    cv::Mat gIxgwn = gI.cross(gwn);
+    double normgIxgwn = cv::norm(gIxgwn);
+    cv::Mat vhat = gIxgwn/normgIxgwn;
+    double theta = std::atan2(normgIxgwn,gI.dot(gwn));
+    Eigen::Vector3d vhateig = chamo::Converter::toVector3d(vhat);
+    Eigen::Matrix3d Rwi_ = Sophus::SO3::exp(vhateig*theta).matrix();
+    Eigen::Vector3d bias_a=Eigen::Vector3d::Zero();
+    CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
+    cv::Mat Tbc_mat=chamo::Converter::toCvMat(Tbc);
+    cv::Mat Rwi_mat=chamo::Converter::toCvMat(Rwi_);
+    Eigen::Matrix4d Twi = Eigen::Matrix4d::Identity();
+    Twi.block(0,0,3,3)=Rwi_;
+    cv::Mat Twi_mat=chamo::Converter::toCvMat(Twi);
+    Eigen::Vector3d last_v;
+    for(int i=0; i<pose_vec_mat.size(); i++){
+        pose_vec_mat[i].col(3).rowRange(0,3)=pose_vec_mat[i].col(3).rowRange(0,3)*sstar;
+        pose_vec_mat[i]=Twi_mat.t()*pose_vec_mat[i];
+        cv::Mat wPc = pose_vec_mat[i].rowRange(0,3).col(3);                   // wPc
+        cv::Mat Rwc = pose_vec_mat[i].rowRange(0,3).colRange(0,3);            // Rwc
+        map.frames[i]->position=chamo::Converter::toVector3d(wPc);
+        Eigen::Matrix3d tempm=chamo::Converter::toMatrix3d(Rwc);
+        map.frames[i]->direction=Eigen::Quaterniond(tempm);
+    }
+    for(int i=0; i<map.mappoints.size(); i++){
+        map.mappoints[i]->position=Rwi_.transpose()*map.mappoints[i]->position*sstar;
     }
     
 }
@@ -159,7 +154,7 @@ void alignToGPS(gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
                 avg_err=avg_err+err/pc_gps.size();
                 pc_frame_transformed_temp.push_back(posi_gps_homo.block(0,0,3,1));
             }
-            std::cout<<"avg_err: "<<cur_frame_id<<" | "<<pc_gps.size()<<" | "<<avg_err<<std::endl;
+            //std::cout<<"avg_err: "<<cur_frame_id<<" | "<<pc_gps.size()<<" | "<<avg_err<<std::endl;
             //if(avg_err>FLAGS_err_thres || cur_frame_id==map.frames.size()-1){
             if(cur_frame_id==map.frames.size()-1){
                 gm::GlobalMap submap;
@@ -263,37 +258,6 @@ void read_img_time(std::string img_time_addr, std::vector<double>& img_timess, s
     infile.close();
 }
 
-void read_gps_orth(std::string gps_orth_addr, std::vector<Eigen::Vector3d>& gps_orths, std::vector<double>& gps_times,
-        std::vector<int>& gps_covs, Eigen::Vector3d& anchor_gps
-    ){
-    std::string line;
-    std::ifstream infile(gps_orth_addr);
-    while (true)
-    {
-        std::getline(infile, line);
-        if (line==""){
-            break;
-        }
-        std::vector<std::string> splited = chamo::split(line, ",");
-        if(splited.size()==3){
-            anchor_gps(0)=atof(splited[0].c_str());
-            anchor_gps(1)=atof(splited[1].c_str());
-            anchor_gps(2)=atof(splited[2].c_str());
-            continue;
-        }
-        double gps_time=atof(splited[0].c_str());
-        Eigen::Vector3d gps_orth;
-        gps_orth(0)=atof(splited[1].c_str());
-        gps_orth(1)=atof(splited[2].c_str());
-        gps_orth(2)=atof(splited[3].c_str());
-        int gps_cov =atoi(splited[4].c_str());
-        gps_orths.push_back(gps_orth);
-        gps_times.push_back(gps_time);
-        gps_covs.push_back(gps_cov);
-    }
-    infile.close();
-}
-
 void read_gps_alin(std::string gps_alin_addr, std::vector<Eigen::Vector3d>& gps_alins, std::vector<int>& inliars, std::vector<float>& accus){
     std::string line;
     std::ifstream infile(gps_alin_addr);
@@ -361,6 +325,7 @@ public:
 long unsigned int calIdFromGPS(double lat, double lon){
     return floor(lat*100)*floor(lon*100);
 }
+
 void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
     
     std::string img_time_addr=res_root+"/image_time.txt";
@@ -374,25 +339,25 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
     std::vector<float> gps_accus;
     std::vector<Eigen::Vector3d> gps_alins;
     read_gps_alin(gps_alin_addr, gps_alins, gps_inliers, gps_accus);
+    std::vector<Eigen::Vector3d> gps_alins_xyz;
+    for(int i=0; i<gps_alins.size(); i++){
+        if(gps_alins_xyz.size()==0){
+            map.gps_anchor=gps_alins[0];
+        }
+        Eigen::Vector3d coor_gps;
+        convert_to_coor(gps_alins[i], coor_gps, map.gps_anchor);
+        gps_alins_xyz.push_back(coor_gps);
+    }
     std::cout<<"gps_alins: "<<gps_alins.size()<<std::endl;
     if(gps_alins.size()!=img_names.size()){
         std::cout<<"gps count not equal frame count!!!"<<std::endl;
         exit(0);
     }
-    
-    std::string gps_orth_addr=res_root+"/gps_orth.txt";
-    std::vector<Eigen::Vector3d> gps_orths;
-    std::vector<double> gps_times;
-    std::vector<int> gps_covs;
-    Eigen::Vector3d anchor_gps;
-    read_gps_orth(gps_orth_addr, gps_orths, gps_times, gps_covs, anchor_gps);
-    
+
     Eigen::Matrix3d cam_inter;
     Eigen::Vector4d cam_distort;
     Eigen::Matrix4d Tbc;
     read_cam_info(res_root+"/camera_config.txt", cam_inter, cam_distort, Tbc);
-    
-    
     
     std::string imu_addr=res_root+"/imu.txt";
     std::vector<Eigen::Matrix<double, 7, 1>> imu_datas_raw;
@@ -470,13 +435,34 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
         int time_id=-1;
         findFramePoseByName(img_names, time_id, map.frames[i]->frame_file_name);
         CHECK_NE(time_id, -1);
+        long unsigned int new_id;
+        Eigen::Vector3d gps_latlon;
+        convert_to_lonlat(map.frames[i]->position, gps_latlon, map.gps_anchor);
+        
+        gm::get_new_global_id(new_id, gps_latlon);
+        map.frames[i]->id = new_id;
+        unsigned int blockid;
+        gm::get_map_block_id_from_id(blockid, new_id);
+        unsigned int blockid1;
+        gm::get_map_block_id_from_gps(blockid1, gps_latlon);
+        //std::cout<<new_id<<"   :   "<<blockid<<"   :   "<<blockid1<<std::endl;
+        Eigen::Vector3d gps_latlon1;
+        gm::get_gps_from_block_id(gps_latlon1, blockid);
+        //std::cout<<std::setprecision (15)<<gps_latlon.transpose()<<std::endl;
+        //std::cout<<std::setprecision (15)<<gps_latlon1.transpose()<<std::endl;
+        CHECK_GT(gps_alins_xyz.size(), time_id);
         map.frames[i]->time_stamp=img_timess[time_id];
-        map.frames[i]->gps_position=gps_alins[time_id];
+        map.frames[i]->gps_position=gps_alins_xyz[time_id];
         map.frames[i]->gps_accu=gps_accus[time_id];
-        map.frames[i]->id=calIdFromGPS(double lat, double lon);
     }
     
-
+    for(int i=0; i<map.mappoints.size(); i++){
+        long unsigned int new_id;
+        Eigen::Vector3d gps_latlon;
+        convert_to_lonlat(map.mappoints[i]->position, gps_latlon, map.gps_anchor);
+        gm::get_new_global_id(new_id, gps_latlon);
+        map.mappoints[i]->id=new_id;
+    }
     alignToIMU(map);
     alignToGPS(map, out_maps);
 }
@@ -493,6 +479,7 @@ int main(int argc, char* argv[]) {
         std::string map_name="submap_"+ss.str()+".map";
         gm::GlobalMap map;
         bool re= gm::load_submap(map, res_root+"/"+map_name);
+        map.AssignKpToMp();
         if(re==false){
             break;
         }
@@ -500,6 +487,7 @@ int main(int argc, char* argv[]) {
         ConvertFromVisualMap(res_root, map, out_maps);
         for(int n=0; n<out_maps.size(); n++){
             for(int i=0; i<out_maps[n].frames.size(); i++){
+                global_map.gps_anchor=out_maps[n].gps_anchor;
                 global_map.frames.push_back(out_maps[n].frames[i]);
             }
             for(int i=0; i<out_maps[n].mappoints.size(); i++){

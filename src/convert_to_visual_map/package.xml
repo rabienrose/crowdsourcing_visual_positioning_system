@@ -16,4 +16,5 @@
   <depend>backend</depend>
   <depend>imu_visual_lib</depend>
   <depend>sim3_ransac</depend>
+  <depend>gps_tool</depend>
 </package>

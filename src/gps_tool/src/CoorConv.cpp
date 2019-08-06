@@ -29,6 +29,29 @@ void convert_to_coor(Eigen::Vector3d ori_gps, Eigen::Vector3d& coor_gps, Eigen::
     coor_gps=Eigen::Vector3d(north, east, height);
 }
 
+void convert_to_lonlat(Eigen::Vector3d ori_xyz, Eigen::Vector3d& latlon_gps, Eigen::Vector3d anchor_gps){
+    double origin_lat = anchor_gps.x();
+    double origin_lon = anchor_gps.y();
+    GpsConverter gps_conv(origin_lat, origin_lon, false);
+    WGS84Corr latlon;
+    gps_conv.MapXYToLatLon(ori_xyz.x(), ori_xyz.y(), latlon);
+    latlon_gps.x()=latlon.lat;
+    latlon_gps.y()=latlon.log;
+    latlon_gps.z()=ori_xyz.z();
+}
+
+void convert_to_another_anchor(Eigen::Vector3d ori_anchor, Eigen::Vector3d tar_anchor, Eigen::Vector3d& in_ori_xyz, Eigen::Vector3d& out_tar_xyz){
+    GpsConverter gps_conv1(tar_anchor(0), tar_anchor(1), false);
+    GpsConverter gps_conv2(ori_anchor(0), ori_anchor(1), false);
+    WGS84Corr latlon;
+    gps_conv2.MapXYToLatLon(in_ori_xyz.x(), in_ori_xyz.y(), latlon);
+    UTMCoor xy;
+    gps_conv1.MapLatLonToXY(latlon.lat, latlon.log, xy);
+    out_tar_xyz.x()=xy.x;
+    out_tar_xyz.y()=xy.y;
+    out_tar_xyz.z()=in_ori_xyz.z();
+}
+
 
 GpsConverter::GpsConverter()
 {
