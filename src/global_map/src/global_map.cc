@@ -51,11 +51,17 @@ namespace gm{
     void gm::GlobalMap::CalConnections(){
         
         for(int i=0; i<frames.size(); i++){
+//             if(frames[i]->id==482153718213373238){
+//                 std::cout<<frames[i]->id<<" : "<<i<<std::endl;
+//             }
             std::map<std::shared_ptr<Frame>, int> frame_list;
             for(int j=0; j<frames[i]->obss.size(); j++){
                 if(frames[i]->obss[j]!= nullptr){
                     std::shared_ptr<MapPoint> temp_tar_mp = frames[i]->obss[j];
                     for(int k=0; k<temp_tar_mp->track.size(); k++){
+                        if(temp_tar_mp->track[k].frame->id==frames[i]->id){
+                            continue;
+                        }
                         if(frame_list.count(temp_tar_mp->track[k].frame)==0){
                             frame_list[temp_tar_mp->track[k].frame]=1;
                         }else{
@@ -63,15 +69,33 @@ namespace gm{
                         }
                     }
                 }
-                
             }
-            for(std::map<std::shared_ptr<Frame>, int>::iterator it=frame_list.begin(); it!=frame_list.end(); it++){
-                if(it->second>20){
-                    Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*it->first->getPose();
-                    Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
-                    Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
-                    AddConnection(it->first, frames[i] , posi, rot, 1, it->second*0.5);
+//             if(frame_list.size()<=3){
+//                 std::cout<<"warming !!! frame_list.size()<=3"<<std::endl;
+//             }
+            typedef std::function<bool(std::pair<std::shared_ptr<Frame>, int>, std::pair<std::shared_ptr<Frame>, int>)> Comparator;
+ 
+            // Defining a lambda function to compare two pairs. It will compare two pairs using second field
+            Comparator compFunctor =
+                    [](std::pair<std::shared_ptr<Frame>, int> elem1 ,std::pair<std::shared_ptr<Frame>, int> elem2)
+                    {
+                        return elem1.second > elem2.second;
+                    };
+        
+            // Declaring a set that will store the pairs using above comparision logic
+            std::set<std::pair<std::shared_ptr<Frame>, int>, Comparator> ranked_score(frame_list.begin(), frame_list.end(), compFunctor);
+            int add_count=0;
+            for(std::pair<std::shared_ptr<Frame>, int> element : ranked_score){
+                add_count++;
+                if(add_count>20){
+                    break;
                 }
+                //std::cout<<element.second<<std::endl;
+                Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*element.first->getPose();
+                Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
+                Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
+                
+                AddConnection(element.first, frames[i] , posi, rot, 1, element.second*0.5);
             }
         }
     }
@@ -116,6 +140,13 @@ namespace gm{
                 }
                 mappoints.erase(mappoints.begin()+i);
                 break;
+            }
+        }
+    }
+    void GlobalMap::getFrameChildren(std::vector<std::shared_ptr<gm::Frame>>& children, std::shared_ptr<gm::Frame> cur_frame){
+        for(int i=0; i<pose_graph_v1.size(); i++){
+            if(pose_graph_v1[i]->id==cur_frame->id){
+                children.push_back(pose_graph_v2[i]);
             }
         }
     }

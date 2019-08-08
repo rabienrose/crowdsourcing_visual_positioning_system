@@ -30,6 +30,7 @@ public:
     std::shared_ptr<Frame> getFrameById(long unsigned int id);
     void CheckConsistence();
     void GetCovisi(std::shared_ptr<Frame> frame_p, std::map<std::shared_ptr< Frame>, int>& connections);
+    void getFrameChildren(std::vector<std::shared_ptr<gm::Frame>>& children, std::shared_ptr<gm::Frame> cur_frame);
     void AssignKpToMp();
     void CalPoseEdgeVal();
     void UpdatePoseEdge();

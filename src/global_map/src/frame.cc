@@ -6,6 +6,9 @@ Frame::Frame()
     imu_next_frame = nullptr;
     gps_avg_count=0;
     isfix=false;
+    doBA=false;
+    doGraphOpti=false;
+    doMatch=false;
 }
 Eigen::Matrix4d Frame::getPose()
 {

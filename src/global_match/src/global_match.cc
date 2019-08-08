@@ -87,7 +87,7 @@ namespace chamo {
         }
     }
     
-    void GlobalMatch::LoadMap(std::string project_mat_file, std::shared_ptr<gm::GlobalMap> map){
+    void GlobalMatch::LoadMap(std::string project_mat_file, gm::GlobalMap& _map, Eigen::Vector3d est_posi){
         std::ifstream in_stream(project_mat_file, std::ios_base::binary);
         Eigen::MatrixXf words_first_half_;
         Eigen::MatrixXf words_second_half_;
@@ -95,15 +95,20 @@ namespace chamo {
         readAMatrix(in_stream, words_first_half_);
         readAMatrix(in_stream, words_second_half_);
         in_stream.close();
-        
+        map = _map;
         index_.reset(new loop_closure::inverted_multi_index::InvertedMultiIndex<5>(words_first_half_, words_second_half_, 10));
 
         int desc_count=0;
-        for(int i=0; i<map->mappoints.size(); i++){
+        int mp_count=0;
+        for(int i=0; i<map.mappoints.size(); i++){
+            if((map.mappoints[i]->position-est_posi).norm()>1000){
+                continue;
+            }
             int mp_id=i;
-            for(int j=0; j<map->mappoints[i]->track.size(); j++){
-                std::shared_ptr<gm::Frame> frame_p=map->mappoints[i]->track[j].frame;
-                int kp_ind=map->mappoints[i]->track[j].kp_ind;
+            mp_count++;
+            for(int j=0; j<map.mappoints[i]->track.size(); j++){
+                std::shared_ptr<gm::Frame> frame_p=map.mappoints[i]->track[j].frame;
+                int kp_ind=map.mappoints[i]->track[j].kp_ind;
                 Eigen::Matrix<unsigned char, Eigen::Dynamic, 1> raw_descriptor;
                 frame_p->getDesc(kp_ind, raw_descriptor);
                 //std::cout<<raw_descriptor.tranpose()<<std::endl;
@@ -113,7 +118,7 @@ namespace chamo {
                 desc_count++;
             }
         }
-        map_p = map;
+        
     }
 
     
@@ -270,9 +275,9 @@ namespace chamo {
                     cv::Point2f pt=query_frame->kps[item.second[i].query_desc_id].pt;
                     point2ds.push_back(pt);
                     cv::Point3f posi;
-                    posi.x= map_p->mappoints[item.second[i].track_id]->position.x();
-                    posi.y= map_p->mappoints[item.second[i].track_id]->position.y();
-                    posi.z= map_p->mappoints[item.second[i].track_id]->position.z();
+                    posi.x= map.mappoints[item.second[i].track_id]->position.x();
+                    posi.y= map.mappoints[item.second[i].track_id]->position.y();
+                    posi.z= map.mappoints[item.second[i].track_id]->position.z();
                     point3ds.push_back(posi);
                     ransac_to_kpid.push_back(item.second[i].query_desc_id);
                     ransac_to_mpid.push_back(item.second[i].track_id);
@@ -296,7 +301,7 @@ namespace chamo {
             //std::cout<<"point3ds: "<<point3ds.size()<<std::endl;
             cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
             if(inliers.rows<20){
-                return;
+                continue;
             }
             
             cv::Mat rot_m;
@@ -308,62 +313,62 @@ namespace chamo {
             Eigen::Matrix4d pose_inv=Eigen::Matrix4d::Identity();
             pose_inv.block(0,0,3,3)=rot_m_eigen;
             pose_inv.block(0,3,3,1)=tvec_eigen;
-            
-            Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
-            k_mat(0, 0) = query_frame->fx;
-            k_mat(1, 1) = query_frame->fy;
-            k_mat(0, 2) = query_frame->cx;
-            k_mat(1, 2) = query_frame->cy;
-            k_mat(2, 2) = 1;
-            Eigen::Matrix<double, 3, 4> proj_mat = k_mat * pose_inv;
-            
-            point3ds.clear();
-            point2ds.clear();
-            ransac_to_kpid.clear();
-            ransac_to_mpid.clear();
-            for(int j=0; j<map_p->mappoints.size(); j++){
-                Eigen::Vector4d posi_homo;
-                posi_homo.block(0,0,3,1)=map_p->mappoints[j]->position;
-                posi_homo(3)=1;
-                Eigen::Vector3d proj_homo = proj_mat*posi_homo;
-                //std::cout<<proj_mat<<std::endl;
-                double u=proj_homo(0)/proj_homo(2);
-                double v=proj_homo(1)/proj_homo(2);
-                for(int k=0; k<query_frame->kps.size(); k++){
-                    cv::Point2f uv= query_frame->kps[k].pt;                
-                    float proj_err=sqrt((uv.x-u)*(uv.x-u)+(uv.y-v)*(uv.y-v));
-                    if(proj_err<20){
-                        Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> query_desc = query_frame->descriptors.col(k);
-                        int diff = map_p->mappoints[j]->calDescDiff(query_desc);
-                        //std::cout<<diff<<std::endl;
-                        if(diff<50){
-                            cv::Point2f pt=query_frame->kps[k].pt;
-                            point2ds.push_back(pt);
-                            cv::Point3f posi;
-                            posi.x= map_p->mappoints[j]->position.x();
-                            posi.y= map_p->mappoints[j]->position.y();
-                            posi.z= map_p->mappoints[j]->position.z();
-                            point3ds.push_back(posi);
-                            ransac_to_kpid.push_back(k);
-                            ransac_to_mpid.push_back(j);
-                        }
-                    }
-                }
-            }
-            //std::cout<<"ran before: "<<point3ds.size()<<std::endl;
-            cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
-            if(inliers.rows<20){
-                return;
-            }
-            //std::cout<<"ran after: "<<inliers.size()<<std::endl;
-            
-            cv::Rodrigues(rvec, rot_m);
-            convert_mat_float_eigen_double(rot_m_eigen, rot_m);
-            convert_mat_float_eigen_double(tvec_eigen, tvec);
-            pose_inv.block(0,0,3,3)=rot_m_eigen;
-            pose_inv.block(0,3,3,1)=tvec_eigen;
-            
-            //std::cout<<"inliers.rows: "<<inliers.rows<<std::endl;
+//             
+//             Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
+//             k_mat(0, 0) = query_frame->fx;
+//             k_mat(1, 1) = query_frame->fy;
+//             k_mat(0, 2) = query_frame->cx;
+//             k_mat(1, 2) = query_frame->cy;
+//             k_mat(2, 2) = 1;
+//             Eigen::Matrix<double, 3, 4> proj_mat = k_mat * pose_inv;
+//             
+//             point3ds.clear();
+//             point2ds.clear();
+//             ransac_to_kpid.clear();
+//             ransac_to_mpid.clear();
+//             for(int j=0; j<map.mappoints.size(); j++){
+//                 Eigen::Vector4d posi_homo;
+//                 posi_homo.block(0,0,3,1)=map.mappoints[j]->position;
+//                 posi_homo(3)=1;
+//                 Eigen::Vector3d proj_homo = proj_mat*posi_homo;
+//                 //std::cout<<proj_mat<<std::endl;
+//                 double u=proj_homo(0)/proj_homo(2);
+//                 double v=proj_homo(1)/proj_homo(2);
+//                 for(int k=0; k<query_frame->kps.size(); k++){
+//                     cv::Point2f uv= query_frame->kps[k].pt;                
+//                     float proj_err=sqrt((uv.x-u)*(uv.x-u)+(uv.y-v)*(uv.y-v));
+//                     if(proj_err<20){
+//                         Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> query_desc = query_frame->descriptors.col(k);
+//                         int diff = map.mappoints[j]->calDescDiff(query_desc);
+//                         //std::cout<<diff<<std::endl;
+//                         if(diff<50){
+//                             cv::Point2f pt=query_frame->kps[k].pt;
+//                             point2ds.push_back(pt);
+//                             cv::Point3f posi;
+//                             posi.x= map.mappoints[j]->position.x();
+//                             posi.y= map.mappoints[j]->position.y();
+//                             posi.z= map.mappoints[j]->position.z();
+//                             point3ds.push_back(posi);
+//                             ransac_to_kpid.push_back(k);
+//                             ransac_to_mpid.push_back(j);
+//                         }
+//                     }
+//                 }
+//             }
+//             //std::cout<<"ran before: "<<point3ds.size()<<std::endl;
+//             cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
+//             if(inliers.rows<20){
+//                 return;
+//             }
+//             //std::cout<<"ran after: "<<inliers.size()<<std::endl;
+//             
+//             cv::Rodrigues(rvec, rot_m);
+//             convert_mat_float_eigen_double(rot_m_eigen, rot_m);
+//             convert_mat_float_eigen_double(tvec_eigen, tvec);
+//             pose_inv.block(0,0,3,3)=rot_m_eigen;
+//             pose_inv.block(0,3,3,1)=tvec_eigen;
+//             
+//             //std::cout<<"inliers.rows: "<<inliers.rows<<std::endl;
             std::vector<int> inliers_kp;
             std::vector<int> inliers_mp;
             for(int i=0; i<inliers.rows; i++){

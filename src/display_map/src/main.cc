@@ -36,10 +36,12 @@ int main(int argc, char* argv[]){
     google::ParseCommandLineFlags(&argc, &argv, true);
     visualization::RVizVisualizationSink::init();
     std::string res_root=argv[1];
-    unsigned int map_id=std::stoul(argv[2]);
+    int map_count=argc-2;
     std::vector<unsigned int> map_ids;
-    map_ids.push_back(map_id);
-
+    for(int i=2; i<argc; i++){
+        unsigned int map_id=std::stoul(argv[i]);
+        map_ids.push_back(map_id);
+    }
     gm::GlobalMap map;
     gm::load_global_map(map, res_root,map_ids);
     
@@ -68,20 +70,20 @@ int main(int argc, char* argv[]){
         rots.push_back(map.frames[i]->direction);
     }
     show_pose_as_marker(traj_posi, rots, "vm_pose");
-//     visualization::LineSegmentVector matches;
-//     for(int i=0; i<map.pose_graph_e_posi.size(); i++){
-//         visualization::LineSegment line_segment;
-//         line_segment.from = map.pose_graph_v1[i]->position;
-//         line_segment.scale = 0.03;
-//         line_segment.alpha = 1;
-// 
-//         line_segment.color.red = 0;
-//         line_segment.color.green = 255;
-//         line_segment.color.blue = 0;
-//         line_segment.to = map.pose_graph_v2[i]->position;
-//         matches.push_back(line_segment);
-//     }
-//     visualization::publishLines(matches, 0, visualization::kDefaultMapFrame,visualization::kDefaultNamespace, "vm_covisibility");
+    visualization::LineSegmentVector matches;
+    for(int i=0; i<map.pose_graph_e_posi.size(); i++){
+        visualization::LineSegment line_segment;
+        line_segment.from = map.pose_graph_v1[i]->position;
+        line_segment.scale = 0.03;
+        line_segment.alpha = 1;
+
+        line_segment.color.red = 0;
+        line_segment.color.green = 255;
+        line_segment.color.blue = 0;
+        line_segment.to = map.pose_graph_v2[i]->position;
+        matches.push_back(line_segment);
+    }
+    visualization::publishLines(matches, 0, visualization::kDefaultMapFrame,visualization::kDefaultNamespace, "vm_covisibility");
     show_mp_as_cloud(traj_posi, "vm_frame_posi");
     show_mp_as_cloud(mp_posi, "vm_mp_posi");
     show_mp_as_cloud(gps_posi, "vm_gps_posi");

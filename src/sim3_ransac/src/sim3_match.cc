@@ -332,7 +332,7 @@ namespace chamo
         }
 
         float ransac_prob = 0.99;
-        int ransac_min_inliers = std::max(60,int(match_size * 0.30));
+        int ransac_min_inliers = 20;
         int ransac_max_iter = 300;
 
         // Adjust Parameters according to number of correspondences
@@ -379,6 +379,7 @@ namespace chamo
 
             std::vector<bool> b_inliners = std::vector<bool>(match_size,false);
             int ninliers = CheckInliers(P1, P2, T12, scale_12, b_inliners);
+            //std::cout<<"ransac ninliers: "<<ninliers<<std::endl; 
             if (ninliers > ransac_min_inliers) {
                 std::vector<Eigen::Vector3d> P3D1_inlier, P3D2_inlier;
                 // std::vector<cv::KeyPoint> local_kp_inlier;
@@ -402,7 +403,7 @@ namespace chamo
                 // chamo::ComputeSim3(P3D1_inlier, P3D2_inlier, T12, scale_12);
                 // int ninliers_final = CheckInliers(P3D1_inlier, P3D2_inlier, T12, scale_12, b_inliners);
                 // if(ninliers_final > 0.5 * ninliers){
-                if(ninliers_final > 20){
+                if(ninliers_final > ransac_min_inliers){
                     return true;
                 }
             }

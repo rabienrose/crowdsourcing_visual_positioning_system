@@ -9,7 +9,7 @@
 namespace chamo {
 class GlobalMatch{
 public:
-    void LoadMap(std::string project_mat_file, std::shared_ptr<gm::GlobalMap> map);
+    void LoadMap(std::string project_mat_file, gm::GlobalMap& _map, Eigen::Vector3d est_posi);
 
     void MatchImg(std::shared_ptr<gm::Frame> query_frame, std::vector<std::vector<int>>& inliers_mps, 
                                 std::vector<std::vector<int>>& inliers_kps, std::vector<Eigen::Matrix4d>& poses
@@ -17,7 +17,7 @@ public:
     
     std::shared_ptr<loop_closure::inverted_multi_index::InvertedMultiIndex<5>> index_;
     Eigen::MatrixXf projection_matrix_;
-    std::shared_ptr<gm::GlobalMap> map_p;
+    gm::GlobalMap map;
 };
 
 

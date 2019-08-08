@@ -8,6 +8,9 @@ public:
     Frame();
     long unsigned int id;
     bool isfix;
+    bool doBA;
+    bool doGraphOpti;
+    bool doMatch;
     double time_stamp;
     std::string frame_file_name;
     std::vector<cv::KeyPoint> kps;

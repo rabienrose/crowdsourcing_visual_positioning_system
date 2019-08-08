@@ -163,7 +163,7 @@ void alignToGPS(gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
                     Eigen::Matrix4d pose_transformed_temp;
                     Eigen::Matrix4d temp_pose=submap.frames[j]->getPose();
                     transformPoseUseSim3(T12, scale_12, temp_pose, pose_transformed_temp);
-                    map.frames[j]->setPose(pose_transformed_temp);
+                    submap.frames[j]->setPose(pose_transformed_temp);
                 }
                 for(int j=0; j<submap.mappoints.size(); j++){
                     Eigen::Vector4d posi_homo;
@@ -340,13 +340,24 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
     std::vector<Eigen::Vector3d> gps_alins;
     read_gps_alin(gps_alin_addr, gps_alins, gps_inliers, gps_accus);
     std::vector<Eigen::Vector3d> gps_alins_xyz;
+    bool get_anchor=false;
     for(int i=0; i<gps_alins.size(); i++){
-        if(gps_alins_xyz.size()==0){
-            map.gps_anchor=gps_alins[0];
-        }
         Eigen::Vector3d coor_gps;
-        convert_to_coor(gps_alins[i], coor_gps, map.gps_anchor);
+        if(get_anchor==false){
+            if(gps_accus[i]<100){
+                map.gps_anchor=gps_alins[i];
+                get_anchor=true;
+                convert_to_coor(gps_alins[i], coor_gps, map.gps_anchor);
+            }
+        }else{
+            convert_to_coor(gps_alins[i], coor_gps, map.gps_anchor);
+        }
         gps_alins_xyz.push_back(coor_gps);
+    }
+    for(int i=0; i<gps_alins_xyz.size(); i++){
+        if(gps_accus[i]>=100){
+            gps_alins_xyz[i]=map.gps_anchor;
+        }
     }
     std::cout<<"gps_alins: "<<gps_alins.size()<<std::endl;
     if(gps_alins.size()!=img_names.size()){
@@ -473,12 +484,13 @@ int main(int argc, char* argv[]) {
     google::ParseCommandLineFlags(&argc, &argv, true);
     std::string res_root=FLAGS_res_root;
     gm::GlobalMap global_map;
+    srand(time(0));
     for(int i=0; i<1000; i++){
         std::stringstream ss;
         ss<<i;
         std::string map_name="submap_"+ss.str()+".map";
         gm::GlobalMap map;
-        bool re= gm::load_submap(map, res_root+"/"+map_name);
+        bool re= gm::load_submap(map, res_root+"/"+map_name, true);
         map.AssignKpToMp();
         if(re==false){
             break;

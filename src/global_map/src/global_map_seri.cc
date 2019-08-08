@@ -1,7 +1,6 @@
 #include "global_map/global_map_seri.h"
 #include <glog/logging.h>
 #include "CoorConv.h"
-#define ID_LEN 1000000000
 
 namespace gm{
     void putToFile(float val, std::fstream& f){
@@ -87,6 +86,11 @@ namespace gm{
             
             putToFile(frame_p->time_stamp, output);
             
+            putToFile((int)frame_p->doMatch, output);
+            putToFile((int)frame_p->doGraphOpti, output);
+            putToFile((int)frame_p->doBA, output);
+            putToFile((int)frame_p->isfix, output);
+            
             putToFileD2F(frame_p->Tbc_posi.x(), output);
             putToFileD2F(frame_p->Tbc_posi.y(), output);
             putToFileD2F(frame_p->Tbc_posi.z(), output);
@@ -159,10 +163,33 @@ namespace gm{
             }
         }
         std::cout<<"kp count: "<<kp_count<<std::endl;
+        
+        putToFile((int)map.pose_graph_e_posi.size(), output);
+        std::cout<<"covisi count: "<<map.pose_graph_e_posi.size()<<std::endl;
+        CHECK_EQ(map.pose_graph_e_posi.size(),map.pose_graph_e_posi.size());
+        CHECK_EQ(map.pose_graph_e_rot.size(),map.pose_graph_e_posi.size());
+        CHECK_EQ(map.pose_graph_e_scale.size(),map.pose_graph_e_posi.size());
+        CHECK_EQ(map.pose_graph_weight.size(),map.pose_graph_e_posi.size());
+        CHECK_EQ(map.pose_graph_v1.size(),map.pose_graph_e_posi.size());
+        CHECK_EQ(map.pose_graph_v2.size(),map.pose_graph_e_posi.size());
+        for(size_t i=0; i<map.pose_graph_e_posi.size(); i++){
+            putToFileD2F(map.pose_graph_e_posi[i].x(), output);
+            putToFileD2F(map.pose_graph_e_posi[i].y(), output);
+            putToFileD2F(map.pose_graph_e_posi[i].z(), output);
+            Eigen::Quaterniond rot_qua(map.pose_graph_e_rot[i]);
+            putToFileD2F(rot_qua.w(), output);
+            putToFileD2F(rot_qua.x(), output);
+            putToFileD2F(rot_qua.y(), output);
+            putToFileD2F(rot_qua.z(), output);
+            putToFileD2F(map.pose_graph_e_scale[i], output);
+            putToFileD2F(map.pose_graph_weight[i], output);
+            putToFile(map.pose_graph_v1[i]->id, output);
+            putToFile(map.pose_graph_v2[i]->id, output);
+        }
         output.close();
     }
 
-    bool load_submap(GlobalMap& map, std::string file_addr){
+    bool load_submap(GlobalMap& map, std::string file_addr, bool do_recover_obs){
         std::fstream input(file_addr.c_str(), std::ios::in | std::ios::binary);
         if(!input.is_open()){
             return false;
@@ -193,6 +220,11 @@ namespace gm{
             
             frame_p->frame_file_name = getFromFileS(input);
             frame_p->time_stamp=getFromFileD(input);
+            
+            frame_p->doMatch=getFromFileI(input);
+            frame_p->doGraphOpti=getFromFileI(input);
+            frame_p->doBA=getFromFileI(input);
+            frame_p->isfix=getFromFileI(input);
             
             frame_p->Tbc_posi.x()=getFromFileF2D(input);
             frame_p->Tbc_posi.y()=getFromFileF2D(input);
@@ -269,16 +301,56 @@ namespace gm{
         }
         std::cout<<"kp count: "<<kp_count<<std::endl;
         
-        for(int i=0; i<map.frames.size(); i++){
-            if(map.frames[i]->imu_next_frame_id!=-1){
-                map.frames[i]->imu_next_frame=map.getFrameById(map.frames[i]->imu_next_frame_id);
+        int pose_graph_e_size;
+        pose_graph_e_size=getFromFileI(input);
+        for(int i=0; i<pose_graph_e_size; i++){
+            Eigen::Vector3d posi;
+            posi.x()=getFromFileF2D(input);
+            posi.y()=getFromFileF2D(input);
+            posi.z()=getFromFileF2D(input);
+            Eigen::Quaterniond rot_qua;
+            rot_qua.w()=getFromFileF2D(input);
+            rot_qua.x()=getFromFileF2D(input);
+            rot_qua.y()=getFromFileF2D(input);
+            rot_qua.z()=getFromFileF2D(input);
+            
+            long unsigned int v1_id =getFromFileLI(input);
+            long unsigned int v2_id =getFromFileLI(input);
+            std::shared_ptr<Frame> frame1_p = map.getFrameById(v1_id);
+            std::shared_ptr<Frame> frame2_p = map.getFrameById(v2_id);
+            if(frame1_p!=nullptr && frame2_p!=nullptr){
+                map.pose_graph_e_posi.push_back(posi);
+                Eigen::Matrix3d rot(rot_qua);
+                map.pose_graph_e_rot.push_back(rot);
+                map.pose_graph_e_scale.push_back(getFromFileF2D(input));
+                map.pose_graph_weight.push_back(getFromFileF2D(input));
+                map.pose_graph_v1.push_back(frame1_p);
+                map.pose_graph_v2.push_back(frame2_p);
             }
-            for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
-                if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
-                    map.frames[i]->obss[j]=map.getMPById(map.frames[i]->obss_ids[j]);
+            
+        }
+        std::cout<<"covisi count: "<<pose_graph_e_size<<std::endl;
+        if(do_recover_obs){
+            std::map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
+            for(int i=0; i<map.mappoints.size(); i++){
+                temp_mp_map[map.mappoints[i]->id]=map.mappoints[i];
+            }
+            for(int i=0; i<map.frames.size(); i++){
+                if(map.frames[i]->imu_next_frame_id!=-1){
+                    map.frames[i]->imu_next_frame=map.getFrameById(map.frames[i]->imu_next_frame_id);
+                }
+                for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
+                    if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
+                        std::map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
+                        if(it!=temp_mp_map.end()){
+                            map.frames[i]->obss[j]=it->second;
+                        }
+                        
+                    }
                 }
             }
         }
+        
         return true;
     }
     
@@ -297,6 +369,8 @@ namespace gm{
             Eigen::Vector3d out_tar_xyz;
             convert_to_another_anchor(map.gps_anchor, temp_anchor, map.frames[i]->position, out_tar_xyz);
             map.frames[i]->position=out_tar_xyz;
+            convert_to_another_anchor(map.gps_anchor, temp_anchor, map.frames[i]->gps_position, out_tar_xyz);
+            map.frames[i]->gps_position=out_tar_xyz;
             submaps[block_id]->frames.push_back(map.frames[i]);
         }
         for(int i=0; i<map.mappoints.size(); i++){
@@ -312,6 +386,16 @@ namespace gm{
             map.mappoints[i]->position=out_tar_xyz;
             submaps[block_id]->mappoints.push_back(map.mappoints[i]);
         }
+        for(int i=0; i<map.pose_graph_v1.size(); i++){
+            unsigned int block_id;
+            get_map_block_id_from_id(block_id, map.mappoints[i]->id);
+            submaps[block_id]->pose_graph_v1.push_back(map.pose_graph_v1[i]);
+            submaps[block_id]->pose_graph_v2.push_back(map.pose_graph_v2[i]);
+            submaps[block_id]->pose_graph_e_posi.push_back(map.pose_graph_e_posi[i]);
+            submaps[block_id]->pose_graph_e_rot.push_back(map.pose_graph_e_rot[i]);
+            submaps[block_id]->pose_graph_e_scale.push_back(map.pose_graph_e_scale[i]);
+            submaps[block_id]->pose_graph_weight.push_back(map.pose_graph_weight[i]);
+        }
         for(std::map<unsigned int, std::shared_ptr<GlobalMap>>::iterator it=submaps.begin(); it!=submaps.end(); it++){
             std::stringstream ss;
             ss<<it->first;
@@ -326,16 +410,18 @@ namespace gm{
             std::stringstream ss;
             ss<<map_id_temp;
             GlobalMap map_temp;
+            std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
             if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
                 if(map.frames.size()==0){
                     get_gps_from_block_id(map.gps_anchor, map_ids[i]);
                 }
                 get_gps_from_block_id(map_temp.gps_anchor, map_ids[i]);
-                std::cout<<map.frames.size()<<std::endl;
                 for(int j=0; j<map_temp.frames.size(); j++){
                     Eigen::Vector3d out_tar_xyz;
                     convert_to_another_anchor(map_temp.gps_anchor, map.gps_anchor, map_temp.frames[j]->position, out_tar_xyz);
                     map_temp.frames[j]->position=out_tar_xyz;
+                    convert_to_another_anchor(map_temp.gps_anchor, map.gps_anchor, map_temp.frames[j]->gps_position, out_tar_xyz);
+                    map_temp.frames[j]->gps_position=out_tar_xyz;
                     map.frames.push_back(map_temp.frames[j]);
                 }
                 for(int j=0; j<map_temp.mappoints.size(); j++){
@@ -344,18 +430,35 @@ namespace gm{
                     map_temp.mappoints[j]->position=out_tar_xyz;
                     map.mappoints.push_back(map_temp.mappoints[j]);
                 }
+                for(int i=0; i<map_temp.pose_graph_v1.size(); i++){
+                    map.pose_graph_v1.push_back(map_temp.pose_graph_v1[i]);
+                    map.pose_graph_v2.push_back(map_temp.pose_graph_v2[i]);
+                    map.pose_graph_e_posi.push_back(map_temp.pose_graph_e_posi[i]);
+                    map.pose_graph_e_rot.push_back(map_temp.pose_graph_e_rot[i]);
+                    map.pose_graph_e_scale.push_back(map_temp.pose_graph_e_scale[i]);
+                    map.pose_graph_weight.push_back(map_temp.pose_graph_weight[i]);
+                }
             }
+        }
+        std::map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
+        for(int i=0; i<map.mappoints.size(); i++){
+            temp_mp_map[map.mappoints[i]->id]=map.mappoints[i];
         }
         for(int i=0; i<map.frames.size(); i++){
             if(map.frames[i]->imu_next_frame_id!=-1){
                 map.frames[i]->imu_next_frame=map.getFrameById(map.frames[i]->imu_next_frame_id);
             }
             for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
-                if(map.frames[i]->obss_ids[j]!= -1){
-                    map.frames[i]->obss[j]=map.getMPById(map.frames[i]->obss_ids[j]);
+                if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
+                    std::map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
+                    if(it!=temp_mp_map.end()){
+                        map.frames[i]->obss[j]=it->second;
+                    }
+                    
                 }
             }
         }
+        
         map.AssignKpToMp();
     }
 }   
