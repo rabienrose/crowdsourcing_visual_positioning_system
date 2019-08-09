@@ -1,6 +1,7 @@
 #include "global_map/global_map_seri.h"
 #include <glog/logging.h>
 #include "CoorConv.h"
+#include <unordered_map>
 
 namespace gm{
     void putToFile(float val, std::fstream& f){
@@ -331,7 +332,7 @@ namespace gm{
         }
         std::cout<<"covisi count: "<<pose_graph_e_size<<std::endl;
         if(do_recover_obs){
-            std::map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
+            std::unordered_map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
             for(int i=0; i<map.mappoints.size(); i++){
                 temp_mp_map[map.mappoints[i]->id]=map.mappoints[i];
             }
@@ -341,7 +342,7 @@ namespace gm{
                 }
                 for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
                     if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
-                        std::map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
+                        std::unordered_map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
                         if(it!=temp_mp_map.end()){
                             map.frames[i]->obss[j]=it->second;
                         }
@@ -440,7 +441,7 @@ namespace gm{
                 }
             }
         }
-        std::map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
+        std::unordered_map<long unsigned int, std::shared_ptr<MapPoint>> temp_mp_map;
         for(int i=0; i<map.mappoints.size(); i++){
             temp_mp_map[map.mappoints[i]->id]=map.mappoints[i];
         }
@@ -450,7 +451,7 @@ namespace gm{
             }
             for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
                 if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
-                    std::map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
+                    std::unordered_map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(map.frames[i]->obss_ids[j]);
                     if(it!=temp_mp_map.end()){
                         map.frames[i]->obss[j]=it->second;
                     }

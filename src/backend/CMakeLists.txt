@@ -10,6 +10,9 @@ cs_add_executable(${PROJECT_NAME}
     src/main.cc
     src/find_correspond.cc
     src/pose_graph_opti.cc
+    src/ba.cc
+    src/culling_frame.cc
+    src/map_tool.cc
 )
 
 cs_install()

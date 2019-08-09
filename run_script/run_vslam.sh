@@ -1,8 +1,9 @@
-BAG_NAME=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_test/6_19_cloudy/6_19_cloudy_building_near.bag
+BAG_NAME=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/try_coarse_gps/bag/07-25-15-44-57.bag
 OUT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/merge/test
 EXE_ROOT=/home/chamo/Documents/work/chamo_vps
 
 ORB_SLAM_ADDR=${EXE_ROOT}/devel/lib/vslam/mono_kitti
+BAG_TOOL_ADDR=${EXE_ROOT}/devel/lib/bag_tool/bag_tool_exe
 
 ${ORB_SLAM_ADDR} \
     --bag_addr=${BAG_NAME} \
@@ -17,8 +18,10 @@ ${ORB_SLAM_ADDR} \
     --feature_count=2000 \
     --feature_scale_factor=1.2 \
     --feature_level=8 \
-    --min_match_count=200 \
-    --max_step_KF=15 \
+    --min_match_count=100 \
+    --max_step_KF=25 \
     --v=0 \
     --logtostderr=true \
     --colorlogtostderr=true
+
+${BAG_TOOL_ADDR} --bag_addr=${BAG_NAME} --out_dir=${OUT_ADDR} --img_topic=img --imu_topic=imu --gps_topic=gps --isExtractImage=false

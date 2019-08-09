@@ -11,6 +11,8 @@
 
 DEFINE_string(res_root, "", "");
 DEFINE_string(out_root, "", "");
+DEFINE_string(op_type, "", "");
+DEFINE_string(param1, "", "");
 DEFINE_string(map_ids, "", "");
 
 int main(int argc, char* argv[]) {
@@ -29,9 +31,20 @@ int main(int argc, char* argv[]) {
     gm::GlobalMap map;
     gm::load_global_map(map, res_root,map_ids);
     map.AssignKpToMp();
-    map.CalConnections();
-    std::cout<<"connections: "<<map.pose_graph_v1.size()<<std::endl;
-    update_corresponds(map);
-    pose_graph_opti(map);
+    std::cout<<"backend op: "<<FLAGS_op_type<<std::endl;
+    if(FLAGS_op_type=="BA"){
+        if(FLAGS_param1=="re_triang"){
+            optimize_BA(map, true);
+        }else{
+            optimize_BA(map, false);
+        }
+    }else if(FLAGS_op_type=="Match"){
+        update_corresponds(map);
+    }else if(FLAGS_op_type=="CullingFrame"){
+        culling_frame(map);
+    }
+    else if(FLAGS_op_type=="Reset"){
+        reset_all_status(map);
+    }
     gm::save_global_map(map, FLAGS_out_root);
 }

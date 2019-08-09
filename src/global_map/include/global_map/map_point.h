@@ -15,6 +15,7 @@ public:
     MapPoint();
     long unsigned int id = -1;
     bool isfix;
+    bool isbad;
     int match_count=0;
     Eigen::Vector3d position;
     std::vector<TrackItem> track;

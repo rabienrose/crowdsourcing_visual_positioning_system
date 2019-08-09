@@ -12,7 +12,8 @@ public:
     void LoadMap(std::string project_mat_file, gm::GlobalMap& _map, Eigen::Vector3d est_posi);
 
     void MatchImg(std::shared_ptr<gm::Frame> query_frame, std::vector<std::vector<int>>& inliers_mps, 
-                                std::vector<std::vector<int>>& inliers_kps, std::vector<Eigen::Matrix4d>& poses
+                                std::vector<std::vector<int>>& inliers_kps, std::vector<Eigen::Matrix4d>& poses,
+                                float project_err_range=20, float desc_diff_err=50
     );
     
     std::shared_ptr<loop_closure::inverted_multi_index::InvertedMultiIndex<5>> index_;
