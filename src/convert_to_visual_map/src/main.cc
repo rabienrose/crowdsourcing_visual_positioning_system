@@ -446,34 +446,12 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
         int time_id=-1;
         findFramePoseByName(img_names, time_id, map.frames[i]->frame_file_name);
         CHECK_NE(time_id, -1);
-        long unsigned int new_id;
-        Eigen::Vector3d gps_latlon;
-        convert_to_lonlat(map.frames[i]->position, gps_latlon, map.gps_anchor);
-        
-        gm::get_new_global_id(new_id, gps_latlon);
-        map.frames[i]->id = new_id;
-        unsigned int blockid;
-        gm::get_map_block_id_from_id(blockid, new_id);
-        unsigned int blockid1;
-        gm::get_map_block_id_from_gps(blockid1, gps_latlon);
-        //std::cout<<new_id<<"   :   "<<blockid<<"   :   "<<blockid1<<std::endl;
-        Eigen::Vector3d gps_latlon1;
-        gm::get_gps_from_block_id(gps_latlon1, blockid);
-        //std::cout<<std::setprecision (15)<<gps_latlon.transpose()<<std::endl;
-        //std::cout<<std::setprecision (15)<<gps_latlon1.transpose()<<std::endl;
         CHECK_GT(gps_alins_xyz.size(), time_id);
         map.frames[i]->time_stamp=img_timess[time_id];
         map.frames[i]->gps_position=gps_alins_xyz[time_id];
         map.frames[i]->gps_accu=gps_accus[time_id];
     }
-    
-    for(int i=0; i<map.mappoints.size(); i++){
-        long unsigned int new_id;
-        Eigen::Vector3d gps_latlon;
-        convert_to_lonlat(map.mappoints[i]->position, gps_latlon, map.gps_anchor);
-        gm::get_new_global_id(new_id, gps_latlon);
-        map.mappoints[i]->id=new_id;
-    }
+
     alignToIMU(map);
     alignToGPS(map, out_maps);
 }
@@ -495,19 +473,38 @@ int main(int argc, char* argv[]) {
         if(re==false){
             break;
         }
+        if(map.frames.size()<3){
+            continue;
+        }
         std::vector<gm::GlobalMap> out_maps;
         ConvertFromVisualMap(res_root, map, out_maps);
         for(int n=0; n<out_maps.size(); n++){
-            for(int i=0; i<out_maps[n].frames.size(); i++){
+            for(int i=0; i<out_maps[n].frames.size(); i++){     
+                long unsigned int new_id;
+                Eigen::Vector3d gps_latlon;
+                convert_to_lonlat(out_maps[n].frames[i]->position, gps_latlon, map.gps_anchor);
+                gm::get_new_global_id(new_id, gps_latlon);
+                out_maps[n].frames[i]->id=new_id;
                 global_map.gps_anchor=out_maps[n].gps_anchor;
                 global_map.frames.push_back(out_maps[n].frames[i]);
             }
             for(int i=0; i<out_maps[n].mappoints.size(); i++){
+                long unsigned int new_id;
+                Eigen::Vector3d gps_latlon;
+                convert_to_lonlat(out_maps[n].mappoints[i]->position, gps_latlon, map.gps_anchor);
+                gm::get_new_global_id(new_id, gps_latlon);
+//                 unsigned int block_id;
+//                 gm::get_map_block_id_from_id(block_id, new_id);
+//                 if(block_id==(unsigned int)112224160){
+//                     std::cout<<"get me"<<std::endl;
+//                 }
+                out_maps[n].mappoints[i]->id=new_id;
                 global_map.mappoints.push_back(out_maps[n].mappoints[i]);
             }
         }
     }
-    gm::save_global_map(global_map, FLAGS_global_root);
-    
+    if(global_map.frames.size()>3){
+        gm::save_global_map(global_map, FLAGS_global_root);
+    }
     return 0;
 }

@@ -16,6 +16,8 @@ public:
     long unsigned int id = -1;
     bool isfix;
     bool isbad;
+    bool doBA;
+    bool isborder;
     int match_count=0;
     Eigen::Vector3d position;
     std::vector<TrackItem> track;

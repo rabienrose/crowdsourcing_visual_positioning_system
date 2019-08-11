@@ -101,7 +101,7 @@ namespace chamo {
         int desc_count=0;
         int mp_count=0;
         for(int i=0; i<map.mappoints.size(); i++){
-            if((map.mappoints[i]->position-est_posi).norm()>1000){
+            if((map.mappoints[i]->position-est_posi).norm()>200){
                 continue;
             }
             int mp_id=i;

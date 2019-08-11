@@ -43,15 +43,15 @@ int main(int argc, char* argv[]){
         map_ids.push_back(map_id);
     }
     gm::GlobalMap map;
-    gm::load_global_map(map, res_root,map_ids);
-    
-    std::cout<<map.gps_anchor.transpose()<<std::endl;
+    gm::load_submap(map, res_root,true);
+    //gm::load_global_map(map, res_root,map_ids);
     std::vector<Eigen::Vector3d> traj_posi;
     std::vector<Eigen::Vector3d> mp_posi;
     std::vector<Eigen::Vector3d> gps_posi;
     std::vector<Eigen::Vector3d> hd_gps_posi;
     for(int i=0; i<map.frames.size(); i++){
         traj_posi.push_back(map.frames[i]->position);
+        //std::cout<<map.frames[i]->position.transpose()<<std::endl;
     }
     for(int i=0; i<map.frames.size(); i++){
         gps_posi.push_back(map.frames[i]->gps_position);
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]){
     for(int i=0; i<map.pose_graph_e_posi.size(); i++){
         visualization::LineSegment line_segment;
         line_segment.from = map.pose_graph_v1[i]->position;
-        line_segment.scale = 0.03;
+        line_segment.scale = 0.003;
         line_segment.alpha = 1;
 
         line_segment.color.red = 0;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]){
             if(map.frames[i]->obss[j]!=nullptr){
                 visualization::LineSegment line_segment;
                 line_segment.from = map.frames[i]->position;
-                line_segment.scale = 0.03;
+                line_segment.scale = 0.3;
                 line_segment.alpha = 0.6;
 
                 line_segment.color.red = 255;

@@ -8,6 +8,7 @@ public:
     Frame();
     long unsigned int id;
     bool isfix;
+    bool isborder;
     bool doBA;
     bool doGraphOpti;
     bool doMatch;

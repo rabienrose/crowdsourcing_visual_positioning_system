@@ -131,11 +131,16 @@ namespace gm{
                 kp_count++;
                 putToFile(keypoints1[j].pt.x, output);
                 putToFile(keypoints1[j].pt.y, output);
-                if(frame_p->obss[j]!=nullptr){
-                    putToFile(frame_p->obss[j]->id, output);
+                if(frame_p->isborder==true){
+                    putToFile(frame_p->obss_ids[j], output);
                 }else{
-                    putToFile((long unsigned int)-1, output);
+                    if(frame_p->obss[j]!=nullptr){
+                        putToFile(frame_p->obss[j]->id, output);
+                    }else{
+                        putToFile((long unsigned int)-1, output);
+                    }
                 }
+                
                 putToFile(keypoints1[j].octave, output);
             }
             int desc_width=frame_p->descriptors.rows();
@@ -157,10 +162,14 @@ namespace gm{
                 putToFileD2F(frame_p->gyros[j](2), output);
                 putToFile(frame_p->imu_times[j], output);
             }
-            if(frame_p->imu_next_frame==nullptr){
-                putToFile((long unsigned int)-1, output);
+            if(frame_p->isborder==true){
+                putToFile(frame_p->imu_next_frame_id, output);
             }else{
-                putToFile(frame_p->imu_next_frame->id, output);
+                if(frame_p->imu_next_frame==nullptr){
+                    putToFile((long unsigned int)-1, output);
+                }else{
+                    putToFile(frame_p->imu_next_frame->id, output);
+                }
             }
         }
         std::cout<<"kp count: "<<kp_count<<std::endl;
@@ -388,8 +397,19 @@ namespace gm{
             submaps[block_id]->mappoints.push_back(map.mappoints[i]);
         }
         for(int i=0; i<map.pose_graph_v1.size(); i++){
+            //std::cout<<i<<":"<<map.pose_graph_v1.size()<<std::endl;
             unsigned int block_id;
-            get_map_block_id_from_id(block_id, map.mappoints[i]->id);
+            get_map_block_id_from_id(block_id, map.pose_graph_v1[i]->id);
+            std::map<unsigned int, std::shared_ptr<GlobalMap>>::iterator find_it = submaps.find(block_id);
+            if(find_it==submaps.end()){
+                continue;
+            }
+            CHECK_GT(map.pose_graph_v1.size(),i);
+            CHECK_GT(map.pose_graph_v2.size(),i);
+            CHECK_GT(map.pose_graph_e_posi.size(),i);
+            CHECK_GT(map.pose_graph_e_rot.size(),i);
+            CHECK_GT(map.pose_graph_e_scale.size(),i);
+            CHECK_GT(map.pose_graph_weight.size(),i);
             submaps[block_id]->pose_graph_v1.push_back(map.pose_graph_v1[i]);
             submaps[block_id]->pose_graph_v2.push_back(map.pose_graph_v2[i]);
             submaps[block_id]->pose_graph_e_posi.push_back(map.pose_graph_e_posi[i]);
@@ -405,17 +425,69 @@ namespace gm{
         }
     }
     
+    std::vector<unsigned int> getNearBlock(std::vector<unsigned int>& input_ids){
+        double min_lon=9999;
+        double max_lon=-9999;
+        double min_lat=9999;
+        double max_lat=-9999;
+        for(int i=0; i<input_ids.size(); i++){
+            Eigen::Vector3d gps_latlon;
+            get_gps_from_block_id(gps_latlon, input_ids[i]);
+            //std::cout<<std::setprecision(15)<<gps_latlon(0)<<" : "<<gps_latlon(1)<<std::endl;
+            if(gps_latlon(0)>max_lon){
+                max_lon=gps_latlon(0);
+            }
+            if(gps_latlon(0)<min_lon){
+                min_lon=gps_latlon(0);
+            }
+            if(gps_latlon(1)>max_lat){
+                max_lat=gps_latlon(1);
+            }
+            if(gps_latlon(1)<min_lat){
+                min_lat=gps_latlon(1);
+            }
+        }
+        //std::cout<<std::setprecision(15)<<min_lon<<" : "<<max_lon<<std::endl;
+        //std::cout<<std::setprecision(15)<<min_lat<<" : "<<max_lat<<std::endl;
+
+        min_lon=floor(min_lon*100)/100;
+        max_lon=floor(max_lon*100)/100;
+        min_lat=floor(min_lat*100)/100;
+        max_lat=floor(max_lat*100)/100;
+        std::vector<unsigned int> out_ids;
+        for(double lon=min_lon-0.01; lon<=max_lon+0.01; lon=lon+0.01){
+            for(double lat=min_lat-0.01; lat<=max_lat+0.01; lat=lat+0.01){
+                unsigned int block_id;
+                Eigen::Vector3d gps_latlon;
+                gps_latlon(0)=lon;
+                gps_latlon(1)=lat;
+                get_map_block_id_from_gps(block_id, gps_latlon);
+                out_ids.push_back(block_id);
+            }
+        }
+        return out_ids;        
+    }
+    
+    bool checkIDExist(std::vector<unsigned int>& input_ids, unsigned int query){
+        for(int i=0; i<input_ids.size(); i++){
+            if(input_ids[i]==query){
+                return true;
+            }
+        }
+        return false;
+    }
+    
     void load_global_map(GlobalMap& map, std::string file_addr, std::vector<unsigned int> map_ids){
         for(int i=0; i<map_ids.size(); i++){
             unsigned int map_id_temp=map_ids[i];
             std::stringstream ss;
             ss<<map_id_temp;
+            if(i==0){
+                get_gps_from_block_id(map.gps_anchor, map_ids[i]);
+            }
             GlobalMap map_temp;
             std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
             if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
-                if(map.frames.size()==0){
-                    get_gps_from_block_id(map.gps_anchor, map_ids[i]);
-                }
                 get_gps_from_block_id(map_temp.gps_anchor, map_ids[i]);
                 for(int j=0; j<map_temp.frames.size(); j++){
                     Eigen::Vector3d out_tar_xyz;
@@ -448,6 +520,9 @@ namespace gm{
         for(int i=0; i<map.frames.size(); i++){
             if(map.frames[i]->imu_next_frame_id!=-1){
                 map.frames[i]->imu_next_frame=map.getFrameById(map.frames[i]->imu_next_frame_id);
+                if(map.frames[i]->imu_next_frame==nullptr){
+                    map.frames[i]->isborder=true;
+                }
             }
             for(int j=0; j<map.frames[i]->obss_ids.size(); j++){
                 if(map.frames[i]->obss_ids[j]!= (long unsigned int)-1){
@@ -455,11 +530,61 @@ namespace gm{
                     if(it!=temp_mp_map.end()){
                         map.frames[i]->obss[j]=it->second;
                     }
-                    
                 }
             }
         }
         
+        GlobalMap nearmap=map;
+        std::vector<unsigned int> near_blocks = getNearBlock(map_ids);
+        for(int i=0; i<near_blocks.size(); i++){
+            unsigned int map_id_temp=near_blocks[i];
+            if(checkIDExist(map_ids, map_id_temp)){
+                continue;
+            }
+            std::stringstream ss;
+            ss<<map_id_temp;
+            GlobalMap map_temp;
+            std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
+            if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
+                for(int j=0; j<map_temp.frames.size(); j++){
+                    nearmap.frames.push_back(map_temp.frames[j]);
+                }
+                for(int j=0; j<map_temp.mappoints.size(); j++){
+                    nearmap.mappoints.push_back(map_temp.mappoints[j]);
+                }
+
+            }
+        }
+        temp_mp_map.clear();
+        for(int i=0; i<nearmap.mappoints.size(); i++){
+            temp_mp_map[nearmap.mappoints[i]->id]=nearmap.mappoints[i];
+        }
+        for(int i=0; i<nearmap.frames.size(); i++){
+            for(int j=0; j<nearmap.frames[i]->obss_ids.size(); j++){
+                if(nearmap.frames[i]->obss_ids[j]!= (long unsigned int)-1){
+                    std::unordered_map<long unsigned int, std::shared_ptr<MapPoint>>::const_iterator it = temp_mp_map.find(nearmap.frames[i]->obss_ids[j]);
+                    if(it!=temp_mp_map.end()){
+                        nearmap.frames[i]->obss[j]=it->second;
+                    }
+                }
+            }
+        }
+        nearmap.AssignKpToMp();
+        nearmap.CalConnections();
+        for(int i=0; i<nearmap.pose_graph_v1.size(); i++){
+            unsigned int block_id1;
+            get_map_block_id_from_id(block_id1, nearmap.pose_graph_v1[i]->id);
+            unsigned int block_id2;
+            get_map_block_id_from_id(block_id2, nearmap.pose_graph_v2[i]->id);
+            if(checkIDExist(map_ids, block_id1) && !checkIDExist(map_ids, block_id2)){
+                //std::cout<<block_id1<<std::endl;
+                nearmap.pose_graph_v1[i]->isborder=true;
+            }
+            if(!checkIDExist(map_ids, block_id1) && checkIDExist(map_ids, block_id2)){
+                //std::cout<<block_id2<<std::endl;
+                nearmap.pose_graph_v2[i]->isborder=true;
+            }
+        }
         map.AssignKpToMp();
     }
 }   

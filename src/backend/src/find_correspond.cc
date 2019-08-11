@@ -12,19 +12,19 @@ void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint
         to_merge_mp->track[k].frame->obss[to_merge_mp->track[k].kp_ind]=base_mp;
     }
 }
-void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
-    Eigen::Matrix3Xd points;
-    points.resize(3,mp_posis.size());
-    for(int i=0; i<mp_posis.size(); i++){
-        points.block<3,1>(0,i)=mp_posis[i];
-    }    
-    publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
-}
+// void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
+//     Eigen::Matrix3Xd points;
+//     points.resize(3,mp_posis.size());
+//     for(int i=0; i<mp_posis.size(); i++){
+//         points.block<3,1>(0,i)=mp_posis[i];
+//     }    
+//     publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
+// }
 
 void update_corresponds(gm::GlobalMap& map){
     chamo::GlobalMatch global_matcher;
     
-    global_matcher.LoadMap(FLAGS_project_mat_file, map, map.frames[0]->position);
+    
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
     std::vector<Eigen::Vector3d> debug_points;
@@ -37,12 +37,14 @@ void update_corresponds(gm::GlobalMap& map){
             continue;
         }
         std::vector<Eigen::Matrix4d> poses;
-        
+        global_matcher.LoadMap(FLAGS_project_mat_file, map, map.frames[i]->position);
         global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
         frame_inliers_mps.push_back(inliers_mps);
         frame_inliers_kps.push_back(inliers_kps);
         for(int j=0; j<frame_inliers_kps[i].size(); j++){
-            std::cout<<"match count: "<<i<<":"<<frame_inliers_kps[i][j].size()<<std::endl;
+            if(frame_inliers_kps[i].size()>=2){
+                std::cout<<"match count: "<<i<<":"<<frame_inliers_kps[i][j].size()<<std::endl;
+            }
         }
         
     }

@@ -49,7 +49,12 @@ namespace gm{
     }
     
     void gm::GlobalMap::CalConnections(){
-        
+        pose_graph_v1.clear();
+        pose_graph_v2.clear();
+        pose_graph_weight.clear();
+        pose_graph_e_scale.clear();
+        pose_graph_e_posi.clear();
+        pose_graph_e_rot.clear();
         for(int i=0; i<frames.size(); i++){
 //             if(frames[i]->id==482153718213373238){
 //                 std::cout<<frames[i]->id<<" : "<<i<<std::endl;
@@ -62,11 +67,13 @@ namespace gm{
                         if(temp_tar_mp->track[k].frame->id==frames[i]->id){
                             continue;
                         }
+                        
                         if(frame_list.count(temp_tar_mp->track[k].frame)==0){
                             frame_list[temp_tar_mp->track[k].frame]=1;
                         }else{
                             frame_list[temp_tar_mp->track[k].frame]=frame_list[temp_tar_mp->track[k].frame]+1;
                         }
+                        
                     }
                 }
             }
@@ -83,19 +90,32 @@ namespace gm{
                     };
         
             // Declaring a set that will store the pairs using above comparision logic
-            std::set<std::pair<std::shared_ptr<Frame>, int>, Comparator> ranked_score(frame_list.begin(), frame_list.end(), compFunctor);
-            int add_count=0;
-            for(std::pair<std::shared_ptr<Frame>, int> element : ranked_score){
-                add_count++;
-                if(add_count>20){
+//             std::set<std::pair<std::shared_ptr<Frame>, int>, Comparator> ranked_score(frame_list.begin(), frame_list.end(), compFunctor);
+//             int add_count=0;
+//             for(std::pair<std::shared_ptr<Frame>, int> element : ranked_score){
+//                 add_count++;
+//                 if(add_count>20){
+//                     break;
+//                 }
+//                 //std::cout<<element.second<<std::endl;
+//                 Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*element.first->getPose();
+//                 Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
+//                 Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
+//                 
+//                 AddConnection(element.first, frames[i] , posi, rot, 1, element.second*0.5);
+//             }
+            std::map<std::shared_ptr<Frame>, int>::iterator it;
+            for(it=frame_list.begin(); it!=frame_list.end(); it++){
+                std::cout<<it->second<<std::endl;
+                if(it->second<=5){
                     break;
                 }
                 //std::cout<<element.second<<std::endl;
-                Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*element.first->getPose();
+                Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*it->first->getPose();
                 Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
                 Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
                 
-                AddConnection(element.first, frames[i] , posi, rot, 1, element.second*0.5);
+                AddConnection(it->first, frames[i] , posi, rot, 1, it->second*0.5);
             }
         }
     }
@@ -147,6 +167,9 @@ namespace gm{
         for(int i=0; i<pose_graph_v1.size(); i++){
             if(pose_graph_v1[i]->id==cur_frame->id){
                 children.push_back(pose_graph_v2[i]);
+            }
+            if(pose_graph_v2[i]->id==cur_frame->id){
+                children.push_back(pose_graph_v1[i]);
             }
         }
     }

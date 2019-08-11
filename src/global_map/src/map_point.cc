@@ -62,6 +62,8 @@ void TrackItem::getUV(float& x, float& y, int& octave)
     MapPoint::MapPoint(){
         isfix=false;
         isbad=false;
+        doBA=false;
+        isborder=false;
     }
 
 }  // namespace gm

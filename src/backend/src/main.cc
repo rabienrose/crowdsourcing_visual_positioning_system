@@ -32,12 +32,10 @@ int main(int argc, char* argv[]) {
     gm::load_global_map(map, res_root,map_ids);
     map.AssignKpToMp();
     std::cout<<"backend op: "<<FLAGS_op_type<<std::endl;
-    if(FLAGS_op_type=="BA"){
-        if(FLAGS_param1=="re_triang"){
-            optimize_BA(map, true);
-        }else{
-            optimize_BA(map, false);
-        }
+    if(FLAGS_op_type=="BA_rt"){
+        optimize_BA(map, true);
+    }else if(FLAGS_op_type=="BA"){
+        optimize_BA(map, false);
     }else if(FLAGS_op_type=="Match"){
         update_corresponds(map);
     }else if(FLAGS_op_type=="CullingFrame"){

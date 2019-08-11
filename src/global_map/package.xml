@@ -12,4 +12,5 @@
   <depend>glog_catkin</depend>
   <depend>gps_tool</depend>
   <depend>chamo_common</depend>
+  <depend>visualization</depend>
 </package>

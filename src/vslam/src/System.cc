@@ -250,6 +250,45 @@ namespace ORB_SLAM2
             }
         }
         LOG(INFO)<<"save map: "<<map_filename;
+//         for(int i=0; i<vpKFs.size(); i++){
+//             ORB_SLAM2::KeyFrame* pKF = vpKFs[i];
+//             if(pKF->isBad()){
+//                 continue;
+//             }
+//             std::vector<KeyFrame*> conns = pKF->GetBestCovisibilityKeyFrames(40);
+//             std::cout<<pKF->mnId<<std::endl;
+//             for(std::vector<KeyFrame*>::iterator it=conns.begin(); it!=conns.end(); it++){
+//                 std::cout<<(*it)->mnId<<":";
+//             }
+//             std::cout<<std::endl;
+//         }
+        
+//         for(int i=0; i<vpKFs.size(); i++){
+//             ORB_SLAM2::KeyFrame* pKF = vpKFs[i];
+//             if(pKF->isBad()){
+//                 continue;
+//             }
+//             std::map<KeyFrame*, int> frame_list;
+//             for(int j=0; j<vpKFs[i]->mvpMapPoints.size(); j++){
+//                 if(pKF->mvpMapPoints[j]!=NULL){
+//                     std::map<KeyFrame*,size_t> observations = pKF->mvpMapPoints[j]->GetObservations();
+// 
+//                     for(std::map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+//                     {
+//                         if(mit->first->mnId==pKF->mnId)
+//                             continue;
+//                         frame_list[mit->first]++;
+//                     }
+//                 }
+//             }
+//             std::cout<<"=========="<<pKF->mnId<<"=========="<<std::endl;
+//             for(std::map<KeyFrame*,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
+//             {
+//                 std::cout<<mit->first->mnId<<" : "<<mit->second<<std::endl;
+//             }
+//         }
+        map.AssignKpToMp();
+        
         gm::save_submap(map, map_filename);
     }
 
