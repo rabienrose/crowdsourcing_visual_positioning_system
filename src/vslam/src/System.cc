@@ -288,7 +288,24 @@ namespace ORB_SLAM2
 //             }
 //         }
         map.AssignKpToMp();
-        
+//         for(int i=0; i<map.frames.size(); i++){
+//             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
+//             for(int j=0; j<map.frames[i]->obss.size(); j++){
+//                 
+//                 if(map.frames[i]->obss[j]!=nullptr){
+//                     
+//                     for(int k=0; k<map.frames[i]->obss[j]->track.size(); k++){
+//                         frame_list[map.frames[i]->obss[j]->track[k].frame]++;
+//                     }
+//                 }
+//             }
+//             std::cout<<"=========="<<map.frames[i]->id<<"=========="<<std::endl;
+//             for(std::map<std::shared_ptr<gm::Frame>,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
+//             {
+//                 std::cout<<mit->first->id<<" : "<<mit->second<<std::endl;
+//             }
+//         }
+        map.CalConnections();
         gm::save_submap(map, map_filename);
     }
 

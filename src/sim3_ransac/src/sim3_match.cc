@@ -332,8 +332,8 @@ namespace chamo
         }
 
         float ransac_prob = 0.99;
-        int ransac_min_inliers = 20;
-        int ransac_max_iter = 300;
+        int ransac_min_inliers = 50;
+        int ransac_max_iter = 1000;
 
         // Adjust Parameters according to number of correspondences
         float epsilon = (float)ransac_min_inliers / match_size;
@@ -341,19 +341,15 @@ namespace chamo
         // Set RANSAC iterations according to probability, epsilon, and max iterations
         int n_iterations;
 
-        if (ransac_min_inliers == match_size)
-            n_iterations = 1;
-        else
-            n_iterations = ceil(log(1 - ransac_prob) / log(1 - pow(epsilon, 3)));
+//         if (ransac_min_inliers == match_size)
+//             n_iterations = 1;
+//         else
+//             n_iterations = ceil(log(1 - ransac_prob) / log(1 - pow(epsilon, 3)));
 
         //ransac_max_iter = max(1, min(n_iterations, ransac_max_iter));
         ransac_max_iter=1000;
         int count_iter = 0;
-
-        if (match_size < ransac_min_inliers) {
-            return false;
-        }
-
+        int ninliers_final=0;
         while (count_iter < ransac_max_iter) {
             count_iter++;
 
@@ -394,7 +390,7 @@ namespace chamo
                     }
                 }
 
-                int ninliers_final = OptimizeSim3Align(P3D1_inlier,
+                ninliers_final = OptimizeSim3Align(P3D1_inlier,
                                                                         P3D2_inlier,
                                                                         T12,
                                                                         scale_12,
@@ -408,7 +404,10 @@ namespace chamo
                 }
             }
         }
-
-        return false;
+        if(ninliers_final<20){
+            return false;
+        }else{
+            return true;
+        }
     }
 }

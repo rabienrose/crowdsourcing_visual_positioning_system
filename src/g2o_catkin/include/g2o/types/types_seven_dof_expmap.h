@@ -109,9 +109,11 @@ namespace g2o {
       const VertexSim3Expmap* v2 = static_cast<const VertexSim3Expmap*>(_vertices[1]);
 
       Sim3 C(_measurement);
-      C.scale()=v1->estimate().scale();
+      //C.scale()=v1->estimate().scale();
       Sim3 error_=C*v1->estimate()*v2->estimate().inverse();
       _error = error_.log();
+      //std::cout<<C<<std::endl;
+      //std::cout<<v2->estimate()<<std::endl;
     }
 
     virtual double initialEstimatePossible(const OptimizableGraph::VertexSet& , OptimizableGraph::Vertex* ) { return 1.;}

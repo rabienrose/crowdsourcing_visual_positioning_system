@@ -48,18 +48,17 @@ namespace g2o {
     };
 }
 
-void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
-    Eigen::Matrix3Xd points;
-    points.resize(3,mp_posis.size());
-    for(int i=0; i<mp_posis.size(); i++){
-        points.block<3,1>(0,i)=mp_posis[i];
-    }    
-    publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
-}
+// void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
+//     Eigen::Matrix3Xd points;
+//     points.resize(3,mp_posis.size());
+//     for(int i=0; i<mp_posis.size(); i++){
+//         points.block<3,1>(0,i)=mp_posis[i];
+//     }    
+//     publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
+// }
 
 void optimize_BA(gm::GlobalMap& map, bool re_triangle){
     map.CalConnections();
-    return;
     int pose_opt_count=0;
     std::vector<std::shared_ptr<gm::Frame>> cur_level_frames;
     std::vector<Eigen::Vector3d> debug_points;
@@ -112,7 +111,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         
     }
 //     for(int n=0; n<map.frames.size(); n++){
-//         if(map.frames[n]->isfix==true){
+//         if(map.frames[n]->isborder==true){
 //             debug_points.push_back(map.frames[n]->position);
 //         }
 //     }
@@ -130,9 +129,9 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
 //     }
 //     show_mp_as_cloud(debug_points, "debug1");
 //     ros::spin();
-
-    std::cout<<"pose edge count after match: "<<map.pose_graph_v1.size()<<std::endl;
-    std::cout<<"pose opt count: "<<pose_opt_count<<std::endl;
+// 
+//     std::cout<<"pose edge count after match: "<<map.pose_graph_v1.size()<<std::endl;
+//     std::cout<<"pose opt count: "<<pose_opt_count<<std::endl;
     
     
 //     std::vector<std::shared_ptr<gm::Frame>, cv::Mat> proj_cv_mats;
@@ -422,4 +421,5 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
             }
         }
     }
+    std::cout<<"del mp: "<<mp_count<<std::endl;
 }

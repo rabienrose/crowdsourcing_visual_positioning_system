@@ -23,17 +23,18 @@ void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint
 
 void update_corresponds(gm::GlobalMap& map){
     chamo::GlobalMatch global_matcher;
-    
+    map.CalConnections();
     
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
+    std::vector<std::vector<Eigen::Matrix4d>> posess;
+    std::vector<std::shared_ptr<gm::Frame>> matchid_2_frame;
     std::vector<Eigen::Vector3d> debug_points;
+    std::vector<Eigen::Vector3d> frame_points;
     for(int i=0; i<map.frames.size(); i++){
         std::vector<std::vector<int>> inliers_mps;
         std::vector<std::vector<int>> inliers_kps;
         if(map.frames[i]->doMatch==false){
-            frame_inliers_mps.push_back(inliers_mps);
-            frame_inliers_kps.push_back(inliers_kps);
             continue;
         }
         std::vector<Eigen::Matrix4d> poses;
@@ -41,14 +42,107 @@ void update_corresponds(gm::GlobalMap& map){
         global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
         frame_inliers_mps.push_back(inliers_mps);
         frame_inliers_kps.push_back(inliers_kps);
-        for(int j=0; j<frame_inliers_kps[i].size(); j++){
-            if(frame_inliers_kps[i].size()>=2){
-                std::cout<<"match count: "<<i<<":"<<frame_inliers_kps[i][j].size()<<std::endl;
+        posess.push_back(poses);
+        matchid_2_frame.push_back(map.frames[i]);
+        for(int j=0; j<inliers_kps.size(); j++){
+            if(inliers_kps.size()>=2){
+                std::cout<<"match count: "<<map.frames[i]->id<<":"<<inliers_kps[j].size()<<std::endl;
             }
         }
         
+//         
+//         for(int k=0; k<poses.size(); k++){
+//             debug_points.push_back(poses[k].block(0,3,3,1));
+//         }
+//         frame_points.push_back(map.frames[i]->position);
+//         show_mp_as_cloud(debug_points, "debug");
+//         show_mp_as_cloud(frame_points, "debug_frame");
     }
     
+    std::cout<<"done raw match!!"<<std::endl;
+    for(int i=0; i<posess.size(); i++){
+        for(int n=0; n<posess[i].size(); n++){
+            CHECK_GT(frame_inliers_kps.size(), i);
+            CHECK_GT(frame_inliers_kps[i].size(), n);
+            if(frame_inliers_kps[i][n].size()>20){
+                if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
+                }else{
+                    continue;
+                }
+                
+                std::vector<Eigen::Vector3d> local_pc;
+                std::vector<Eigen::Vector3d> global_pc;
+                for(int j=0; j<frame_inliers_kps[i][n].size(); j++){
+                    if(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]!=nullptr){
+                        local_pc.push_back(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]->position);
+                        global_pc.push_back(map.mappoints[frame_inliers_mps[i][n][j]]->position);
+                    }
+                }
+                Eigen::Matrix4d T_tar_sour;
+                double scale_tar_sour; 
+                //show_mp_as_cloud(global_pc, "global_pc");
+                //show_mp_as_cloud(local_pc, "local_pc");
+                //std::cout<<"global_pc: "<<global_pc.size()<<std::endl;
+                //std::cout<<"local_pc: "<<local_pc.size()<<std::endl;
+                bool succ= chamo::ComputeSim3Ransac(global_pc, local_pc, T_tar_sour, scale_tar_sour);
+                if(succ){
+                    //std::cout<<"scale_tar_sour: "<<scale_tar_sour<<std::endl;
+                    if(scale_tar_sour>1.5){
+                        continue;
+                    }
+                    std::map<std::shared_ptr<gm::Frame>, int> frame_list;
+                    for(int j=0; j<frame_inliers_mps[i][n].size(); j++){
+                        std::shared_ptr<gm::MapPoint> temp_tar_mp = map.mappoints[frame_inliers_mps[i][n][j]];
+                        for(int k=0; k<temp_tar_mp->track.size(); k++){
+                            if(frame_list.count(temp_tar_mp->track[k].frame)==0){
+                                frame_list[temp_tar_mp->track[k].frame]=1;
+                            }else{
+                                frame_list[temp_tar_mp->track[k].frame]=frame_list[temp_tar_mp->track[k].frame]+1;
+                            }
+                        }
+                    }
+                    
+                    std::vector<std::shared_ptr<gm::Frame> > connected_frames;
+                    std::vector<int> connected_weights;
+                    std::map<std::shared_ptr<gm::Frame>, int>::iterator it;
+                    int max_count=0;
+                    std::shared_ptr<gm::Frame> max_frame=nullptr;
+                    for ( it = frame_list.begin(); it != frame_list.end(); it++ ){
+                        if(it->second>30){
+                            connected_weights.push_back(it->second);
+                            connected_frames.push_back(it->first);
+                        }
+//                         if(it->second>max_count){
+//                             max_count=it->second;
+//                             max_frame=it->first;
+//                         }
+                    }
+//                     if(max_frame!= nullptr && max_count>30){
+//                         connected_frames.push_back(max_frame);
+//                     }
+                    //LOG(INFO)<<"connected_frames: "<<connected_frames.size();
+                    for(int j=0; j<connected_frames.size(); j++){
+                        Eigen::Matrix4d T_tarworld_sourworld = T_tar_sour;
+                        Eigen::Matrix4d T_tarworld_tar = connected_frames[j]->getPose();
+                        Eigen::Matrix4d T_sourworld_sour = matchid_2_frame[i]->getPose();
+                        Eigen::Matrix4d T_tar_tarworld = T_tarworld_tar.inverse();
+                        Eigen::Matrix4d T_tar_sour = T_tar_tarworld*T_tarworld_sourworld*T_sourworld_sour;
+                        Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
+                        Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
+                        map.AddConnection(matchid_2_frame[i], connected_frames[j], posi, rot, scale_tar_sour, connected_weights[j]);
+
+                    }
+                }else{
+                    //std::cout<<"ransac for local pc match failed!!"<<std::endl;
+                    //return false;
+                }
+                
+            }else{
+                std::cout<<"not enouph local_pc!!"<<std::endl;
+                //return false;
+            }
+        }
+    }
     int merge_count=0;
     int new_match_count=0;
     std::vector<std::set<long unsigned int >> to_merge_mps;
@@ -56,34 +150,34 @@ void update_corresponds(gm::GlobalMap& map){
         for(int j=0; j<frame_inliers_kps[i].size(); j++){
             if(frame_inliers_kps[i][j].size()>10){
                 for(int k=0; k<frame_inliers_kps[i][j].size(); k++){
-                    CHECK_GT(map.frames[i]->obss.size(), frame_inliers_kps[i][j][k]);
-                    if(map.frames[i]->obss[frame_inliers_kps[i][j][k]]==nullptr){
+                    CHECK_GT(matchid_2_frame[i]->obss.size(), frame_inliers_kps[i][j][k]);
+                    if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]==nullptr){
                         CHECK_GT(map.mappoints.size(), frame_inliers_mps[i][j][k]);
-                        map.frames[i]->obss[frame_inliers_kps[i][j][k]]=map.mappoints[frame_inliers_mps[i][j][k]];
+                        matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]=map.mappoints[frame_inliers_mps[i][j][k]];
                         //find new pair.
                         new_match_count++;
                     }else{
-                        if(map.frames[i]->obss[frame_inliers_kps[i][j][k]]->id==map.mappoints[frame_inliers_mps[i][j][k]]->id){
+                        if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id==map.mappoints[frame_inliers_mps[i][j][k]]->id){
                             //find the same pair, do nothing.
                         }else{
                             bool find_one=false;
                             for(int n=0; n<to_merge_mps.size(); n++){
-                                auto search = to_merge_mps[n].find(map.frames[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                auto search = to_merge_mps[n].find(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
                                 if (search != to_merge_mps[n].end()) {
-                                    to_merge_mps[n].insert(map.frames[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                    to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
                                     to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
                                     find_one=true;
                                 }
                                 search = to_merge_mps[n].find(map.mappoints[frame_inliers_mps[i][j][k]]->id);
                                 if (search != to_merge_mps[n].end()) {
-                                    to_merge_mps[n].insert(map.frames[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                    to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
                                     to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
                                     find_one=true;
                                 }
                             }
                             if(find_one==false){
                                 std::set<long unsigned int> temp_set;
-                                temp_set.insert(map.frames[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                temp_set.insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
                                 temp_set.insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
                                 to_merge_mps.push_back(temp_set);
                             }

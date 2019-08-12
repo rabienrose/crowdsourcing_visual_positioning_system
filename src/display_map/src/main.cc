@@ -43,8 +43,8 @@ int main(int argc, char* argv[]){
         map_ids.push_back(map_id);
     }
     gm::GlobalMap map;
-    gm::load_submap(map, res_root,true);
-    //gm::load_global_map(map, res_root,map_ids);
+    //gm::load_submap(map, res_root,true);
+    gm::load_global_map(map, res_root,map_ids);
     std::vector<Eigen::Vector3d> traj_posi;
     std::vector<Eigen::Vector3d> mp_posi;
     std::vector<Eigen::Vector3d> gps_posi;

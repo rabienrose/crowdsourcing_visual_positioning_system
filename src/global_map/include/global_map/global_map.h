@@ -24,7 +24,7 @@ public:
     std::vector<double> pose_graph_weight;
 
     void DelMappoint(long unsigned int id);
-    void DelFrame(long unsigned int id);
+    bool DelFrame(long unsigned int id);
     void GetMPPosiList(std::vector<Eigen::Vector3d>& mp_posis);
     std::shared_ptr<MapPoint> getMPById(long unsigned int id);
     std::shared_ptr<Frame> getFrameById(long unsigned int id);

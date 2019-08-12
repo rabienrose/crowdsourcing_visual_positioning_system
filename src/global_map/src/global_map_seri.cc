@@ -324,6 +324,9 @@ namespace gm{
             rot_qua.y()=getFromFileF2D(input);
             rot_qua.z()=getFromFileF2D(input);
             
+            double temp_scale=getFromFileF2D(input);
+            double temp_weight=getFromFileF2D(input);
+            
             long unsigned int v1_id =getFromFileLI(input);
             long unsigned int v2_id =getFromFileLI(input);
             std::shared_ptr<Frame> frame1_p = map.getFrameById(v1_id);
@@ -332,8 +335,8 @@ namespace gm{
                 map.pose_graph_e_posi.push_back(posi);
                 Eigen::Matrix3d rot(rot_qua);
                 map.pose_graph_e_rot.push_back(rot);
-                map.pose_graph_e_scale.push_back(getFromFileF2D(input));
-                map.pose_graph_weight.push_back(getFromFileF2D(input));
+                map.pose_graph_e_scale.push_back(temp_scale);
+                map.pose_graph_weight.push_back(temp_weight);
                 map.pose_graph_v1.push_back(frame1_p);
                 map.pose_graph_v2.push_back(frame2_p);
             }

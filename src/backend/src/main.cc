@@ -40,9 +40,11 @@ int main(int argc, char* argv[]) {
         update_corresponds(map);
     }else if(FLAGS_op_type=="CullingFrame"){
         culling_frame(map);
-    }
-    else if(FLAGS_op_type=="Reset"){
+    }else if(FLAGS_op_type=="Reset"){
         reset_all_status(map);
+    }
+    else if(FLAGS_op_type=="Pose"){
+        pose_graph_opti(map);
     }
     gm::save_global_map(map, FLAGS_out_root);
 }

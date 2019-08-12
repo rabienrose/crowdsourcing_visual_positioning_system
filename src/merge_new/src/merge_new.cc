@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
     gm::load_global_map(new_map, new_map_root, map_ids);
     if(base_map.frames.size()==0 && base_map.mappoints.size()==0){
         base_map=new_map;
+        for(int i=0; i<base_map.frames.size(); i++){
+            new_map.frames[i]->doMatch=true;
+        }
     }else{
         for(int i=0; i<new_map.frames.size(); i++){
             new_map.frames[i]->doMatch=true;
