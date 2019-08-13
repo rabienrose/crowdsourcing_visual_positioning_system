@@ -9,9 +9,11 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
+#ifdef VISUALIZATION
 #include "visualization/color-palette.h"
 #include "visualization/color.h"
 #include "visualization/common-rviz-visualization.h"
+#endif
 
 
 DEFINE_int32(opti_count, 100, "How many of the iteration of optimization");

@@ -1,7 +1,9 @@
 #include <backend/header.h>
+#ifdef VISUALIZATION
 #include "visualization/color-palette.h"
 #include "visualization/color.h"
 #include "visualization/common-rviz-visualization.h"
+#endif
 
 DEFINE_string(project_mat_file, "", "");
 DEFINE_double(match_project_range, 20, "");
