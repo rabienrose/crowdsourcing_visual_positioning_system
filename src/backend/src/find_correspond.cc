@@ -6,6 +6,7 @@
 DEFINE_string(project_mat_file, "", "");
 DEFINE_double(match_project_range, 20, "");
 DEFINE_double(match_project_desc_diff, 50, "");
+DEFINE_bool(use_se3, true, "");
 void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint> to_merge_mp){
     for(int k=0; k<to_merge_mp->track.size(); k++){
         CHECK_GT(to_merge_mp->track[k].frame->obss.size(), to_merge_mp->track[k].kp_ind);
@@ -47,6 +48,7 @@ void update_corresponds(gm::GlobalMap& map){
         for(int j=0; j<inliers_kps.size(); j++){
             if(inliers_kps.size()>=2){
                 std::cout<<"match count: "<<map.frames[i]->id<<":"<<inliers_kps[j].size()<<std::endl;
+                
             }
         }
         
@@ -69,27 +71,24 @@ void update_corresponds(gm::GlobalMap& map){
                 }else{
                     continue;
                 }
-                
-                std::vector<Eigen::Vector3d> local_pc;
-                std::vector<Eigen::Vector3d> global_pc;
-                for(int j=0; j<frame_inliers_kps[i][n].size(); j++){
-                    if(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]!=nullptr){
-                        local_pc.push_back(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]->position);
-                        global_pc.push_back(map.mappoints[frame_inliers_mps[i][n][j]]->position);
-                    }
-                }
                 Eigen::Matrix4d T_tar_sour;
                 double scale_tar_sour; 
-                //show_mp_as_cloud(global_pc, "global_pc");
-                //show_mp_as_cloud(local_pc, "local_pc");
-                //std::cout<<"global_pc: "<<global_pc.size()<<std::endl;
-                //std::cout<<"local_pc: "<<local_pc.size()<<std::endl;
-                bool succ= chamo::ComputeSim3Ransac(global_pc, local_pc, T_tar_sour, scale_tar_sour);
-                if(succ){
-                    //std::cout<<"scale_tar_sour: "<<scale_tar_sour<<std::endl;
-                    if(scale_tar_sour>1.5){
-                        continue;
+                bool succ=true;
+                if(FLAGS_use_se3){
+                    T_tar_sour=posess[i][n]*matchid_2_frame[i]->getPose().inverse(); //to-do
+                    scale_tar_sour=1;
+                }else{
+                    std::vector<Eigen::Vector3d> local_pc;
+                    std::vector<Eigen::Vector3d> global_pc;
+                    for(int j=0; j<frame_inliers_kps[i][n].size(); j++){
+                        if(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]!=nullptr){
+                            local_pc.push_back(matchid_2_frame[i]->obss[frame_inliers_kps[i][n][j]]->position);
+                            global_pc.push_back(map.mappoints[frame_inliers_mps[i][n][j]]->position);
+                        }
                     }
+                    succ= chamo::ComputeSim3Ransac(global_pc, local_pc, T_tar_sour, scale_tar_sour);
+                }
+                if(succ){
                     std::map<std::shared_ptr<gm::Frame>, int> frame_list;
                     for(int j=0; j<frame_inliers_mps[i][n].size(); j++){
                         std::shared_ptr<gm::MapPoint> temp_tar_mp = map.mappoints[frame_inliers_mps[i][n][j]];
@@ -112,14 +111,14 @@ void update_corresponds(gm::GlobalMap& map){
                             connected_weights.push_back(it->second);
                             connected_frames.push_back(it->first);
                         }
-//                         if(it->second>max_count){
-//                             max_count=it->second;
-//                             max_frame=it->first;
-//                         }
+    //                         if(it->second>max_count){
+    //                             max_count=it->second;
+    //                             max_frame=it->first;
+    //                         }
                     }
-//                     if(max_frame!= nullptr && max_count>30){
-//                         connected_frames.push_back(max_frame);
-//                     }
+    //                     if(max_frame!= nullptr && max_count>30){
+    //                         connected_frames.push_back(max_frame);
+    //                     }
                     //LOG(INFO)<<"connected_frames: "<<connected_frames.size();
                     for(int j=0; j<connected_frames.size(); j++){
                         Eigen::Matrix4d T_tarworld_sourworld = T_tar_sour;
@@ -132,11 +131,7 @@ void update_corresponds(gm::GlobalMap& map){
                         map.AddConnection(matchid_2_frame[i], connected_frames[j], posi, rot, scale_tar_sour, connected_weights[j]);
 
                     }
-                }else{
-                    //std::cout<<"ransac for local pc match failed!!"<<std::endl;
-                    //return false;
                 }
-                
             }else{
                 std::cout<<"not enouph local_pc!!"<<std::endl;
                 //return false;

@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         reset_all_status(map);
     }
     else if(FLAGS_op_type=="Pose"){
-        pose_graph_opti(map);
+        pose_graph_opti_sim3(map);
     }
     gm::save_global_map(map, FLAGS_out_root);
 }

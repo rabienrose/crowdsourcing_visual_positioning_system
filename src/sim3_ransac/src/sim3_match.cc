@@ -8,6 +8,7 @@
 #include "g2o/core/robust_kernel_impl.h"
 #include "g2o/solvers/linear_solver_dense.h"
 #include "g2o/types/types_seven_dof_expmap.h"
+#include <glog/logging.h>
 #include <cmath>
 namespace chamo
 {
@@ -324,6 +325,11 @@ namespace chamo
                                            Eigen::Matrix4d& T12,
                                            double& scale_12)
     { 
+        CHECK_EQ(P1.size(), P2.size());
+        if(P1.size()<10){
+            std::cout<<"sim3 ransac too few points!!"<<std::endl;
+            return false;
+        }
         std::vector<size_t> all_indices;
         int match_size = P1.size();
         all_indices.reserve(match_size);
@@ -362,8 +368,10 @@ namespace chamo
             // Get min set of points
             for (short i = 0; i < 3; ++i) {
                 int randi = RandomInt(0, available_indices.size() - 1);
-
+                CHECK_GT(available_indices.size(), randi);
                 int idx = available_indices[randi];
+                CHECK_GT(P1.size(), idx);
+                CHECK_GT(P2.size(), idx);
                 P3D1.push_back(P1[idx]);
                 P3D2.push_back(P2[idx]);
 
@@ -383,7 +391,10 @@ namespace chamo
                 P3D2_inlier.reserve(match_size);
                 // local_kp.reserve(match_size);
                 for (int i = 0; i < match_size; i++){
+                    CHECK_GT(b_inliners.size(), i);
                     if (b_inliners[i]){
+                        CHECK_GT(P1.size(), i);
+                        CHECK_GT(P2.size(), i);
                         P3D1_inlier.push_back(P1[i]);
                         P3D2_inlier.push_back(P2[i]);
                         // local_kp_inlier.push_back(local_kp[i]);
