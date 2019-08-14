@@ -14,10 +14,10 @@
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
-                    <sceneKitView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Vdr-Xf-zlF">
+                    <imageView key="view" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="mtX-33-9mr">
                         <rect key="frame" x="0.0" y="0.0" width="896" height="414"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    </sceneKitView>
+                    </imageView>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
@@ -141,34 +141,23 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3mQ-z1-hh2">
-                                <rect key="frame" x="44" y="0.0" width="240" height="393"/>
+                                <rect key="frame" x="44" y="0.0" width="500" height="393"/>
                                 <subviews>
                                     <pickerView contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qQq-6x-6yj" userLabel="Bag List">
-                                        <rect key="frame" x="0.0" y="0.0" width="240" height="162"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="162" id="JIJ-pH-rMS"/>
-                                        </constraints>
-                                    </pickerView>
-                                    <pickerView contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EFT-XO-j84" userLabel="Map List">
-                                        <rect key="frame" x="0.0" y="231" width="240" height="162"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="162" id="nKO-pO-hxz"/>
-                                        </constraints>
+                                        <rect key="frame" x="0.0" y="0.0" width="500" height="393"/>
                                     </pickerView>
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="240" id="Gnn-hs-WI7"/>
+                                    <constraint firstAttribute="width" constant="500" id="Gnn-hs-WI7"/>
                                     <constraint firstAttribute="trailing" secondItem="qQq-6x-6yj" secondAttribute="trailing" id="ILD-Mg-0W8"/>
                                     <constraint firstItem="qQq-6x-6yj" firstAttribute="leading" secondItem="3mQ-z1-hh2" secondAttribute="leading" id="OQ6-EF-nnm"/>
-                                    <constraint firstAttribute="bottom" secondItem="EFT-XO-j84" secondAttribute="bottom" id="UE9-Rf-RHY"/>
-                                    <constraint firstAttribute="trailing" secondItem="EFT-XO-j84" secondAttribute="trailing" id="nV5-bI-xhb"/>
                                     <constraint firstItem="qQq-6x-6yj" firstAttribute="top" secondItem="3mQ-z1-hh2" secondAttribute="top" id="uzu-zq-Y0v"/>
-                                    <constraint firstItem="EFT-XO-j84" firstAttribute="leading" secondItem="3mQ-z1-hh2" secondAttribute="leading" id="ybr-Yk-nQM"/>
+                                    <constraint firstAttribute="bottom" secondItem="qQq-6x-6yj" secondAttribute="bottom" id="yTg-oh-zEX"/>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mIB-71-jnv">
-                                <rect key="frame" x="284" y="0.0" width="100" height="393"/>
+                                <rect key="frame" x="544" y="0.0" width="100" height="393"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SJU-oJ-b9m">
                                         <rect key="frame" x="0.0" y="0.0" width="100" height="30"/>
@@ -198,11 +187,11 @@
                                             <action selector="locate:" destination="9ls-vt-jnu" eventType="touchUpInside" id="zqF-KF-55q"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ko1-gL-xpv" userLabel="Start Sensor">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ko1-gL-xpv">
                                         <rect key="frame" x="0.0" y="120" width="100" height="30"/>
-                                        <state key="normal" title="Start Sensor"/>
+                                        <state key="normal" title="New"/>
                                         <connections>
-                                            <action selector="start_sensor:" destination="9ls-vt-jnu" eventType="touchUpInside" id="13D-Tm-NNu"/>
+                                            <action selector="new_btn:" destination="9ls-vt-jnu" eventType="touchUpInside" id="dDh-kQ-y1w"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UPL-GN-Yts">
@@ -254,7 +243,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Z6i-mc-Wib" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="17" y="-52"/>
+            <point key="canvasLocation" x="17" y="728"/>
         </scene>
     </scenes>
 </document>

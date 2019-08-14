@@ -58,9 +58,9 @@
     
     [session commitConfiguration];
     img_count=0;
-    dele_bag= [[BagListDelegate alloc] init];
-    self.bag_list_ui.delegate = dele_bag;
-    self.bag_list_ui.dataSource = dele_bag;
+    dele_map= [[BagListDelegate alloc] init];
+    self.map_list_ui.delegate = dele_map;
+    self.map_list_ui.dataSource = dele_map;
 }
 
 void interDouble(double v1, double v2, double t1, double t2, double& v3_out, double t3){
@@ -142,7 +142,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     return image;
 }
 
-- (void)update_baglist{
+- (void)update_maplist{
     NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[dirPaths objectAtIndex:0] error:NULL];
     bool has_file=false;
@@ -150,16 +150,16 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     for (int count = 0; count < (int)[directoryContent count]; count++)
     {
         if (count ==0){
-            dele_bag.sel_filename=[directoryContent objectAtIndex:count];
+            dele_map.sel_filename=[directoryContent objectAtIndex:count];
             has_file=true;
             break;
         }
         NSLog(@"File %d: %@", (count + 1), [directoryContent objectAtIndex:count]);
     }
-    dele_bag.file_list =directoryContent;
-    [self.bag_list_ui reloadAllComponents];
+    dele_map.file_list =directoryContent;
+    [self.map_list_ui reloadAllComponents];
     if ((int)[directoryContent count]>0){
-        [self.bag_list_ui selectRow:0 inComponent:0 animated:NO];
+        [self.map_list_ui selectRow:0 inComponent:0 animated:NO];
     }
 }
 
@@ -167,69 +167,11 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
 
 - (void) start_slam: (NSString *) bag_name
 {
-    NSBundle* myBundle = [NSBundle mainBundle];
-    NSString* mycam_str;
-    mycam_str = [myBundle pathForResource:@"iphone" ofType:@"yaml"];
-    NSString* voc_str;
-    voc_str = [myBundle pathForResource:@"small_voc_no_rot" ofType:@"yml"];
-    NSString* bag_str=nil;
-    NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:[dirPaths objectAtIndex:0] error:NULL];
-    for (int count = 0; count < (int)[directoryContent count]; count++)
-    {
-        NSError *error = nil;
-        bag_str = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:[directoryContent objectAtIndex:count]];
-        if([bag_name isEqualToString:[directoryContent objectAtIndex:count]]==YES){
-            break;
-        }
-    }
-//    NSLog(bag_str);
-//    ORB_SLAM2::System sys([voc_str UTF8String], [mycam_str UTF8String]);
-//    rosbag::Bag bag;
-//    bag.open([bag_str UTF8String],rosbag::bagmode::Read);
-//    std::vector<std::string> topics;
-//    topics.push_back("img");
-//    rosbag::View view(bag, rosbag::TopicQuery(topics));
-//    int img_count=0;
-//    rosbag::View::iterator it= view.begin();
-//    for(;it!=view.end();it++){
-//        rosbag::MessageInstance m =*it;
-//        sensor_msgs::CompressedImagePtr simg = m.instantiate<sensor_msgs::CompressedImage>();
-//        if(simg!=NULL){
-//            cv_bridge::CvImagePtr cv_ptr;
-//            try{
-//                std::stringstream ss;
-//                cv_ptr = cv_bridge::toCvCopy(simg, "mono8");
-//                sys.TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
-//                std::vector<Eigen::Vector3d> pcs;
-//                sys.getPC(pcs);
-//                std::vector<Eigen::Vector3d> posis;
-//                std::vector<Eigen::Quaterniond> quas;
-//                sys.getTraj(posis, quas);
-//                float reproject_err_t;
-//                int match_count_t;
-//                int mp_count_t;
-//                int kf_count_t;
-//                sys.getDebugImg(img_display, reproject_err_t, match_count_t, mp_count_t, kf_count_t);
-//                if(!img_display.empty()){
-//                    [self.frameDelegate showFrame: img_display];
-//                    [self.frameDelegate showCurInfo: reproject_err_t match_count: match_count_t mp_count: mp_count_t kf_count: kf_count_t];
-//                    //std::cout<<"posis.size(): "<<posis.size()<<std::endl;
-//                    if(posis.size()>0){
-//                        if(last_kf_count<posis.size()){
-//                            [_sceneDelegate showTraj: posis];
-//
-//                        }
-//                    }
-//                    last_kf_count=posis.size();
-//                }
-//            }catch (cv_bridge::Exception& e){
-//                ROS_ERROR("cv_bridge exception: %s", e.what());
-//                return;
-//            }
-//            img_count++;
-//        }
-//    }
+    
+}
+
+- (IBAction)new_btn:(id)sender {
+    
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
@@ -299,7 +241,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             NSLog(@"close the bag");
         });
         [sender setTitle:@"Record" forState:UIControlStateNormal];
-        [self update_baglist];
+        [self update_maplist];
     }
     
 }
@@ -357,21 +299,16 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     }
 }
 - (IBAction)start_mapping:(id)sender {
-    if((int)[dele_bag.file_list count]>0){
-        dispatch_async( sessionQueue, ^{
-             [self start_slam:dele_bag.sel_filename];
-        } );
-       
-    }
     
 }
+
 - (IBAction)load_map:(id)sender {
 }
 - (IBAction)locate:(id)sender {
 }
 
 - (void)viewDidAppear:(BOOL)animated{
-    [self update_baglist];
+    [self update_maplist];
 }
 
 - (IBAction)go_to_frame_page:(id)sender {

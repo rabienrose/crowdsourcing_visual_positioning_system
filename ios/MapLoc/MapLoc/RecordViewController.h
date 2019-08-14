@@ -34,10 +34,9 @@
     cv::Mat img_display;
     bool hasNewFrame;
     int last_kf_count;
-    BagListDelegate *dele_bag;
     BagListDelegate *dele_map;
 }
 @property (nonatomic, weak) id<FrameInfoDelegate> frameDelegate;
 @property (nonatomic, weak) id<SceneInfoDelegate> sceneDelegate;
-@property (weak, nonatomic) IBOutlet UIPickerView *bag_list_ui;
+@property (weak, nonatomic) IBOutlet UIPickerView *map_list_ui;
 @end
