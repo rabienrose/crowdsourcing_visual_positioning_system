@@ -367,6 +367,23 @@ namespace gm{
         return true;
     }
     
+    void get_blockid_list(GlobalMap& map, std::vector<unsigned int>& out_block_ids){
+        std::map<unsigned int, std::shared_ptr<GlobalMap>> submaps;
+        for(int i=0; i<map.frames.size(); i++){
+            unsigned int block_id;
+            get_map_block_id_from_id(block_id, map.frames[i]->id);
+            submaps[block_id]->frames.push_back(map.frames[i]);
+        }
+        for(int i=0; i<map.mappoints.size(); i++){
+            unsigned int block_id;
+            get_map_block_id_from_id(block_id, map.frames[i]->id);
+            submaps[block_id]->mappoints.push_back(map.mappoints[i]);
+        }
+        for(std::map<unsigned int, std::shared_ptr<GlobalMap>>::iterator it=submaps.begin(); it!=submaps.end(); it++){
+            out_block_ids.push_back(it->first);
+        }
+    }
+    
     void save_global_map(GlobalMap& map, std::string file_addr){
         std::map<unsigned int, std::shared_ptr<GlobalMap>> submaps;
         
@@ -478,6 +495,15 @@ namespace gm{
             }
         }
         return false;
+    }
+    
+    void load_global_map_by_gps(GlobalMap& map, std::string file_addr, Eigen::Vector3d gps_position){
+        unsigned int block_id;
+        get_map_block_id_from_gps(block_id, gps_position);
+        std::vector<unsigned int> map_ids;
+        map_ids.push_back(block_id);
+        std::vector<unsigned int> near_blocks = getNearBlock(map_ids);
+        load_global_map(map, file_addr, near_blocks);
     }
     
     void load_global_map(GlobalMap& map, std::string file_addr, std::vector<unsigned int> map_ids){
