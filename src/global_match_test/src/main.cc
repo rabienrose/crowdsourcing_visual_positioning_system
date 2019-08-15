@@ -20,9 +20,9 @@
 #include <bag_tool/extract_bag.h>
 #include "global_map_api/global_map_api.h"
 
-DEFINE_double(t_c_g_x, 0, "gps position in camera coordinate");
-DEFINE_double(t_c_g_y, 0, "gps position in camera coordinate");
-DEFINE_double(t_c_g_z, 0, "gps position in camera coordinate");
+DEFINE_double(t_cg_x_match, 0, "gps position in camera coordinate");
+DEFINE_double(t_cg_y_match, 0, "gps position in camera coordinate");
+DEFINE_double(t_cg_z_match, 0, "gps position in camera coordinate");
 DEFINE_string(config_root, "", "");
 DEFINE_string(map_name, "", "");
 DEFINE_string(bag_addr, "", "");
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]){
     get_gps_traj(bag_addr, FLAGS_gps_topic, gps_list, gps_time_list, gps_cov_list);
     std::vector<Eigen::Vector3d> gps_hd_list;
     for(int i=0; i<gps_list.size(); i++){
-        if(gps_cov_list[i]<30){
+        if(gps_cov_list[i]<100){
             gps_hd_list.push_back(gps_list[i]);
         }
     }
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]){
     std::ofstream f;
     f.open(res_root+"/frame_pose_opt.txt");
     Eigen::Vector3d t_c_g;
-    t_c_g<<FLAGS_t_c_g_x,FLAGS_t_c_g_y,FLAGS_t_c_g_z;
+    t_c_g<<FLAGS_t_cg_x_match,FLAGS_t_cg_y_match,FLAGS_t_cg_z_match;
     
     for(;it!=view.end();it++){
         if(!ros::ok()){
@@ -151,7 +151,6 @@ int main(int argc, char* argv[]){
                 clock_t start = clock();
                 Eigen::Vector3d gps_position(-1,-1,-1);
                 api.locate_img(img, pose, gps_position, inliers_kp, inliers_mp);
-                
                 double dur = (double)(clock() - start)/CLOCKS_PER_SEC;
                 raw_match su = {0};
                 su.runtime = dur;

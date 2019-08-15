@@ -31,10 +31,14 @@ namespace gm{
     }
     
     void get_blockids_frome_gps_list(std::vector<Eigen::Vector3d>& gps_list, std::vector<unsigned int>& blockid_list){
+        std::set<unsigned int> ids_set;
         for(int i=0; i<gps_list.size(); i++){
             unsigned int block_id;
             get_map_block_id_from_gps(block_id, gps_list[i]);
-            blockid_list.push_back(block_id);
+            ids_set.insert(block_id);
+        }
+        for(std::set<unsigned int>::iterator it=ids_set.begin(); it!=ids_set.end(); it++){
+            blockid_list.push_back(*it);
         }
     }
     

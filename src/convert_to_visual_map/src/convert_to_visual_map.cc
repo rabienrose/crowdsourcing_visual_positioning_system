@@ -17,8 +17,6 @@
 #include "CoorConv.h"
 #include "convert_to_visual_map/convert_to_visual_map.h"
 
-DEFINE_string(res_root, "", "Folder contain the resource.");
-DEFINE_string(global_root, "", "");
 DEFINE_double(err_thres, 0.1, "if the sim3 match err is large than this, the trajectory will be cut");
 
 void updatePreInt(std::vector<chamo::IMUPreintegrator>& preints, std::vector<std::vector<chamo::IMUData>>& sycn_imu_datas,
@@ -457,7 +455,7 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
     alignToGPS(map, out_maps);
 }
 
-void convert_to_visual_map(std::string res_root, std::vector<unsigned int>& ids) {
+void convert_to_visual_map(std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {
     gm::GlobalMap global_map;
     srand(time(0));
     for(int i=0; i<1000; i++){
@@ -497,6 +495,6 @@ void convert_to_visual_map(std::string res_root, std::vector<unsigned int>& ids)
     }
     gm::get_blockid_list(global_map, ids);
     if(global_map.frames.size()>3){
-        gm::save_global_map(global_map, FLAGS_global_root);
+        gm::save_global_map(global_map, globalmap_root);
     }
 }

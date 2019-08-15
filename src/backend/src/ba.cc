@@ -27,10 +27,9 @@
 DECLARE_int32(opti_count);
 DECLARE_double(gps_weight);
 DEFINE_double(max_repro_err, 5, "");
-DECLARE_double(t_c_g_x);
-DECLARE_double(t_c_g_y);
-DECLARE_double(t_c_g_z);
-
+DEFINE_double(t_c_g_x, 0, "gps position in camera coordinate");
+DEFINE_double(t_c_g_y, 0, "gps position in camera coordinate");
+DEFINE_double(t_c_g_z, 0, "gps position in camera coordinate");
 namespace g2o {   
     class EdgePosiPre : public BaseUnaryEdge<3, Eigen::Vector3d, VertexSE3Expmap>{
     public:

@@ -18,9 +18,7 @@
 
 DEFINE_int32(opti_count, 100, "How many of the iteration of optimization");
 DEFINE_double(gps_weight, 0.0001, "The weight of GPS impact in optimization");
-DEFINE_double(t_c_g_x, 0, "gps position in camera coordinate");
-DEFINE_double(t_c_g_y, 0, "gps position in camera coordinate");
-DEFINE_double(t_c_g_z, 0, "gps position in camera coordinate");
+
 
 namespace g2o {
     class EdgePosiPreSim3 : public BaseUnaryEdge<3, Eigen::Vector3d, VertexSim3Expmap>{

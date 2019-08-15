@@ -101,9 +101,13 @@ namespace chamo {
         int desc_count=0;
         int mp_count=0;
         for(int i=0; i<map.mappoints.size(); i++){
-            if((map.mappoints[i]->position-est_posi).norm()>200){
-                continue;
+            if(est_posi(0)==-1 && est_posi(1)==-1 && est_posi(2)==-1 ){   
+            }else{
+                if((map.mappoints[i]->position-est_posi).norm()>200){
+                    continue;
+                }
             }
+            
             int mp_id=i;
             mp_count++;
             for(int j=0; j<map.mappoints[i]->track.size(); j++){

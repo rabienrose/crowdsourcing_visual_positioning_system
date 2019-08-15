@@ -28,6 +28,7 @@
 #include "convert_to_visual_map/convert_to_visual_map.h"
 #include "backend/header.h"
 #include "merge_new/merge_new.h"
+#include "global_map_api/global_map_api.h"
 
 #ifdef VISUALIZATION
 #include "visualization/color-palette.h"
@@ -145,10 +146,11 @@ namespace gm{
 
     bool GlobalMapApi::init(std::string config_addr_, std::string map_addr_){
         map_addr=map_addr_;
-        cur_map=std::make_shared<GlobalMap>();
+        config_addr=config_addr_;
+        cur_map=nullptr;
         Eigen::Matrix3d cam_inter;
         Eigen::Vector4d cam_distort;
-        read_cam_info(config_addr, cam_inter, cam_distort);
+        read_cam_info(config_addr+"/camera_config.txt", cam_inter, cam_distort);
         fx=cam_inter(0,0);
         fy=cam_inter(1,1);
         cx=cam_inter(0,2);
@@ -160,10 +162,17 @@ namespace gm{
         return true;
     }
     bool GlobalMapApi::load_map(std::vector<Eigen::Vector3d> gps_positions){
+        cur_map=std::make_shared<GlobalMap>();
+        matcher=std::make_shared<chamo::GlobalMatch>();
+        extractor=std::make_shared<ORB_SLAM2::ORBextractor>(2000, 1.2, 8, 20, 7);
         GlobalMap temp_map;
         std::vector<unsigned int> map_ids;
         gm::get_blockids_frome_gps_list(gps_positions, map_ids);
+        gm::load_global_map(temp_map, map_addr,map_ids);
+        temp_map.AssignKpToMp();
         *cur_map=temp_map;
+        Eigen::Vector3d est_posi(-1, -1,-1);
+        matcher->LoadMap(config_addr+"/words_projmat.fstream", *cur_map ,est_posi);
         return true;
     }
     bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud){
@@ -172,11 +181,12 @@ namespace gm{
         }
         return true;
     }
-    bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr){
+    bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
+        extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
         do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
-        convert_to_visual_map(cache_addr, block_ids);
-        merge_new(map_addr, cache_addr, map_addr, block_ids);
+        convert_to_visual_map(cache_addr,localmap_addr, block_ids);
+        merge_new(map_addr, localmap_addr, map_addr, block_ids);
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         map.AssignKpToMp();
@@ -190,9 +200,8 @@ namespace gm{
     }
     bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
                                   std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp){
-        chamo::GlobalMatch global_matcher;
         std::vector<Eigen::Matrix4d> poses;
-        global_matcher.LoadMap(config_addr+"/words_projmat.dat", *cur_map ,gps_position);
+        
         cv::Mat descriptors;
         std::vector<cv::KeyPoint> keypoints;
         cv::Mat undistort_img;
@@ -208,8 +217,8 @@ namespace gm{
         DistCoef.at<float>(2) = p1;
         DistCoef.at<float>(3) = p2;
         cv::undistort(img, undistort_img, K, DistCoef);
-        ORB_SLAM2::ORBextractor mpORBextractor(2000, 1.2, 8, 20, 7);
-        mpORBextractor.ExtractDesc(undistort_img, cv::Mat() ,keypoints, descriptors, false);
+        
+        extractor->ExtractDesc(undistort_img, cv::Mat() ,keypoints, descriptors, false);
         
         std::shared_ptr<Frame> loc_frame=std::make_shared<Frame>();
         loc_frame->fx=fx;
@@ -231,7 +240,7 @@ namespace gm{
         }
         std::vector<std::vector<int>> inliers_kps;
         std::vector<std::vector<int>> inliers_mps;
-        global_matcher.MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
+        matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
         if(poses.size()>0){
             pose=poses[0];
             for(int i=0; i<inliers_kps[0].size(); i++){
