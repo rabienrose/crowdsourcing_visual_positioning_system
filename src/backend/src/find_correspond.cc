@@ -5,7 +5,6 @@
 #include "visualization/common-rviz-visualization.h"
 #endif
 
-DEFINE_string(project_mat_file, "", "");
 DEFINE_double(match_project_range, 20, "");
 DEFINE_double(match_project_desc_diff, 50, "");
 DEFINE_bool(use_se3, true, "");
@@ -24,7 +23,7 @@ void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint
 //     publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
 // }
 
-void update_corresponds(gm::GlobalMap& map){
+void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     chamo::GlobalMatch global_matcher;
     map.CalConnections();
     
@@ -34,6 +33,7 @@ void update_corresponds(gm::GlobalMap& map){
     std::vector<std::shared_ptr<gm::Frame>> matchid_2_frame;
     std::vector<Eigen::Vector3d> debug_points;
     std::vector<Eigen::Vector3d> frame_points;
+    global_matcher.LoadMap(project_mat_file, map, Eigen::Vector3d(-1, -1, -1));
     for(int i=0; i<map.frames.size(); i++){
         std::vector<std::vector<int>> inliers_mps;
         std::vector<std::vector<int>> inliers_kps;
@@ -41,7 +41,7 @@ void update_corresponds(gm::GlobalMap& map){
             continue;
         }
         std::vector<Eigen::Matrix4d> poses;
-        global_matcher.LoadMap(FLAGS_project_mat_file, map, map.frames[i]->position);
+        
         global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
         frame_inliers_mps.push_back(inliers_mps);
         frame_inliers_kps.push_back(inliers_kps);

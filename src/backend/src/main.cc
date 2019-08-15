@@ -14,6 +14,9 @@ DEFINE_string(out_root, "", "");
 DEFINE_string(op_type, "", "");
 DEFINE_string(param1, "", "");
 DEFINE_string(map_ids, "", "");
+DEFINE_string(project_mat_file, "", "");
+DEFINE_string(reset_type, "all", "");
+DEFINE_bool(reset_val, false, "");
 
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
@@ -37,11 +40,11 @@ int main(int argc, char* argv[]) {
     }else if(FLAGS_op_type=="BA"){
         optimize_BA(map, false);
     }else if(FLAGS_op_type=="Match"){
-        update_corresponds(map);
+        update_corresponds(map, FLAGS_project_mat_file);
     }else if(FLAGS_op_type=="CullingFrame"){
         culling_frame(map);
     }else if(FLAGS_op_type=="Reset"){
-        reset_all_status(map);
+        reset_all_status(map, FLAGS_reset_type, FLAGS_reset_val);
     }
     else if(FLAGS_op_type=="Pose"){
         pose_graph_opti_sim3(map);

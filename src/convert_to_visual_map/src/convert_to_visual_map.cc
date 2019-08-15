@@ -325,7 +325,7 @@ long unsigned int calIdFromGPS(double lat, double lon){
     return floor(lat*100)*floor(lon*100);
 }
 
-void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
+void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
     
     std::string img_time_addr=res_root+"/image_time.txt";
     std::vector<double> img_timess;
@@ -367,7 +367,7 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
     Eigen::Matrix3d cam_inter;
     Eigen::Vector4d cam_distort;
     Eigen::Matrix4d Tbc;
-    read_cam_info(res_root+"/camera_config.txt", cam_inter, cam_distort, Tbc);
+    read_cam_info(config_root+"/camera_config.txt", cam_inter, cam_distort, Tbc);
     
     std::string imu_addr=res_root+"/imu.txt";
     std::vector<Eigen::Matrix<double, 7, 1>> imu_datas_raw;
@@ -455,7 +455,7 @@ void ConvertFromVisualMap(std::string res_root, gm::GlobalMap& map, std::vector<
     alignToGPS(map, out_maps);
 }
 
-void convert_to_visual_map(std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {
+void convert_to_visual_map(std::string config_root, std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {
     gm::GlobalMap global_map;
     srand(time(0));
     for(int i=0; i<1000; i++){
@@ -472,7 +472,7 @@ void convert_to_visual_map(std::string res_root, std::string globalmap_root, std
             continue;
         }
         std::vector<gm::GlobalMap> out_maps;
-        ConvertFromVisualMap(res_root, map, out_maps);
+        ConvertFromVisualMap(config_root, res_root, map, out_maps);
         for(int n=0; n<out_maps.size(); n++){
             for(int i=0; i<out_maps[n].frames.size(); i++){     
                 long unsigned int new_id;

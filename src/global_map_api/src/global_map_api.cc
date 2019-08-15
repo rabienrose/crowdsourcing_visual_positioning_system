@@ -37,6 +37,7 @@
 #endif
 DECLARE_string(voc_addr);
 DECLARE_string(camera_config);
+DECLARE_double(max_repro_err);
 namespace gm{
     
     void do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr){
@@ -185,16 +186,18 @@ namespace gm{
         extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
         do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
-        convert_to_visual_map(cache_addr,localmap_addr, block_ids);
+        convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         map.AssignKpToMp();
-        update_corresponds(map);
+        update_corresponds(map, config_addr+"/words_projmat.fstream");
+        FLAGS_max_repro_err=100;
         optimize_BA(map, false);
+        FLAGS_max_repro_err=20;
         optimize_BA(map, false);
         culling_frame(map);
-        reset_all_status(map);
+        reset_all_status(map, "all", false);
         gm::save_global_map(map, map_addr);
         return true;
     }

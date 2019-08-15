@@ -19,7 +19,6 @@ void culling_frame(gm::GlobalMap& map){
         frame_obss_count[map.frames[i]->id]=cont_t;
     }
     do{
-        std::cout<<map.frames.size()<<std::endl;
         del_any_frame=false;
         for(int i=0; i<map.frames.size(); i++){
             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
@@ -57,7 +56,6 @@ void culling_frame(gm::GlobalMap& map){
                 break;
             }
         }
-        std::cout<<del_any_frame<<std::endl;
     }while(del_any_frame==true);
 }
         

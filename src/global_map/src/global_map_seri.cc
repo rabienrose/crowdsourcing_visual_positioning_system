@@ -372,11 +372,17 @@ namespace gm{
         for(int i=0; i<map.frames.size(); i++){
             unsigned int block_id;
             get_map_block_id_from_id(block_id, map.frames[i]->id);
+            if(submaps.count(block_id)==0){
+                submaps[block_id].reset(new GlobalMap);
+            }
             submaps[block_id]->frames.push_back(map.frames[i]);
         }
         for(int i=0; i<map.mappoints.size(); i++){
             unsigned int block_id;
-            get_map_block_id_from_id(block_id, map.frames[i]->id);
+            get_map_block_id_from_id(block_id, map.mappoints[i]->id);
+            if(submaps.count(block_id)==0){
+                submaps[block_id].reset(new GlobalMap);
+            }
             submaps[block_id]->mappoints.push_back(map.mappoints[i]);
         }
         for(std::map<unsigned int, std::shared_ptr<GlobalMap>>::iterator it=submaps.begin(); it!=submaps.end(); it++){
@@ -515,7 +521,7 @@ namespace gm{
                 get_gps_from_block_id(map.gps_anchor, map_ids[i]);
             }
             GlobalMap map_temp;
-            std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
+            //std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
             if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
                 get_gps_from_block_id(map_temp.gps_anchor, map_ids[i]);
                 for(int j=0; j<map_temp.frames.size(); j++){
@@ -573,7 +579,7 @@ namespace gm{
             std::stringstream ss;
             ss<<map_id_temp;
             GlobalMap map_temp;
-            std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
+            //std::cout<<"load_submap: "<<file_addr+"/"+ss.str()+".map"<<std::endl;
             if(load_submap(map_temp, file_addr+"/"+ss.str()+".map")){
                 for(int j=0; j<map_temp.frames.size(); j++){
                     nearmap.frames.push_back(map_temp.frames[j]);
