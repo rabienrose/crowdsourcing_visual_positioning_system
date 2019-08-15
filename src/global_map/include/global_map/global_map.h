@@ -9,6 +9,7 @@ void get_map_block_id_from_gps(unsigned int& block_id, Eigen::Vector3d gps_latlo
 void get_new_global_id(long unsigned int& new_id, Eigen::Vector3d gps_latlon);
 void get_map_block_id_from_id(unsigned int& block_id, long unsigned int id);
 void get_gps_from_block_id(Eigen::Vector3d& gps_latlon, unsigned int block_id);
+void get_blockids_frome_gps_list(std::vector<Eigen::Vector3d>& gps_list, std::vector<unsigned int>& blockid_list);
     
 class GlobalMap {
 public:

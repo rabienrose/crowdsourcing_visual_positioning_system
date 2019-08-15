@@ -51,6 +51,27 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     v3_out=v1+(v2-v1)*(t3-t1)/(t2-t1);
 }
 
+void get_gps_traj(std::string bag_addr, std::string gps_topic, std::vector<Eigen::Vector3d>& gps_list,
+                  std::vector<double>& gps_time_list, std::vector<int>& gps_cov_list
+                 ){
+    rosbag::Bag bag;
+    bag.open(bag_addr,rosbag::bagmode::Read);
+    std::vector<std::string> topics;
+    topics.push_back(gps_topic);
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+    rosbag::View::iterator it= view.begin();
+    for(;it!=view.end();it++){
+        rosbag::MessageInstance m =*it;
+        sensor_msgs::NavSatFixPtr sgps = m.instantiate<sensor_msgs::NavSatFix>();
+        if(sgps!=NULL){
+            double sec = sgps->header.stamp.toSec();
+            Eigen::Vector3d gps_data(sgps->latitude, sgps->longitude, sgps->altitude);
+            gps_list.push_back(gps_data);
+            gps_time_list.push_back(sec);
+            gps_cov_list.push_back((int)sgps->position_covariance[0]);
+        }
+    }
+}
 
 void extract_bag(std::string out_addr_, std::string bag_addr_, std::string img_topic, std::string imu_topic, std::string gps_topic, bool isExtractImage){
     

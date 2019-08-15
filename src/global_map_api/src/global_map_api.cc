@@ -143,9 +143,7 @@ namespace gm{
         cam_distort(3)=atof(splited[7].c_str());
     }
 
-    bool global_map_api::init(std::string config_addr_, std::string map_addr_, std::string cache_addr_){
-        config_addr=config_addr_;
-        cache_addr=cache_addr_;
+    bool GlobalMapApi::init(std::string config_addr_, std::string map_addr_){
         map_addr=map_addr_;
         cur_map=std::make_shared<GlobalMap>();
         Eigen::Matrix3d cam_inter;
@@ -161,19 +159,20 @@ namespace gm{
         p2=cam_distort(3);
         return true;
     }
-    bool global_map_api::load_map(Eigen::Vector3d gps_position){
+    bool GlobalMapApi::load_map(std::vector<Eigen::Vector3d> gps_positions){
         GlobalMap temp_map;
-        load_global_map_by_gps(temp_map, cache_addr, gps_position);
+        std::vector<unsigned int> map_ids;
+        gm::get_blockids_frome_gps_list(gps_positions, map_ids);
         *cur_map=temp_map;
         return true;
     }
-    bool global_map_api::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud){
+    bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud){
         for(int i=0; i<cur_map->mappoints.size(); i++){
             out_pointcloud.push_back(cur_map->mappoints[i]->position);
         }
         return true;
     }
-    bool global_map_api::process_bag(std::string bag_addr){
+    bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr){
         do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
         convert_to_visual_map(cache_addr, block_ids);
@@ -189,10 +188,9 @@ namespace gm{
         gm::save_global_map(map, map_addr);
         return true;
     }
-    bool global_map_api::locate_img(cv::Mat img, Eigen::Matrix4d pose, Eigen::Vector3d gps_position){
+    bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
+                                  std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp){
         chamo::GlobalMatch global_matcher;
-        std::vector<std::vector<int>> inliers_mps;
-        std::vector<std::vector<int>> inliers_kps;
         std::vector<Eigen::Matrix4d> poses;
         global_matcher.LoadMap(config_addr+"/words_projmat.dat", *cur_map ,gps_position);
         cv::Mat descriptors;
@@ -231,9 +229,15 @@ namespace gm{
                 loc_frame->descriptors(j, k)=descriptors.at<unsigned char>(k, j);
             } 
         }
+        std::vector<std::vector<int>> inliers_kps;
+        std::vector<std::vector<int>> inliers_mps;
         global_matcher.MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
         if(poses.size()>0){
             pose=poses[0];
+            for(int i=0; i<inliers_kps[0].size(); i++){
+                inliers_kp.push_back(loc_frame->kps[inliers_kps[0][i]].pt);
+            }
+            inliers_mp=inliers_mps[0];
             return true;
         }else{
             return false;

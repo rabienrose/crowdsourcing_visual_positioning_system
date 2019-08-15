@@ -495,7 +495,7 @@ void convert_to_visual_map(std::string res_root, std::vector<unsigned int>& ids)
             }
         }
     }
-    ids=gm::get_blockid_list(global_map, ids);
+    gm::get_blockid_list(global_map, ids);
     if(global_map.frames.size()>3){
         gm::save_global_map(global_map, FLAGS_global_root);
     }

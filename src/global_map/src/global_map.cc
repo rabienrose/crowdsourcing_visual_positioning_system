@@ -30,6 +30,14 @@ namespace gm{
         gps_latlon(1)=(block_id-gps_latlon(0)*(360*100*100))/(double)100;
     }
     
+    void get_blockids_frome_gps_list(std::vector<Eigen::Vector3d>& gps_list, std::vector<unsigned int>& blockid_list){
+        for(int i=0; i<gps_list.size(); i++){
+            unsigned int block_id;
+            get_map_block_id_from_gps(block_id, gps_list[i]);
+            blockid_list.push_back(block_id);
+        }
+    }
+    
     std::shared_ptr<MapPoint> GlobalMap::getMPById(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
             if(id==mappoints[i]->id){

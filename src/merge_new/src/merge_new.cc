@@ -13,8 +13,8 @@
 void merge_new(std::string base_map_root, std::string new_map_root, std::string out_map_root, std::vector<unsigned int> ids) {
     gm::GlobalMap base_map;
     gm::GlobalMap new_map;
-    gm::load_global_map(base_map, base_map_root, map_ids);
-    gm::load_global_map(new_map, new_map_root, map_ids);
+    gm::load_global_map(base_map, base_map_root, ids);
+    gm::load_global_map(new_map, new_map_root, ids);
     if(base_map.frames.size()==0 && base_map.mappoints.size()==0){
         base_map=new_map;
         for(int i=0; i<base_map.frames.size(); i++){

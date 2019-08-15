@@ -4,16 +4,17 @@
 
 namespace gm{
     class GlobalMap;
-    class global_map_api{
+    class GlobalMapApi{
     public:
-        bool init(std::string config_addr_, std::string map_addr_, std::string cache_addr_);
-        bool load_map(Eigen::Vector3d gps_position);
+        bool init(std::string config_addr_, std::string map_addr_);
+        bool load_map(std::vector<Eigen::Vector3d> gps_positions);
         bool get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud);
-        bool process_bag(std::string bag_addr);
-        bool locate_img(cv::Mat img, Eigen::Matrix4d, Eigen::Vector3d gps_position);
+        bool process_bag(std::string bag_addr, std::string cache_addr_);
+        bool locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position,
+            std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp
+        );
     private:
         std::string config_addr;
-        std::string cache_addr;
         std::string map_addr;
         std::shared_ptr<GlobalMap> cur_map;
         double fx, fy, cx, cy;

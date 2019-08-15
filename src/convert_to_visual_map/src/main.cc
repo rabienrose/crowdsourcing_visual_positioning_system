@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
     google::InstallFailureSignalHandler();
     google::ParseCommandLineFlags(&argc, &argv, true);
     std::string res_root=FLAGS_res_root;
-    conver_to_visual_map(res_root);
+    std::vector<unsigned int> ids;
+    convert_to_visual_map(res_root, ids);
     return 0;
 }
