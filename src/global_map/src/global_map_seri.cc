@@ -4,53 +4,53 @@
 #include <unordered_map>
 
 namespace gm{
-    void putToFile(float val, std::fstream& f){
+    void putToFile(float val, std::ofstream& f){
         f.write((char*)&val, 4);
     }
-    float getFromFileF(std::fstream& f){
+    float getFromFileF(std::ifstream& f){
         float val;
         f.read((char*)&val, 4);
         return val;
     }
-    void putToFile(double val, std::fstream& f){
+    void putToFile(double val, std::ofstream& f){
         f.write((char*)&val, 8);
     }
-    double getFromFileD(std::fstream& f){
+    double getFromFileD(std::ifstream& f){
         double val;
         f.read((char*)&val, 8);
         return val;
     }
-    void putToFileD2F(float val, std::fstream& f){
+    void putToFileD2F(float val, std::ofstream& f){
         float val_f=(float)val;
         f.write((char*)&val_f, 4);
     }
-    double getFromFileF2D(std::fstream& f){
+    double getFromFileF2D(std::ifstream& f){
         float val_f;
         f.read((char*)&val_f, 4);
         return val_f;
     }
-    void putToFile(int val, std::fstream& f){
+    void putToFile(int val, std::ofstream& f){
         f.write((char*)&val, 4);
     }
-    int getFromFileI(std::fstream& f){
+    int getFromFileI(std::ifstream& f){
         int val;
         f.read((char*)&val, 4);
         return val;
     }
-    void putToFile(long unsigned int val, std::fstream& f){
+    void putToFile(long unsigned int val, std::ofstream& f){
         f.write((char*)&val, 8);
     }
-    long unsigned int getFromFileLI(std::fstream& f){
+    long unsigned int getFromFileLI(std::ifstream& f){
         long unsigned int val;
         f.read((char*)&val, 8);
         return val;
     }
-    void putToFile(std::string& str, std::fstream& f){
+    void putToFile(std::string& str, std::ofstream& f){
         int str_len=str.size();
         f.write((char*)&str_len, 4);
         f.write((const char*)str.c_str(), str.size());
     }
-    std::string getFromFileS(std::fstream& f){
+    std::string getFromFileS(std::ifstream& f){
         std::string str;
         int str_len;
         f.read((char*)&str_len, 4);
@@ -64,7 +64,7 @@ namespace gm{
     }
 
     void save_submap(GlobalMap& map, std::string file_addr){
-        std::fstream output(file_addr, std::ios::out | std::ios::trunc | std::ios::binary);
+        std::ofstream output(file_addr, std::ios::out | std::ios::trunc | std::ios::binary);
         putToFile((int)map.mappoints.size(), output);
         std::cout<<"mp count: "<<map.mappoints.size()<<std::endl;
         for(size_t i=0; i<map.mappoints.size(); i++){
@@ -198,9 +198,38 @@ namespace gm{
         }
         output.close();
     }
+    
+    void fast_load_mps(std::vector<Eigen::Vector3d>& posis, std::string file_addr, std::vector<unsigned int> ids){
+        Eigen::Vector3d gps_anchor;
+        get_gps_from_block_id(gps_anchor, ids[0]);
+        for(int i=0; i<ids.size(); i++){
+            unsigned int map_id_temp=ids[i];
+            Eigen::Vector3d cur_gps_anchor;
+            get_gps_from_block_id(cur_gps_anchor, map_id_temp);
+            std::stringstream ss;
+            ss<<map_id_temp;
+            std::string full_file_name=file_addr+"/"+ss.str()+".map";
+            std::ifstream input(full_file_name.c_str(), std::ios::binary);
+            if(!input.is_open()){
+                return;
+            }
+            int mappoints_size=getFromFileI(input);
+            for(int i=0; i<mappoints_size; i++){
+                getFromFileLI(input);
+                Eigen::Vector3d posi;
+                posi.x()=getFromFileF2D(input);
+                posi.y()=getFromFileF2D(input);
+                posi.z()=getFromFileF2D(input);
+                Eigen::Vector3d out_tar_xyz;
+                convert_to_another_anchor(cur_gps_anchor, gps_anchor, posi, out_tar_xyz);
+                posis.push_back(out_tar_xyz);
+            }
+        }
+    }
+
 
     bool load_submap(GlobalMap& map, std::string file_addr, bool do_recover_obs){
-        std::fstream input(file_addr.c_str(), std::ios::in | std::ios::binary);
+        std::ifstream input(file_addr.c_str(), std::ios::in | std::ios::binary);
         if(!input.is_open()){
             return false;
         }

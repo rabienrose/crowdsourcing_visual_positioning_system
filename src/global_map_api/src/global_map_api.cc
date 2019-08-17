@@ -46,10 +46,10 @@ namespace gm{
         std::string out_str=local_addr;
         std::string img_topic="img";
         int min_frame=0;
-        int max_frame=100000;
+        int max_frame=10000;
         int step=1;
         LOG(INFO)<<"max frame:"<<max_frame;
-        std::shared_ptr<ORB_SLAM2::System> sys_p=std::make_shared<ORB_SLAM2::System>();
+        ORB_SLAM2::System* sys_p=nullptr;
         rosbag::Bag bag;
         bag.open(bag_addr,rosbag::bagmode::Read);
         std::vector<std::string> topics;
@@ -60,6 +60,7 @@ namespace gm{
         rosbag::View::iterator it= view.begin();
         
         int map_count=0;
+        bool bReset=false;
         for(;it!=view.end();it++){
             rosbag::MessageInstance m =*it;
             sensor_msgs::CompressedImagePtr simg = m.instantiate<sensor_msgs::CompressedImage>();
@@ -76,12 +77,17 @@ namespace gm{
                     break;
                 }
                 try{
-                    
                     std::stringstream ss;
                     ss<<"img_"<<img_count<<".jpg";
                     cv_ptr = cv_bridge::toCvCopy(simg, "mono8");
                     cv::Mat resize_img;
                     //cv::resize(cv_ptr->image, resize_img, cv::Size(cv_ptr->image.cols/2, cv_ptr->image.rows/2));
+                    if(cv_ptr->image.empty()){
+                        std::cout<<"image empty"<<std::endl;
+                    }
+                    if(sys_p==nullptr){
+                        sys_p=new ORB_SLAM2::System();
+                    }
                     bool re = sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
                     if(re){
 #ifdef VISUALIZATION
@@ -99,7 +105,7 @@ namespace gm{
 
                         if(!img_display.empty()){
                             cv::imshow("chamo", img_display);
-                            //show_mp_as_cloud(posis, "vslam_output_posi");
+                            show_mp_as_cloud(posis, "vslam_output_posi");
                             cv::waitKey(1);
                         }
 #endif
@@ -113,12 +119,17 @@ namespace gm{
                             sys_p->saveToVisualMap(out_str+"/"+"submap_"+ss.str()+".map");
                             map_count++;
                         }
-                        sys_p=std::make_shared<ORB_SLAM2::System>();
+                        if(sys_p!=nullptr){
+                            delete sys_p;
+                            sys_p=nullptr;
+                        }
                     }
-                    
-                                    
                 }catch (cv_bridge::Exception& e){
                     std::cout<<"err in main!!"<<std::endl;
+                    if(sys_p!=nullptr){
+                        delete sys_p;
+                        sys_p=nullptr;
+                    }
                     return;
                 }
             }
@@ -127,6 +138,10 @@ namespace gm{
         ss<<map_count;
         out_str=out_str+"/"+"submap_"+ss.str()+".map";
         sys_p->saveToVisualMap(out_str);
+        if(sys_p!=nullptr){
+            delete sys_p;
+            sys_p=nullptr;
+        }
     }
     
     void read_cam_info(std::string cam_addr, Eigen::Matrix3d& cam_inter, Eigen::Vector4d& cam_distort){
@@ -176,29 +191,28 @@ namespace gm{
         matcher->LoadMap(config_addr+"/words_projmat.fstream", *cur_map ,est_posi);
         return true;
     }
-    bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud){
-        for(int i=0; i<cur_map->mappoints.size(); i++){
-            out_pointcloud.push_back(cur_map->mappoints[i]->position);
-        }
+    bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<unsigned int> ids){
+        gm::fast_load_mps(out_pointcloud, map_addr, ids);
         return true;
     }
+    
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
         extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
-        do_vslam(cache_addr, config_addr, bag_addr);
+        //do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
-        convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
-        merge_new(map_addr, localmap_addr, map_addr, block_ids);
-        gm::GlobalMap map;
-        gm::load_global_map(map, map_addr,block_ids);
-        map.AssignKpToMp();
-        update_corresponds(map, config_addr+"/words_projmat.fstream");
-        FLAGS_max_repro_err=100;
-        optimize_BA(map, false);
-        FLAGS_max_repro_err=20;
-        optimize_BA(map, false);
-        culling_frame(map);
-        reset_all_status(map, "all", false);
-        gm::save_global_map(map, map_addr);
+//        convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
+//        merge_new(map_addr, localmap_addr, map_addr, block_ids);
+//        gm::GlobalMap map;
+//        gm::load_global_map(map, map_addr,block_ids);
+//        map.AssignKpToMp();
+//        update_corresponds(map, config_addr+"/words_projmat.fstream");
+//        FLAGS_max_repro_err=100;
+//        optimize_BA(map, false);
+//        FLAGS_max_repro_err=20;
+//        optimize_BA(map, false);
+//        culling_frame(map);
+//        reset_all_status(map, "all", false);
+//        gm::save_global_map(map, map_addr);
         return true;
     }
     bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 

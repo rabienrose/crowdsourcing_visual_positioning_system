@@ -729,19 +729,8 @@ cv::Mat LocalMapping::SkewSymmetricMatrix(const cv::Mat &v)
 
 void LocalMapping::RequestReset()
 {
-    {
-        //unique_lock<mutex> lock(mMutexReset);
-        mbResetRequested = true;
-    }
-
-    while(1)
-    {
-        {
-            //unique_lock<mutex> lock2(mMutexReset);
-            if(!mbResetRequested)
-                break;
-        }
-    }
+    mlNewKeyFrames.clear();
+    mlpRecentAddedMapPoints.clear();
 }
 
 void LocalMapping::ResetIfRequested()

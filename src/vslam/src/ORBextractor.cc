@@ -1146,8 +1146,10 @@ void ORBextractor::ExtractDesc( InputArray _image, InputArray _mask, vector<KeyP
         descriptors = _descriptors.getMat();
         int offset=0;
         for(int i=0; i<desc_levels.size(); i++){
-            desc_levels[i].copyTo(descriptors.rowRange(offset, offset+desc_levels[i].rows));
-            offset += desc_levels[i].rows;
+            if(!desc_levels[i].empty()){
+                desc_levels[i].copyTo(descriptors.rowRange(offset, offset+desc_levels[i].rows));
+                offset += desc_levels[i].rows;
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ namespace gm{
     public:
         bool init(std::string config_addr_, std::string map_addr_);
         bool load_map(std::vector<Eigen::Vector3d> gps_positions);
-        bool get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud);
+        bool get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<unsigned int> ids);
         bool process_bag(std::string bag_addr, std::string cache_addr_, std::string localmap_addr);
         bool locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position,
             std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp

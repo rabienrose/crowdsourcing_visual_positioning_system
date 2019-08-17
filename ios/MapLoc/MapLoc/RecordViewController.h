@@ -12,6 +12,7 @@
 #include "std_msgs/String.h"
 #include "delegate_header.h"
 #import "UIListDelegate.h"
+#include <global_map_api/global_map_api.h>
 @protocol RecordViewControllerDelegate <NSObject>
 @required
 - (cv::Mat)getNewFrame;
@@ -35,7 +36,10 @@
     bool hasNewFrame;
     int last_kf_count;
     BagListDelegate *dele_map;
+    gm::GlobalMapApi api;
 }
+@property (weak, nonatomic) IBOutlet UILabel *debug_record;
+
 @property (nonatomic, weak) id<FrameInfoDelegate> frameDelegate;
 @property (nonatomic, weak) id<SceneInfoDelegate> sceneDelegate;
 @property (weak, nonatomic) IBOutlet UIPickerView *map_list_ui;

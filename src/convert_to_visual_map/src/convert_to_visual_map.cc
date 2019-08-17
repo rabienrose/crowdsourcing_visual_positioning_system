@@ -353,6 +353,11 @@ void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::Glo
         }
         gps_alins_xyz.push_back(coor_gps);
     }
+    if(get_anchor==false){
+        map.gps_anchor(0)=31.1783570885823;
+        map.gps_anchor(1)=121.603262304281;
+        map.gps_anchor(2)=0;
+    }
     for(int i=0; i<gps_alins_xyz.size(); i++){
         if(gps_accus[i]>=100){
             gps_alins_xyz[i]=map.gps_anchor;

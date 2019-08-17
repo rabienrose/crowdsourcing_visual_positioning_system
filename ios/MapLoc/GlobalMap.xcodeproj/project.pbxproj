@@ -56,7 +56,6 @@
 		041C0CAB2302BF24004610C6 /* frame.cc in Sources */ = {isa = PBXBuildFile; fileRef = 041C0BE72302BF24004610C6 /* frame.cc */; };
 		041C0CAC2302BF24004610C6 /* global_map_seri.cc in Sources */ = {isa = PBXBuildFile; fileRef = 041C0BE82302BF24004610C6 /* global_map_seri.cc */; };
 		041C0CAF2302BF24004610C6 /* global_match.cc in Sources */ = {isa = PBXBuildFile; fileRef = 041C0BF02302BF24004610C6 /* global_match.cc */; };
-		041C0CB22302BF24004610C6 /* solver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 041C0C272302BF24004610C6 /* solver.cpp */; };
 		041C0CB32302BF24004610C6 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 041C0C392302BF24004610C6 /* .gitignore */; };
 		041C0CB42302BF24004610C6 /* types_six_dof_expmap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 041C0C3C2302BF24004610C6 /* types_six_dof_expmap.cpp */; };
 		041C0CB52302BF24004610C6 /* types_sba.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 041C0C3D2302BF24004610C6 /* types_sba.cpp */; };
@@ -102,21 +101,28 @@
 		041C0CEB2302BF7D004610C6 /* boost.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 041C0CDE2302BF7D004610C6 /* boost.a */; };
 		041C0CEC2302BF7D004610C6 /* librosconsole.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 041C0CDF2302BF7D004610C6 /* librosconsole.a */; };
 		041C0CED2302BF7D004610C6 /* libconsole_bridge.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 041C0CE02302BF7D004610C6 /* libconsole_bridge.a */; };
+		04346C8D2305437600E6D8C9 /* merge_new.cc in Sources */ = {isa = PBXBuildFile; fileRef = 04346C772305437500E6D8C9 /* merge_new.cc */; };
+		04346C912305437600E6D8C9 /* global_map_api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 04346C802305437500E6D8C9 /* global_map_api.cc */; };
+		04346C952305437600E6D8C9 /* convert_to_visual_map.cc in Sources */ = {isa = PBXBuildFile; fileRef = 04346C892305437500E6D8C9 /* convert_to_visual_map.cc */; };
+		04346C982305672E00E6D8C9 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 04346C972305672E00E6D8C9 /* ViewController.mm */; };
+		04346C9D23056B2900E6D8C9 /* camera_config.txt in Resources */ = {isa = PBXBuildFile; fileRef = 04346C9923056B2700E6D8C9 /* camera_config.txt */; };
+		04346C9E23056B2900E6D8C9 /* image_conf.txt in Resources */ = {isa = PBXBuildFile; fileRef = 04346C9A23056B2800E6D8C9 /* image_conf.txt */; };
+		04346C9F23056B2900E6D8C9 /* words_projmat.fstream in Resources */ = {isa = PBXBuildFile; fileRef = 04346C9B23056B2800E6D8C9 /* words_projmat.fstream */; };
+		04346CA023056B2900E6D8C9 /* FreakAll.bin in Resources */ = {isa = PBXBuildFile; fileRef = 04346C9C23056B2800E6D8C9 /* FreakAll.bin */; };
 		043F0B39225B7C63000104D4 /* RecordViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 043F0B37225B7C61000104D4 /* RecordViewController.mm */; };
 		043F0B3B225B8D0D000104D4 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 043F0B3A225B8D0C000104D4 /* CoreMotion.framework */; };
 		043F0B3D225B8D14000104D4 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 043F0B3C225B8D14000104D4 /* CoreLocation.framework */; };
 		043F0B3F225B8D20000104D4 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 043F0B3E225B8D20000104D4 /* CoreMedia.framework */; };
 		043F0B41225B8D2A000104D4 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 043F0B40225B8D2A000104D4 /* AVFoundation.framework */; };
 		0456D43D225741DC00A00865 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0456D43C225741DC00A00865 /* AppDelegate.m */; };
-		0456D440225741DC00A00865 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0456D43F225741DC00A00865 /* ViewController.mm */; };
 		0456D443225741DC00A00865 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0456D441225741DC00A00865 /* Main.storyboard */; };
 		0456D445225741DD00A00865 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0456D444225741DD00A00865 /* Assets.xcassets */; };
 		0456D448225741DD00A00865 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0456D446225741DD00A00865 /* LaunchScreen.storyboard */; };
 		0456D44B225741DD00A00865 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0456D44A225741DD00A00865 /* main.m */; };
 		0456D557225788D800A00865 /* SceneKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0456D556225788D800A00865 /* SceneKit.framework */; };
 		0456D5682257897100A00865 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0456D55C2257897100A00865 /* opencv2.framework */; };
-		0456D5772257AAEC00A00865 /* garage.bag in Resources */ = {isa = PBXBuildFile; fileRef = 0456D5732257AAEB00A00865 /* garage.bag */; };
 		047AFB892259DA2500BA3710 /* try_mm.mm in Sources */ = {isa = PBXBuildFile; fileRef = 047AFB872259DA2400BA3710 /* try_mm.mm */; };
+		04E7AB3C2306BA8A000C1C31 /* liblib_merge.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04E7AB3B2306BA8A000C1C31 /* liblib_merge.a */; };
 		04F153EF22634C3C006D0B36 /* UIListDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 04F153EE22634C3B006D0B36 /* UIListDelegate.mm */; };
 /* End PBXBuildFile section */
 
@@ -329,17 +335,27 @@
 		041C0CDE2302BF7D004610C6 /* boost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = boost.a; path = ../ThirdParty/boost.a; sourceTree = "<group>"; };
 		041C0CDF2302BF7D004610C6 /* librosconsole.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librosconsole.a; path = ../ThirdParty/librosconsole.a; sourceTree = "<group>"; };
 		041C0CE02302BF7D004610C6 /* libconsole_bridge.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libconsole_bridge.a; path = ../ThirdParty/libconsole_bridge.a; sourceTree = "<group>"; };
+		04346C742305437500E6D8C9 /* merge_new.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = merge_new.h; sourceTree = "<group>"; };
+		04346C772305437500E6D8C9 /* merge_new.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = merge_new.cc; sourceTree = "<group>"; };
+		04346C7D2305437500E6D8C9 /* global_map_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = global_map_api.h; sourceTree = "<group>"; };
+		04346C802305437500E6D8C9 /* global_map_api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = global_map_api.cc; sourceTree = "<group>"; };
+		04346C862305437500E6D8C9 /* convert_to_visual_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = convert_to_visual_map.h; sourceTree = "<group>"; };
+		04346C892305437500E6D8C9 /* convert_to_visual_map.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = convert_to_visual_map.cc; sourceTree = "<group>"; };
+		04346C962305672D00E6D8C9 /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		04346C972305672E00E6D8C9 /* ViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
+		04346C9923056B2700E6D8C9 /* camera_config.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = camera_config.txt; path = MapLoc/data/config/camera_config.txt; sourceTree = "<group>"; };
+		04346C9A23056B2800E6D8C9 /* image_conf.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = image_conf.txt; path = MapLoc/data/config/image_conf.txt; sourceTree = "<group>"; };
+		04346C9B23056B2800E6D8C9 /* words_projmat.fstream */ = {isa = PBXFileReference; lastKnownFileType = file; name = words_projmat.fstream; path = MapLoc/data/config/words_projmat.fstream; sourceTree = "<group>"; };
+		04346C9C23056B2800E6D8C9 /* FreakAll.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = FreakAll.bin; path = MapLoc/data/config/FreakAll.bin; sourceTree = "<group>"; };
 		043F0B37225B7C61000104D4 /* RecordViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = RecordViewController.mm; sourceTree = "<group>"; };
 		043F0B38225B7C62000104D4 /* RecordViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RecordViewController.h; sourceTree = "<group>"; };
 		043F0B3A225B8D0C000104D4 /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		043F0B3C225B8D14000104D4 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		043F0B3E225B8D20000104D4 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		043F0B40225B8D2A000104D4 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
-		0456D438225741DC00A00865 /* MapLoc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MapLoc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0456D438225741DC00A00865 /* GlobalMap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GlobalMap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0456D43B225741DC00A00865 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		0456D43C225741DC00A00865 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		0456D43E225741DC00A00865 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		0456D43F225741DC00A00865 /* ViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
 		0456D442225741DC00A00865 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		0456D444225741DD00A00865 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0456D447225741DD00A00865 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -360,9 +376,9 @@
 		0456D5622257897100A00865 /* librostime.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librostime.a; path = ThirdParty/librostime.a; sourceTree = "<group>"; };
 		0456D5632257897100A00865 /* libcpp_common.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcpp_common.a; path = ThirdParty/libcpp_common.a; sourceTree = "<group>"; };
 		0456D57022579D4F00A00865 /* boost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = boost.a; path = ThirdParty/boost.a; sourceTree = "<group>"; };
-		0456D5732257AAEB00A00865 /* garage.bag */ = {isa = PBXFileReference; lastKnownFileType = file; name = garage.bag; path = MapLoc/data/garage.bag; sourceTree = "<group>"; };
 		047AFB872259DA2400BA3710 /* try_mm.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = try_mm.mm; sourceTree = "<group>"; };
 		047AFB882259DA2400BA3710 /* common_header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common_header.h; sourceTree = "<group>"; };
+		04E7AB3B2306BA8A000C1C31 /* liblib_merge.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblib_merge.a; path = ../ThirdParty/liblib_merge.a; sourceTree = "<group>"; };
 		04F153ED22634C3A006D0B36 /* UIListDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIListDelegate.h; sourceTree = "<group>"; };
 		04F153EE22634C3B006D0B36 /* UIListDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = UIListDelegate.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -372,6 +388,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04E7AB3C2306BA8A000C1C31 /* liblib_merge.a in Frameworks */,
 				041C0CE12302BF7D004610C6 /* libros_ext.a in Frameworks */,
 				041C0CE22302BF7D004610C6 /* librostime.a in Frameworks */,
 				041C0CE32302BF7D004610C6 /* libcpp_common.a in Frameworks */,
@@ -1037,10 +1054,115 @@
 			path = stuff;
 			sourceTree = "<group>";
 		};
+		04346C6F2305437500E6D8C9 /* merge_new */ = {
+			isa = PBXGroup;
+			children = (
+				04346C722305437500E6D8C9 /* include */,
+				04346C752305437500E6D8C9 /* src */,
+			);
+			name = merge_new;
+			path = ../../../src/merge_new;
+			sourceTree = "<group>";
+		};
+		04346C722305437500E6D8C9 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				04346C732305437500E6D8C9 /* merge_new */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		04346C732305437500E6D8C9 /* merge_new */ = {
+			isa = PBXGroup;
+			children = (
+				04346C742305437500E6D8C9 /* merge_new.h */,
+			);
+			path = merge_new;
+			sourceTree = "<group>";
+		};
+		04346C752305437500E6D8C9 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				04346C772305437500E6D8C9 /* merge_new.cc */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		04346C782305437500E6D8C9 /* global_map_api */ = {
+			isa = PBXGroup;
+			children = (
+				04346C7B2305437500E6D8C9 /* include */,
+				04346C7E2305437500E6D8C9 /* src */,
+			);
+			name = global_map_api;
+			path = ../../../src/global_map_api;
+			sourceTree = "<group>";
+		};
+		04346C7B2305437500E6D8C9 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				04346C7C2305437500E6D8C9 /* global_map_api */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		04346C7C2305437500E6D8C9 /* global_map_api */ = {
+			isa = PBXGroup;
+			children = (
+				04346C7D2305437500E6D8C9 /* global_map_api.h */,
+			);
+			path = global_map_api;
+			sourceTree = "<group>";
+		};
+		04346C7E2305437500E6D8C9 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				04346C802305437500E6D8C9 /* global_map_api.cc */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		04346C812305437500E6D8C9 /* convert_to_visual_map */ = {
+			isa = PBXGroup;
+			children = (
+				04346C842305437500E6D8C9 /* include */,
+				04346C872305437500E6D8C9 /* src */,
+			);
+			name = convert_to_visual_map;
+			path = ../../../src/convert_to_visual_map;
+			sourceTree = "<group>";
+		};
+		04346C842305437500E6D8C9 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				04346C852305437500E6D8C9 /* convert_to_visual_map */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		04346C852305437500E6D8C9 /* convert_to_visual_map */ = {
+			isa = PBXGroup;
+			children = (
+				04346C862305437500E6D8C9 /* convert_to_visual_map.h */,
+			);
+			path = convert_to_visual_map;
+			sourceTree = "<group>";
+		};
+		04346C872305437500E6D8C9 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				04346C892305437500E6D8C9 /* convert_to_visual_map.cc */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
 		0456D42F225741DC00A00865 = {
 			isa = PBXGroup;
 			children = (
-				0456D5732257AAEB00A00865 /* garage.bag */,
+				04346C9923056B2700E6D8C9 /* camera_config.txt */,
+				04346C9C23056B2800E6D8C9 /* FreakAll.bin */,
+				04346C9A23056B2800E6D8C9 /* image_conf.txt */,
+				04346C9B23056B2800E6D8C9 /* words_projmat.fstream */,
 				0456D43A225741DC00A00865 /* MapLoc */,
 				0456D439225741DC00A00865 /* Products */,
 				0456D51C2257471000A00865 /* Frameworks */,
@@ -1050,7 +1172,7 @@
 		0456D439225741DC00A00865 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0456D438225741DC00A00865 /* MapLoc.app */,
+				0456D438225741DC00A00865 /* GlobalMap.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1058,6 +1180,11 @@
 		0456D43A225741DC00A00865 /* MapLoc */ = {
 			isa = PBXGroup;
 			children = (
+				04346C962305672D00E6D8C9 /* ViewController.h */,
+				04346C972305672E00E6D8C9 /* ViewController.mm */,
+				04346C812305437500E6D8C9 /* convert_to_visual_map */,
+				04346C782305437500E6D8C9 /* global_map_api */,
+				04346C6F2305437500E6D8C9 /* merge_new */,
 				041C0BB92302BF23004610C6 /* backend */,
 				041C0B512302BF23004610C6 /* bag_tool */,
 				041C0B442302BF23004610C6 /* chamo_common */,
@@ -1082,8 +1209,6 @@
 				0419DAC82258B03A001011E5 /* DetailViewController.mm */,
 				0456D43B225741DC00A00865 /* AppDelegate.h */,
 				0456D43C225741DC00A00865 /* AppDelegate.m */,
-				0456D43E225741DC00A00865 /* ViewController.h */,
-				0456D43F225741DC00A00865 /* ViewController.mm */,
 				0456D441225741DC00A00865 /* Main.storyboard */,
 				0456D444225741DD00A00865 /* Assets.xcassets */,
 				0456D446225741DD00A00865 /* LaunchScreen.storyboard */,
@@ -1096,6 +1221,7 @@
 		0456D51C2257471000A00865 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				04E7AB3B2306BA8A000C1C31 /* liblib_merge.a */,
 				041C0CDE2302BF7D004610C6 /* boost.a */,
 				041C0CE02302BF7D004610C6 /* libconsole_bridge.a */,
 				041C0CD62302BF7C004610C6 /* libcpp_common.a */,
@@ -1135,9 +1261,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0456D437225741DC00A00865 /* MapLoc */ = {
+		0456D437225741DC00A00865 /* GlobalMap */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0456D44E225741DD00A00865 /* Build configuration list for PBXNativeTarget "MapLoc" */;
+			buildConfigurationList = 0456D44E225741DD00A00865 /* Build configuration list for PBXNativeTarget "GlobalMap" */;
 			buildPhases = (
 				0456D434225741DC00A00865 /* Sources */,
 				0456D435225741DC00A00865 /* Frameworks */,
@@ -1147,9 +1273,9 @@
 			);
 			dependencies = (
 			);
-			name = MapLoc;
+			name = GlobalMap;
 			productName = MapLoc;
-			productReference = 0456D438225741DC00A00865 /* MapLoc.app */;
+			productReference = 0456D438225741DC00A00865 /* GlobalMap.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -1166,7 +1292,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 0456D433225741DC00A00865 /* Build configuration list for PBXProject "MapLoc" */;
+			buildConfigurationList = 0456D433225741DC00A00865 /* Build configuration list for PBXProject "GlobalMap" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -1179,7 +1305,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0456D437225741DC00A00865 /* MapLoc */,
+				0456D437225741DC00A00865 /* GlobalMap */,
 			);
 		};
 /* End PBXProject section */
@@ -1189,7 +1315,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0456D5772257AAEC00A00865 /* garage.bag in Resources */,
+				04346C9D23056B2900E6D8C9 /* camera_config.txt in Resources */,
+				04346C9E23056B2900E6D8C9 /* image_conf.txt in Resources */,
+				04346C9F23056B2900E6D8C9 /* words_projmat.fstream in Resources */,
+				04346CA023056B2900E6D8C9 /* FreakAll.bin in Resources */,
 				0456D448225741DD00A00865 /* LaunchScreen.storyboard in Resources */,
 				041C0CB32302BF24004610C6 /* .gitignore in Resources */,
 				0456D445225741DD00A00865 /* Assets.xcassets in Resources */,
@@ -1226,7 +1355,6 @@
 				041C0C9A2302BF24004610C6 /* culling_frame.cc in Sources */,
 				041C0CAF2302BF24004610C6 /* global_match.cc in Sources */,
 				041C0C732302BF24004610C6 /* KeyFrameDatabase.cc in Sources */,
-				0456D440225741DC00A00865 /* ViewController.mm in Sources */,
 				041C0CCC2302BF24004610C6 /* parameter_container.cpp in Sources */,
 				041C0C822302BF24004610C6 /* PnPsolver.cc in Sources */,
 				041C0C792302BF24004610C6 /* Initializer.cc in Sources */,
@@ -1255,6 +1383,7 @@
 				041C0CC52302BF24004610C6 /* hyper_graph_action.cpp in Sources */,
 				041C0CA32302BF24004610C6 /* sim3_match.cc in Sources */,
 				041C0C902302BF24004610C6 /* FeatureVector.cpp in Sources */,
+				04346C912305437600E6D8C9 /* global_map_api.cc in Sources */,
 				041C0C8C2302BF24004610C6 /* imu_tools.cpp in Sources */,
 				041C0C752302BF24004610C6 /* ORBmatcher.cc in Sources */,
 				041C0CC12302BF24004610C6 /* optimization_algorithm.cpp in Sources */,
@@ -1265,6 +1394,8 @@
 				041C0C872302BF24004610C6 /* IMUPreintegrator.cpp in Sources */,
 				04F153EF22634C3C006D0B36 /* UIListDelegate.mm in Sources */,
 				041C0C882302BF24004610C6 /* imudata.cpp in Sources */,
+				04346C8D2305437600E6D8C9 /* merge_new.cc in Sources */,
+				04346C982305672E00E6D8C9 /* ViewController.mm in Sources */,
 				041C0CAA2302BF24004610C6 /* map_point.cc in Sources */,
 				041C0CC42302BF24004610C6 /* cache.cpp in Sources */,
 				041C0C9D2302BF24004610C6 /* find_correspond.cc in Sources */,
@@ -1275,10 +1406,10 @@
 				041C0CB62302BF24004610C6 /* types_seven_dof_expmap.cpp in Sources */,
 				041C0CBC2302BF24004610C6 /* matrix_structure.cpp in Sources */,
 				041C0C812302BF24004610C6 /* System.cc in Sources */,
+				04346C952305437600E6D8C9 /* convert_to_visual_map.cc in Sources */,
 				041C0CB82302BF24004610C6 /* optimizable_graph.cpp in Sources */,
 				047AFB892259DA2500BA3710 /* try_mm.mm in Sources */,
 				041C0C892302BF24004610C6 /* configparam.cpp in Sources */,
-				041C0CB22302BF24004610C6 /* solver.cpp in Sources */,
 				041C0CC82302BF24004610C6 /* robust_kernel.cpp in Sources */,
 				041C0C692302BF24004610C6 /* extract_bag.cpp in Sources */,
 				041C0CCF2302BF24004610C6 /* solver.cpp in Sources */,
@@ -1440,6 +1571,7 @@
 					"$(PROJECT_DIR)/../ThirdParty/include",
 					"$(PROJECT_DIR)/../ThirdParty",
 				);
+				GCC_PREPROCESSOR_DEFINITIONS = "";
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../ThirdParty/include",
 					"$(SRCROOT)/../ThirdParty/include/ros",
@@ -1457,6 +1589,9 @@
 					"\"$(SRCROOT)/../../src/gps_tool/include\"",
 					"\"$(SRCROOT)/../../src/global_match/include\"",
 					"\"$(SRCROOT)/../../src/g2o_catkin/include/g2o/core\"",
+					"\"$(SRCROOT)/../../src/global_map_api/include\"",
+					"\"$(SRCROOT)/../../src/convert_to_visual_map/include\"",
+					"\"$(SRCROOT)/../../src/merge_new/include\"",
 				);
 				INFOPLIST_FILE = MapLoc/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12;
@@ -1468,7 +1603,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/../ThirdParty",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chamo.map.MapLoc;
+				PRODUCT_BUNDLE_IDENTIFIER = chamo.map.globalmap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1486,6 +1621,7 @@
 					"$(PROJECT_DIR)/../ThirdParty/include",
 					"$(PROJECT_DIR)/../ThirdParty",
 				);
+				GCC_PREPROCESSOR_DEFINITIONS = "";
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/../ThirdParty/include",
 					"$(SRCROOT)/../ThirdParty/include/ros",
@@ -1503,6 +1639,9 @@
 					"\"$(SRCROOT)/../../src/gps_tool/include\"",
 					"\"$(SRCROOT)/../../src/global_match/include\"",
 					"\"$(SRCROOT)/../../src/g2o_catkin/include/g2o/core\"",
+					"\"$(SRCROOT)/../../src/global_map_api/include\"",
+					"\"$(SRCROOT)/../../src/convert_to_visual_map/include\"",
+					"\"$(SRCROOT)/../../src/merge_new/include\"",
 				);
 				INFOPLIST_FILE = MapLoc/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12;
@@ -1514,7 +1653,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/../ThirdParty",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = chamo.map.MapLoc;
+				PRODUCT_BUNDLE_IDENTIFIER = chamo.map.globalmap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1523,7 +1662,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0456D433225741DC00A00865 /* Build configuration list for PBXProject "MapLoc" */ = {
+		0456D433225741DC00A00865 /* Build configuration list for PBXProject "GlobalMap" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0456D44C225741DD00A00865 /* Debug */,
@@ -1532,7 +1671,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0456D44E225741DD00A00865 /* Build configuration list for PBXNativeTarget "MapLoc" */ = {
+		0456D44E225741DD00A00865 /* Build configuration list for PBXNativeTarget "GlobalMap" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0456D44F225741DD00A00865 /* Debug */,

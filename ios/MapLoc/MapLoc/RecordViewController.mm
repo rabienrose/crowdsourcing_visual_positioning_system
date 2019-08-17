@@ -6,6 +6,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <rosbag/view.h>
 #include <cv_bridge/cv_bridge.h>
+#include <chamo_common/common.h>
 
 @implementation RecordViewController
 
@@ -15,12 +16,12 @@
     sessionQueue = dispatch_queue_create( "session queue", DISPATCH_QUEUE_SERIAL );
     quene =[[NSOperationQueue alloc] init];
     quene.maxConcurrentOperationCount=1;
-    motionManager = [[CMMotionManager alloc] init];
-    
+    //motionManager = [[CMMotionManager alloc] init];
+
     session = [[AVCaptureSession alloc] init];
     NSError *error = nil;
     [session beginConfiguration];
-    session.sessionPreset =AVCaptureSessionPreset640x480;
+    session.sessionPreset =AVCaptureSessionPreset1280x720;
     videoDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
     AVCaptureDeviceInput *videoDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:videoDevice error:&error];
     if ( ! videoDeviceInput ) {
@@ -38,12 +39,6 @@
         return;
     }
     [videoDevice setActiveVideoMinFrameDuration:CMTimeMake(1, 10)];
-    if ( [videoDevice lockForConfiguration:&error] ) {
-        videoDevice.exposureMode=AVCaptureExposureModeLocked;
-        [videoDevice setExposureModeCustomWithDuration:CMTimeMakeWithSeconds( 0.001, 1000*1000*1000 ) ISO:900 completionHandler:nil];
-    }
-    [videoDevice unlockForConfiguration];
-    
     video_output = [[AVCaptureVideoDataOutput alloc] init];
     NSDictionary *newSettings = @{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
     video_output.videoSettings = newSettings;
@@ -53,9 +48,9 @@
     }else {
         NSLog(@"add output wrong!!!");
     }
-    
+
     [video_output setSampleBufferDelegate:self queue:sessionQueue];
-    
+
     [session commitConfiguration];
     img_count=0;
     dele_map= [[BagListDelegate alloc] init];
@@ -163,15 +158,20 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     }
 }
 
-
-
-- (void) start_slam: (NSString *) bag_name
-{
-    
-}
-
 - (IBAction)new_btn:(id)sender {
-    
+    NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSDate *date = [NSDate date];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"MM-dd-HH-mm-ss"];
+    NSString *timeString = [formatter stringFromDate:date];
+    NSString *string1 = [NSString stringWithFormat:@"%@",timeString];
+    NSString *full_new_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:string1];
+    BOOL isDir;
+    NSFileManager *fileManager= [NSFileManager defaultManager];
+    if(![fileManager fileExistsAtPath:full_new_map_addr isDirectory:&isDir])
+        if(![fileManager createDirectoryAtPath:full_new_map_addr withIntermediateDirectories:YES attributes:nil error:NULL])
+            NSLog(@"Error: Create folder failed %@", full_new_map_addr);
+    [self update_maplist];
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
@@ -216,14 +216,22 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
 }
 - (IBAction)start_record:(id)sender {
     if(!is_recording_bag){
+        [self start_sensor];
         dispatch_async( sessionQueue, ^{
             NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+            NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
+            full_map_addr = [full_map_addr stringByAppendingString:@"/bag"];
+            BOOL isDir;
+            NSFileManager *fileManager= [NSFileManager defaultManager];
+            if(![fileManager fileExistsAtPath:full_map_addr isDirectory:&isDir])
+                if(![fileManager createDirectoryAtPath:full_map_addr withIntermediateDirectories:YES attributes:nil error:NULL])
+                    NSLog(@"Error: Create folder failed %@", full_map_addr);
             NSDate *date = [NSDate date];
             NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
             [formatter setDateFormat:@"MM-dd-HH-mm-ss"];
             NSString *timeString = [formatter stringFromDate:date];
             NSString *string1 = [NSString stringWithFormat:@"%@.bag",timeString];
-            NSString *full_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:string1];
+            NSString *full_addr = [full_map_addr stringByAppendingPathComponent:string1];
             char *docsPath;
             docsPath = (char*)[full_addr cStringUsingEncoding:[NSString defaultCStringEncoding]];
             std::string full_file_name(docsPath);
@@ -239,6 +247,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
         dispatch_async( sessionQueue, ^{
             bag_ptr->close();
             NSLog(@"close the bag");
+            [self start_sensor];
         });
         [sender setTitle:@"Record" forState:UIControlStateNormal];
         [self update_maplist];
@@ -246,13 +255,11 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     
 }
 
-- (IBAction)start_sensor:(id)sender {
+-(void) start_sensor {
     if(session.running){
         [session stopRunning];
-        [sender setTitle:@"Start Sensor" forState:UIControlStateNormal];
     }else{
         [session startRunning];
-        [sender setTitle:@"Stop" forState:UIControlStateNormal];
     }
     
     if(motionManager.accelerometerActive){
@@ -299,10 +306,103 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     }
 }
 - (IBAction)start_mapping:(id)sender {
-    
+    dispatch_async( sessionQueue, ^{
+        NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *full_proj_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
+        NSString *full_map_addr = [full_proj_addr stringByAppendingString:@"/global"];
+        NSString *full_bag_addr = [full_proj_addr stringByAppendingString:@"/bag"];
+        NSBundle* myBundle = [NSBundle mainBundle];
+        NSString*  mycam_str = [myBundle pathForResource:@"camera_config" ofType:@"txt"];
+        NSString *config_addr = [mycam_str stringByDeletingLastPathComponent];
+        std::string config_addr_std = std::string([config_addr UTF8String]);
+        std::string map_addr_std=std::string([full_map_addr UTF8String]);
+        std::string full_bag_std=std::string([full_bag_addr UTF8String]);
+        
+        BOOL isDir;
+        NSFileManager *fileManager= [NSFileManager defaultManager];
+        if(![fileManager fileExistsAtPath:full_map_addr isDirectory:&isDir])
+            if(![fileManager createDirectoryAtPath:full_map_addr withIntermediateDirectories:YES attributes:nil error:NULL])
+                NSLog(@"Error: Create folder failed %@", full_map_addr);
+        gm::GlobalMapApi temp_api;
+        temp_api.init(config_addr_std, map_addr_std);
+        NSURL *url = [NSURL URLWithString:full_bag_addr];
+        NSArray * dirContents =
+        [[NSFileManager defaultManager] contentsOfDirectoryAtURL: url
+                                      includingPropertiesForKeys:@[]
+                                                         options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                           error:nil];
+        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"pathExtension='bag'"];
+        NSArray *bagFiles = [dirContents filteredArrayUsingPredicate:predicate];
+        std::vector<unsigned int> ids;
+        for (NSURL* bagfile in bagFiles) {
+            NSString *bagfile_ns = [bagfile absoluteString];
+            std::string bagfile_std=std::string([bagfile_ns UTF8String]);
+            std::vector<std::string> splited_addr = chamo::split(bagfile_std,"/");
+            std::string full_bag_name=full_bag_std+"/"+splited_addr.back();
+            std::cout<<full_bag_name<<std::endl;
+            NSString *full_cache_addr = [full_proj_addr stringByAppendingString:@"/cache"];
+//            if([fileManager fileExistsAtPath:full_cache_addr isDirectory:&isDir]){
+//                [fileManager removeItemAtPath:full_cache_addr error:nil];
+//            }
+//            [fileManager createDirectoryAtPath:full_cache_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+//            NSString *full_local_addr = [full_proj_addr stringByAppendingString:@"/local"];
+//            if([fileManager fileExistsAtPath:full_local_addr isDirectory:&isDir]){
+//                [fileManager removeItemAtPath:full_local_addr error:nil];
+//            }
+//            [fileManager createDirectoryAtPath:full_local_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+            std::string cache_addr_std=std::string([full_cache_addr UTF8String]);
+            std::string local_addr_std=std::string([full_local_addr UTF8String]);
+            temp_api.process_bag(full_bag_name, cache_addr_std, local_addr_std);
+        }
+    } );
 }
 
 - (IBAction)load_map:(id)sender {
+    if((int)[dele_map.file_list count]>0){
+
+        dispatch_async( sessionQueue, ^{
+            NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+            NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
+            full_map_addr = [full_map_addr stringByAppendingString:@"/global"];
+            NSBundle* myBundle = [NSBundle mainBundle];
+            NSString*  mycam_str = [myBundle pathForResource:@"camera_config" ofType:@"txt"];
+            NSString *config_addr = [mycam_str stringByDeletingLastPathComponent];
+            std::string config_addr_std = std::string([config_addr UTF8String]);
+            std::string map_addr_std=std::string([full_map_addr UTF8String]);
+
+            NSURL *url = [NSURL URLWithString:full_map_addr];
+            NSArray * dirContents =
+                [[NSFileManager defaultManager] contentsOfDirectoryAtURL: url
+                  includingPropertiesForKeys:@[]
+                                     options:NSDirectoryEnumerationSkipsHiddenFiles
+                                       error:nil];
+            NSPredicate *predicate = [NSPredicate predicateWithFormat:@"pathExtension='map'"];
+            NSArray *mapFiles = [dirContents filteredArrayUsingPredicate:predicate];
+            std::vector<unsigned int> ids;
+            for (NSURL* mapfile in dirContents) {
+                NSString *mapfile_ns = [mapfile absoluteString];
+                std::string filename_std=std::string([mapfile_ns UTF8String]);
+                std::vector<std::string> splited_addr = chamo::split(filename_std,"/");
+                std::vector<std::string> splited_filename = chamo::split(splited_addr.back(),".");
+                filename_std=splited_filename[0];
+                unsigned int temp_id=stoul(filename_std);
+                ids.push_back(temp_id);
+            }
+            gm::GlobalMapApi temp_api;
+            api=temp_api;
+            api.init(config_addr_std, map_addr_std);
+            std::vector<Eigen::Vector3d> out_pointcloud;
+            api.get_pointcloud(out_pointcloud, ids);
+            Eigen::Vector3d av_posi;
+            int mp_count=out_pointcloud.size();
+            for(int i=0; i<out_pointcloud.size(); i++){
+                av_posi=av_posi+out_pointcloud[i]/(double)mp_count;
+            }
+            [self.sceneDelegate set_cur_posi: av_posi];
+            [self.sceneDelegate showPC: out_pointcloud];
+        } );
+
+    }
 }
 - (IBAction)locate:(id)sender {
 }

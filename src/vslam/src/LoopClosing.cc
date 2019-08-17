@@ -607,19 +607,7 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
 
 void LoopClosing::RequestReset()
 {
-    {
-        //////unique_lock<mutex> lock(mMutexReset);
-        mbResetRequested = true;
-    }
-
-    while(1)
-    {
-        {
-        //////unique_lock<mutex> lock2(mMutexReset);
-        if(!mbResetRequested)
-            break;
-        }
-    }
+    mlpLoopKeyFrameQueue.clear();
 }
 
 void LoopClosing::ResetIfRequested()

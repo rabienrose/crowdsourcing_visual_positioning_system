@@ -18,6 +18,7 @@ class System
 {
 public:
     System(bool do_loop_detect_flag=true);
+    ~System();
     void saveResult(string map_filename);
     bool TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
     void getPC(std::vector<Eigen::Vector3d>& pcs);

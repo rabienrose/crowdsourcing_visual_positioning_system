@@ -305,8 +305,18 @@ namespace ORB_SLAM2
 //                 std::cout<<mit->first->id<<" : "<<mit->second<<std::endl;
 //             }
 //         }
-        map.CalConnections();
         gm::save_submap(map, map_filename);
+    }
+    
+    System::~System(){
+        mpTracker->Reset();
+        delete mpTracker;
+        delete mpVocabulary;
+        delete mpKeyFrameDatabase;
+        delete mpMap;
+        delete mpLocalMapper;
+        delete mpLoopCloser;
+        
     }
 
 } //namespace ORB_SLAM
