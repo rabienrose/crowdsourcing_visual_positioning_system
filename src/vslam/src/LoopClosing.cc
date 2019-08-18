@@ -413,6 +413,9 @@ bool LoopClosing::ComputeSim3()
         mpCurrentKF->SetErase();
         return false;
     }
+    for(int i=0; i<vpSim3Solvers.size(); i++){
+        delete vpSim3Solvers[i];
+    }
 
 }
 

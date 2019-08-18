@@ -45,7 +45,7 @@ namespace gm{
         FLAGS_camera_config=config_addr+"/camera_config.txt";
         std::string out_str=local_addr;
         std::string img_topic="img";
-        int min_frame=0;
+        int min_frame=2;
         int max_frame=10000;
         int step=1;
         LOG(INFO)<<"max frame:"<<max_frame;
@@ -89,6 +89,12 @@ namespace gm{
                         sys_p=new ORB_SLAM2::System();
                     }
                     bool re = sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
+//                    std::cout<<img_count<<std::endl;
+//                    if(img_count%300==0){
+//                        re=false;
+//                    }else{
+//                        re=true;
+//                    }
                     if(re){
 #ifdef VISUALIZATION
                         std::vector<Eigen::Vector3d> pcs;
@@ -123,6 +129,7 @@ namespace gm{
                             delete sys_p;
                             sys_p=nullptr;
                         }
+                        return;
                     }
                 }catch (cv_bridge::Exception& e){
                     std::cout<<"err in main!!"<<std::endl;
@@ -197,11 +204,11 @@ namespace gm{
     }
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
-        extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
-        //do_vslam(cache_addr, config_addr, bag_addr);
-        std::vector<unsigned int> block_ids;
-//        convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
-//        merge_new(map_addr, localmap_addr, map_addr, block_ids);
+        //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
+        do_vslam(cache_addr, config_addr, bag_addr);
+        //std::vector<unsigned int> block_ids;
+        //convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
+        //merge_new(map_addr, localmap_addr, map_addr, block_ids);
 //        gm::GlobalMap map;
 //        gm::load_global_map(map, map_addr,block_ids);
 //        map.AssignKpToMp();

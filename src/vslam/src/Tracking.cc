@@ -9,7 +9,6 @@
 #include"Initializer.h"
 
 #include"Optimizer.h"
-#include"PnPsolver.h"
 #include<iostream>
 #include <gflags/gflags.h>
 #include<mutex>
@@ -876,6 +875,14 @@ void Tracking::Reset()
     {
         delete mpInitializer;
         mpInitializer = static_cast<Initializer*>(NULL);
+    }
+    if(mpORBextractorLeft){
+        delete mpORBextractorLeft;
+        mpORBextractorLeft=nullptr;
+    }
+    if(mpIniORBextractor){
+        delete mpIniORBextractor;
+        mpIniORBextractor=nullptr;
     }
 
     mlRelativeFramePoses.clear();

@@ -183,8 +183,7 @@ namespace ORB_SLAM2
             //LOG(INFO)<<pKF->file_name_;
             std::vector<std::string> splited = chamo::split(pKF->file_name_, "/");
             std::string filename= splited.back();
-            std::shared_ptr<gm::Frame> frame_p;
-            frame_p.reset(new gm::Frame);
+            std::shared_ptr<gm::Frame> frame_p=std::make_shared<gm::Frame>();
             frame_p->time_stamp=pKF->mTimeStamp;
             frame_p->fx=pKF->fx;
             frame_p->fy=pKF->fy;
@@ -206,7 +205,7 @@ namespace ORB_SLAM2
             for(int j=0; j<desc_width; j++){
                 for(int k=0; k<desc_count; k++){
                     frame_p->descriptors(j, k)=pKF->mDescriptors.at<unsigned char>(k, j);
-                } 
+                }
             }
             for(int j=0; j<pKF->mvKeysUn.size(); j++){
                 frame_p->obss.push_back(nullptr);
@@ -214,15 +213,14 @@ namespace ORB_SLAM2
             frame_p->id=pKF->mnId;
             map.frames.push_back(frame_p);
         }
-        
+//
         vector<MapPoint*> vpMPs = mpMap->GetAllMapPoints();
         for(int i=0; i<vpMPs.size(); i++){
             MapPoint* mp = vpMPs[i];
             if (mp->isBad()){
                 continue;
             }
-            std::shared_ptr<gm::MapPoint> mappoint_p;
-            mappoint_p.reset(new gm::MapPoint);
+            std::shared_ptr<gm::MapPoint> mappoint_p=std::make_shared<gm::MapPoint>();
             cv::Mat mp_posi_cv=vpMPs[i]->GetWorldPos();
             Eigen::Vector3d posi(mp_posi_cv.at<float>(0),mp_posi_cv.at<float>(1),mp_posi_cv.at<float>(2));
             mappoint_p->position=posi;
@@ -250,61 +248,8 @@ namespace ORB_SLAM2
             }
         }
         LOG(INFO)<<"save map: "<<map_filename;
-//         for(int i=0; i<vpKFs.size(); i++){
-//             ORB_SLAM2::KeyFrame* pKF = vpKFs[i];
-//             if(pKF->isBad()){
-//                 continue;
-//             }
-//             std::vector<KeyFrame*> conns = pKF->GetBestCovisibilityKeyFrames(40);
-//             std::cout<<pKF->mnId<<std::endl;
-//             for(std::vector<KeyFrame*>::iterator it=conns.begin(); it!=conns.end(); it++){
-//                 std::cout<<(*it)->mnId<<":";
-//             }
-//             std::cout<<std::endl;
-//         }
-        
-//         for(int i=0; i<vpKFs.size(); i++){
-//             ORB_SLAM2::KeyFrame* pKF = vpKFs[i];
-//             if(pKF->isBad()){
-//                 continue;
-//             }
-//             std::map<KeyFrame*, int> frame_list;
-//             for(int j=0; j<vpKFs[i]->mvpMapPoints.size(); j++){
-//                 if(pKF->mvpMapPoints[j]!=NULL){
-//                     std::map<KeyFrame*,size_t> observations = pKF->mvpMapPoints[j]->GetObservations();
-// 
-//                     for(std::map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
-//                     {
-//                         if(mit->first->mnId==pKF->mnId)
-//                             continue;
-//                         frame_list[mit->first]++;
-//                     }
-//                 }
-//             }
-//             std::cout<<"=========="<<pKF->mnId<<"=========="<<std::endl;
-//             for(std::map<KeyFrame*,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
-//             {
-//                 std::cout<<mit->first->mnId<<" : "<<mit->second<<std::endl;
-//             }
-//         }
+
         map.AssignKpToMp();
-//         for(int i=0; i<map.frames.size(); i++){
-//             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
-//             for(int j=0; j<map.frames[i]->obss.size(); j++){
-//                 
-//                 if(map.frames[i]->obss[j]!=nullptr){
-//                     
-//                     for(int k=0; k<map.frames[i]->obss[j]->track.size(); k++){
-//                         frame_list[map.frames[i]->obss[j]->track[k].frame]++;
-//                     }
-//                 }
-//             }
-//             std::cout<<"=========="<<map.frames[i]->id<<"=========="<<std::endl;
-//             for(std::map<std::shared_ptr<gm::Frame>,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
-//             {
-//                 std::cout<<mit->first->id<<" : "<<mit->second<<std::endl;
-//             }
-//         }
         gm::save_submap(map, map_filename);
     }
     

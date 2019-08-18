@@ -341,15 +341,15 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             std::string full_bag_name=full_bag_std+"/"+splited_addr.back();
             std::cout<<full_bag_name<<std::endl;
             NSString *full_cache_addr = [full_proj_addr stringByAppendingString:@"/cache"];
-//            if([fileManager fileExistsAtPath:full_cache_addr isDirectory:&isDir]){
-//                [fileManager removeItemAtPath:full_cache_addr error:nil];
-//            }
-//            [fileManager createDirectoryAtPath:full_cache_addr withIntermediateDirectories:YES attributes:nil error:NULL];
-//            NSString *full_local_addr = [full_proj_addr stringByAppendingString:@"/local"];
-//            if([fileManager fileExistsAtPath:full_local_addr isDirectory:&isDir]){
-//                [fileManager removeItemAtPath:full_local_addr error:nil];
-//            }
-//            [fileManager createDirectoryAtPath:full_local_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+            if([fileManager fileExistsAtPath:full_cache_addr isDirectory:&isDir]){
+                [fileManager removeItemAtPath:full_cache_addr error:nil];
+            }
+            [fileManager createDirectoryAtPath:full_cache_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+            NSString *full_local_addr = [full_proj_addr stringByAppendingString:@"/local"];
+            if([fileManager fileExistsAtPath:full_local_addr isDirectory:&isDir]){
+                [fileManager removeItemAtPath:full_local_addr error:nil];
+            }
+            [fileManager createDirectoryAtPath:full_local_addr withIntermediateDirectories:YES attributes:nil error:NULL];
             std::string cache_addr_std=std::string([full_cache_addr UTF8String]);
             std::string local_addr_std=std::string([full_local_addr UTF8String]);
             temp_api.process_bag(full_bag_name, cache_addr_std, local_addr_std);

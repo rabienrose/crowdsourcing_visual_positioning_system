@@ -13,6 +13,7 @@ void get_blockids_frome_gps_list(std::vector<Eigen::Vector3d>& gps_list, std::ve
     
 class GlobalMap {
 public:
+    ~GlobalMap();
     std::vector<std::shared_ptr<Frame>> frames;
     std::vector<std::shared_ptr<MapPoint>> mappoints;
     unsigned int map_id;
