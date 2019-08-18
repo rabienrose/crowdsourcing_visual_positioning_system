@@ -43,6 +43,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
         std::vector<Eigen::Matrix4d> poses;
         
         global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
+        //std::cout<<inliers_kps.size()<<std::endl;
         frame_inliers_mps.push_back(inliers_mps);
         frame_inliers_kps.push_back(inliers_kps);
         posess.push_back(poses);
@@ -53,14 +54,6 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                 
             }
         }
-        
-//         
-//         for(int k=0; k<poses.size(); k++){
-//             debug_points.push_back(poses[k].block(0,3,3,1));
-//         }
-//         frame_points.push_back(map.frames[i]->position);
-//         show_mp_as_cloud(debug_points, "debug");
-//         show_mp_as_cloud(frame_points, "debug_frame");
     }
     
     std::cout<<"done raw match!!"<<std::endl;

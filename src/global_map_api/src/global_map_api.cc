@@ -34,6 +34,14 @@
 #include "visualization/color-palette.h"
 #include "visualization/color.h"
 #include "visualization/common-rviz-visualization.h"
+void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
+    Eigen::Matrix3Xd points;
+    points.resize(3,mp_posis.size());
+    for(int i=0; i<mp_posis.size(); i++){
+        points.block<3,1>(0,i)=mp_posis[i];
+    }    
+    publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
+}
 #endif
 DECLARE_string(voc_addr);
 DECLARE_string(camera_config);
@@ -129,7 +137,6 @@ namespace gm{
                             delete sys_p;
                             sys_p=nullptr;
                         }
-                        return;
                     }
                 }catch (cv_bridge::Exception& e){
                     std::cout<<"err in main!!"<<std::endl;
@@ -205,14 +212,16 @@ namespace gm{
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
         //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
-        do_vslam(cache_addr, config_addr, bag_addr);
-        //std::vector<unsigned int> block_ids;
-        //convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
-        //merge_new(map_addr, localmap_addr, map_addr, block_ids);
-//        gm::GlobalMap map;
-//        gm::load_global_map(map, map_addr,block_ids);
-//        map.AssignKpToMp();
-//        update_corresponds(map, config_addr+"/words_projmat.fstream");
+        //do_vslam(cache_addr, config_addr, bag_addr);
+        std::vector<unsigned int> block_ids;
+        //block_ids.push_back(112224160);
+        convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
+        merge_new(map_addr, localmap_addr, map_addr, block_ids);
+        gm::GlobalMap map;
+        gm::load_global_map(map, map_addr,block_ids);
+        map.AssignKpToMp();
+        update_corresponds(map, config_addr+"/words_projmat.fstream");
+        //pose_graph_opti_se3(map);
 //        FLAGS_max_repro_err=100;
 //        optimize_BA(map, false);
 //        FLAGS_max_repro_err=20;

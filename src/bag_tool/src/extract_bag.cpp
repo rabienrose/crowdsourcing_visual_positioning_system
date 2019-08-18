@@ -171,10 +171,10 @@ void extract_bag(std::string out_addr_, std::string bag_addr_, std::string img_t
             gps_times_hcov.push_back(sec);
             gps_orths_hcov.push_back(coor_gps);
             if(sgps->status.status==sensor_msgs::NavSatStatus::STATUS_FIX){
-                gps_confid.push_back(0.05);
-                //gps_confid.push_back(sgps->position_covariance[0]);
+                //gps_confid.push_back(100);
+                gps_confid.push_back(sgps->position_covariance[0]);
             }else{
-                gps_confid.push_back(100);
+                gps_confid.push_back(sgps->position_covariance[0]);
             }
             
         }

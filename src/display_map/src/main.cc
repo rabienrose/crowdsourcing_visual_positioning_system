@@ -45,6 +45,7 @@ int main(int argc, char* argv[]){
     gm::GlobalMap map;
     //gm::load_submap(map, res_root,true);
     gm::load_global_map(map, res_root,map_ids);
+    //map.AssignKpToMp();
     std::vector<Eigen::Vector3d> traj_posi;
     std::vector<Eigen::Vector3d> mp_posi;
     std::vector<Eigen::Vector3d> gps_posi;

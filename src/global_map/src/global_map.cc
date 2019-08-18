@@ -42,13 +42,13 @@ namespace gm{
         }
     }
     GlobalMap::~GlobalMap(){
-        for(int i=0; i<frames.size(); i++){
-            frames[i]->obss.clear();
-            frames[i]->imu_next_frame=nullptr;
-        }
-        for(int i=0; i<mappoints.size(); i++){
-            mappoints[i]->track.clear();
-        }
+//         for(int i=0; i<frames.size(); i++){
+//             frames[i]->obss.clear();
+//             frames[i]->imu_next_frame=nullptr;
+//         }
+//         for(int i=0; i<mappoints.size(); i++){
+//             mappoints[i]->track.clear();
+//         }
     }
     
     

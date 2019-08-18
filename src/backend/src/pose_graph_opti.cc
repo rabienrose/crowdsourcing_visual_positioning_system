@@ -17,7 +17,7 @@
 
 
 DEFINE_int32(opti_count, 100, "How many of the iteration of optimization");
-DEFINE_double(gps_weight, 0.0001, "The weight of GPS impact in optimization");
+DEFINE_double(gps_weight, 0.01, "The weight of GPS impact in optimization");
 
 
 namespace g2o {
