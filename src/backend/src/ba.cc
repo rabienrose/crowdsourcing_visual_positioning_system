@@ -135,51 +135,46 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
 //     std::cout<<"pose opt count: "<<pose_opt_count<<std::endl;
     
     
-//     std::vector<std::shared_ptr<gm::Frame>, cv::Mat> proj_cv_mats;
-//     std::unordered_map<long unsigned int, int> frameid_inds_map;
-//     for(int i=0; i<map.frames.size(); i++){
-//         if(map.frames[i]->doMatch==false){
-//             continue;
-//         }
-//         Eigen::Matrix<double,3,4> P_double_34=map.frames[i]->getProjMat();
-//         cv::Mat cv_mat(3,4, CV_32FC1);
-//         for(int n=0; n<3; n++){
-//             for(int m=0; m<4; m++){
-//                 cv_mat.at<float>(n,m)=P_double_34(n,m);
-//             }
-//         }
-//         frameid_inds_map[map.frames[i]->id]=i;
-//         proj_cv_mats[map.frames[i]] = cv_mat;
-//     }
+    std::map<std::shared_ptr<gm::Frame>, cv::Mat> proj_cv_mats;
+    for(int i=0; i<map.frames.size(); i++){
+        Eigen::Matrix<double,3,4> P_double_34=map.frames[i]->getProjMat();
+        cv::Mat cv_mat(3,4, CV_32FC1);
+        for(int n=0; n<3; n++){
+            for(int m=0; m<4; m++){
+                cv_mat.at<float>(n,m)=P_double_34(n,m);
+            }
+        }
+        proj_cv_mats[map.frames[i]] = cv_mat;
+    }
 
     if(re_triangle==true){
-//         for(int i=0; i<map.mappoints.size(); i++){
-//             if(map.mappoints[i]->track.size()>=2){
-//                 int last_id=map.mappoints[i]->track.size()-1;
-//                 float u,v;
-//                 int octave;
-//                 map.mappoints[i]->track[0].getUV(u, v, octave);
-//                 std::vector<cv::Point2f> pts1;
-//                 cv::Point2f pt1(u, v);
-//                 pts1.push_back(pt1);
-//                 std::vector<cv::Point2f> pts2;
-//                 map.mappoints[i]->track[last_id].getUV(u, v, octave);
-//                 cv::Point2f pt2( u, v);
-//                 pts2.push_back(pt2);
-//                 cv::Mat proj1=proj_cv_mats[frameid_inds_map[map.mappoints[i]->track[0].frame]];
-//                 cv::Mat proj2=proj_cv_mats[frameid_inds_map[map.mappoints[i]->track[last_id].frame]];
-//                 cv::Mat out_posi;
-//                 cv::triangulatePoints(proj1, proj2, pts1, pts2, out_posi);
-//                 Eigen::Vector3d temp_posi;
-//                 temp_posi(0)=out_posi.at<float>(0)/out_posi.at<float>(3);
-//                 temp_posi(1)=out_posi.at<float>(1)/out_posi.at<float>(3);
-//                 temp_posi(2)=out_posi.at<float>(2)/out_posi.at<float>(3);
-//                 map.mappoints[i]->position=temp_posi;
-//                 //std::cout<<mp_posis_out[i].transpose()<<std::endl;
-//             }else{
-//                 map.mappoints[i]->isbad=true;
-//             }
-//         }
+        for(int i=0; i<map.mappoints.size(); i++){
+            if(map.mappoints[i]->track.size()>=2){
+                int last_id=map.mappoints[i]->track.size()-1;
+                float u,v;
+                int octave;
+                map.mappoints[i]->track[0].getUV(u, v, octave);
+                std::vector<cv::Point2f> pts1;
+                cv::Point2f pt1(u, v);
+                pts1.push_back(pt1);
+                std::vector<cv::Point2f> pts2;
+                map.mappoints[i]->track[last_id].getUV(u, v, octave);
+                cv::Point2f pt2( u, v);
+                pts2.push_back(pt2);
+                cv::Mat proj1=proj_cv_mats[map.mappoints[i]->track[0].frame];
+                cv::Mat proj2=proj_cv_mats[map.mappoints[i]->track[last_id].frame];
+                cv::Mat out_posi;
+                cv::triangulatePoints(proj1, proj2, pts1, pts2, out_posi);
+                Eigen::Vector3d temp_posi;
+                temp_posi(0)=out_posi.at<float>(0)/out_posi.at<float>(3);
+                temp_posi(1)=out_posi.at<float>(1)/out_posi.at<float>(3);
+                temp_posi(2)=out_posi.at<float>(2)/out_posi.at<float>(3);
+                map.mappoints[i]->position=temp_posi;
+                //std::cout<<mp_posis_out[i].transpose()<<std::endl;
+            }else{
+                map.mappoints[i]->isbad=true;
+            }
+        }
     }else{
         
     }
@@ -219,7 +214,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         new g2o::BlockSolverX(
             new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>()));
     optimizer.setAlgorithm(solver);
-    
+    optimizer.setVerbose(true);
     //add all vertice, number equal all poses 
     std::vector<g2o::VertexSE3Expmap*> kf_verts;
     long unsigned int maxKFid = 0;

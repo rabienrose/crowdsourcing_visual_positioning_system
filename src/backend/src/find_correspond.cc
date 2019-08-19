@@ -116,15 +116,17 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     //                     }
                     //LOG(INFO)<<"connected_frames: "<<connected_frames.size();
                     for(int j=0; j<connected_frames.size(); j++){
-                        Eigen::Matrix4d T_tarworld_sourworld = T_tar_sour;
-                        Eigen::Matrix4d T_tarworld_tar = connected_frames[j]->getPose();
-                        Eigen::Matrix4d T_sourworld_sour = matchid_2_frame[i]->getPose();
-                        Eigen::Matrix4d T_tar_tarworld = T_tarworld_tar.inverse();
-                        Eigen::Matrix4d T_tar_sour = T_tar_tarworld*T_tarworld_sourworld*T_sourworld_sour;
+//                         Eigen::Matrix4d T_tarworld_sourworld = T_tar_sour;
+//                         Eigen::Matrix4d T_tarworld_tar = connected_frames[j]->getPose();
+//                         Eigen::Matrix4d T_sourworld_sour = matchid_2_frame[i]->getPose();
+//                         Eigen::Matrix4d T_tar_tarworld = T_tarworld_tar.inverse();
+//                         Eigen::Matrix4d T_tar_sour = T_tar_tarworld*T_tarworld_sourworld*T_sourworld_sour;
+//                         Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
+//                         Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
+                        T_tar_sour=connected_frames[j]->getPose().inverse()*posess[i][n];
                         Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
                         Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
                         map.AddConnection(matchid_2_frame[i], connected_frames[j], posi, rot, scale_tar_sour, connected_weights[j]);
-
                     }
                 }
             }else{

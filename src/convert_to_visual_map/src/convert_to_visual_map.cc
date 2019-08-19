@@ -497,6 +497,7 @@ void convert_to_visual_map(std::string config_root, std::string res_root, std::s
                 global_map.mappoints.push_back(out_maps[n].mappoints[i]);
             }
         }
+        map.ReleaseMap();
     }
     gm::get_blockid_list(global_map, ids);
     if(global_map.frames.size()>3){

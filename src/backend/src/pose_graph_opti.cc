@@ -249,13 +249,16 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
 //     }
 //     show_mp_as_cloud(debug_points, "debug1");
 //     ros::spin();
-    
+    bool any_fix_frame=false;
     for(int i=0; i<map.frames.size(); i++){
         g2o::VertexSE3Expmap* vSE3 = new g2o::VertexSE3Expmap();
         Eigen::Matrix<double,3,3> R(map.frames[i]->direction);
         Eigen::Matrix<double,3,1> t=map.frames[i]->position;
         vSE3->setEstimate(g2o::SE3Quat(R,t).inverse());
         vSE3->setFixed(map.frames[i]->isborder);
+        if(map.frames[i]->isborder==true){
+            any_fix_frame=true;
+        }
         
         vSE3->setId(i);
         vSE3->setMarginalized(false);
@@ -265,7 +268,11 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
         frame_to_vertex[map.frames[i]]=vSE3;
         vertex_to_frame[vSE3]=map.frames[i];
     }
-
+    if(any_fix_frame==false){
+        if(v_se3_list.size()>0){
+            v_se3_list[0]->setFixed(true);
+        }
+    }
     std::vector<g2o::EdgePosiPreSE3*> gps_edges;
     for(int i=0; i<map.frames.size(); i++){
         if(map.frames[i]->isborder==true){
@@ -301,6 +308,7 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
             map.pose_graph_weight[i]=100;
         }
         Eigen::Matrix<double,6,6> matLambda = Eigen::Matrix<double,6,6>::Identity()*map.pose_graph_weight[i];
+        //Eigen::Matrix<double,6,6> matLambda = Eigen::Matrix<double,6,6>::Identity();
         e->information() = matLambda;
         e->computeError();
 
@@ -326,7 +334,7 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
     std::cout<<"sim3 edge err before: "<<avg_error<<std::endl;
     
     optimizer.initializeOptimization();
-    //optimizer.computeInitialGuess();
+    optimizer.computeInitialGuess();
     optimizer.optimize(FLAGS_opti_count);
     
     avg_error=0;
@@ -350,6 +358,8 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
         Eigen::Matrix3d eigR = CorrectedSiw.rotation().toRotationMatrix();
         Eigen::Vector3d eigt = CorrectedSiw.translation();
         Eigen::Matrix4d Tiw=Eigen::Matrix4d::Identity();
+        Tiw.block(0,0,3,3)=eigR;
+        Tiw.block(0,3,3,1)=eigt;
         vertex_to_frame[v_se3_list[i]]->setPose(Tiw.inverse());
     }
 }

@@ -214,21 +214,21 @@ namespace gm{
         //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
         //do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
-        block_ids.push_back(112224160);
+        //block_ids.push_back(112224160);
         convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         map.AssignKpToMp();
         update_corresponds(map, config_addr+"/words_projmat.fstream");
-        //pose_graph_opti_se3(map);
-//        FLAGS_max_repro_err=100;
-//        optimize_BA(map, false);
-//        FLAGS_max_repro_err=20;
-//        optimize_BA(map, false);
-//        culling_frame(map);
-//        reset_all_status(map, "all", false);
-//        gm::save_global_map(map, map_addr);
+        reset_all_status(map, "doMatch", true);
+        pose_graph_opti_se3(map);
+        FLAGS_max_repro_err=100;
+        optimize_BA(map, true);
+        FLAGS_max_repro_err=20;
+        optimize_BA(map, false);
+        culling_frame(map);
+        gm::save_global_map(map, map_addr);
         return true;
     }
     bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
