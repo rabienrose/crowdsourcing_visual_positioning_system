@@ -289,6 +289,9 @@ namespace chamo {
                 }
                 //std::cout << "["<<item.first<<": "<<item.second.size()<<"]";
             }
+            if(point3ds.size()<20){
+                continue;
+            }
             //std::cout<<std::endl;
             cv::Mat rvec;
             cv::Mat tvec;
@@ -315,9 +318,6 @@ namespace chamo {
 //                 int diff = map.mappoints[ransac_to_mpid[inliers.at<int>(i)]]->calDescDiff(query_desc);
 //                 std::cout<<diff<<std::endl;
 //             }
-            
-            
-            
             cv::Mat rot_m;
             cv::Rodrigues(rvec, rot_m);
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> rot_m_eigen;
@@ -369,11 +369,14 @@ namespace chamo {
                     }
                 }
             }
+            if(point3ds.size()<20){
+                continue;
+            }
             cv::Mat inliers_after_project;
             //std::cout<<"ran before: "<<point3ds.size()<<std::endl;
             cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers_after_project, cv::SOLVEPNP_EPNP);
             if(inliers.rows<20){
-                return;
+                continue;
             }
             //std::cout<<"ran after: "<<inliers_after_project.size()<<std::endl;
             
@@ -396,6 +399,5 @@ namespace chamo {
             inliers_kps.push_back(inliers_kp);
             inliers_mps.push_back(inliers_mp);
         }
-        return;
     }
 }
