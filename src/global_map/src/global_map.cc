@@ -41,14 +41,14 @@ namespace gm{
             blockid_list.push_back(*it);
         }
     }
-    GlobalMap::~GlobalMap(){
-//         for(int i=0; i<frames.size(); i++){
-//             frames[i]->obss.clear();
-//             frames[i]->imu_next_frame=nullptr;
-//         }
-//         for(int i=0; i<mappoints.size(); i++){
-//             mappoints[i]->track.clear();
-//         }
+    void GlobalMap::ReleaseMap(){
+        for(int i=0; i<frames.size(); i++){
+            frames[i]->obss.clear();
+            frames[i]->imu_next_frame=nullptr;
+        }
+        for(int i=0; i<mappoints.size(); i++){
+            mappoints[i]->track.clear();
+        }
     }
     
     

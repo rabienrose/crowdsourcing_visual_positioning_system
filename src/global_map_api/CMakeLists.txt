@@ -9,7 +9,7 @@ add_definitions(--std=c++11 -Wno-unknown-pragmas)
 cs_add_library(${PROJECT_NAME}_lib
     src/global_map_api.cc
 )
-target_compile_definitions(${PROJECT_NAME}_lib PRIVATE VISUALIZATION)
+#target_compile_definitions(${PROJECT_NAME}_lib PRIVATE VISUALIZATION)
 cs_add_executable(${PROJECT_NAME}
     src/main.cc
 )

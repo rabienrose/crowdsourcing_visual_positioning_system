@@ -197,6 +197,7 @@ namespace gm{
             putToFile(map.pose_graph_v2[i]->id, output);
         }
         output.close();
+        map.ReleaseMap();
     }
     
     void fast_load_mps(std::vector<Eigen::Vector3d>& posis, std::string file_addr, std::vector<unsigned int> ids){
