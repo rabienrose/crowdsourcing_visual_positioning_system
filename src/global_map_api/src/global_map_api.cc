@@ -97,7 +97,7 @@ namespace gm{
                         sys_p=new ORB_SLAM2::System();
                     }
                     bool re = sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
-                   std::cout<<img_count<<std::endl;
+//                    std::cout<<img_count<<std::endl;
 //                    if(img_count%300==0){
 //                        re=false;
 //                    }else{
@@ -211,8 +211,8 @@ namespace gm{
     }
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
-        //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
-        //do_vslam(cache_addr, config_addr, bag_addr);
+        extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
+        do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
         //block_ids.push_back(112224160);
         convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
