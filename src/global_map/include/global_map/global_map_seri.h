@@ -8,5 +8,6 @@ void save_global_map(GlobalMap& map, std::string file_addr);
 void load_global_map(GlobalMap& map, std::string file_addr, std::vector<unsigned int> map_ids);
 void load_global_map_by_gps(GlobalMap& map, std::string file_addr, Eigen::Vector3d gps_position);
 void get_blockid_list(GlobalMap& map, std::vector<unsigned int>& out_block_ids);
-void fast_load_mps(std::vector<Eigen::Vector3d>& posis, std::string file_addr, std::vector<unsigned int> ids);
+void fast_load_mps(std::vector<Eigen::Vector3d>& mp_posis, std::vector<Eigen::Vector3d>& kf_posis, std::vector<Eigen::Quaterniond>& kf_rot, std::string file_addr, std::vector<unsigned int> ids);
+void read_mpkf_count(int& mp_count, int& kf_count, std::string file_addr, std::vector<unsigned int> ids);
 }  // namespace gm

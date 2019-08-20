@@ -200,7 +200,31 @@ namespace gm{
         map.ReleaseMap();
     }
     
-    void fast_load_mps(std::vector<Eigen::Vector3d>& posis, std::string file_addr, std::vector<unsigned int> ids){
+    void read_mpkf_count(int& mp_count, int& kf_count, std::string file_addr, std::vector<unsigned int> ids){
+        if(ids.size()==0){
+            return;
+        }
+        mp_count=0;
+        kf_count=0;
+        for(int i=0; i<ids.size(); i++){
+            unsigned int map_id_temp=ids[i];
+            std::stringstream ss;
+            ss<<map_id_temp;
+            std::string full_file_name=file_addr+"/"+ss.str()+".map";
+            std::ifstream input(full_file_name.c_str(), std::ios::binary);
+            if(!input.is_open()){
+                return;
+            }
+            mp_count=mp_count+getFromFileI(input);
+            input.seekg ( mp_count*20, input.cur);
+            kf_count=kf_count+getFromFileI(input);
+        }
+    }
+    
+    void fast_load_mps(std::vector<Eigen::Vector3d>& mp_posis, std::vector<Eigen::Vector3d>& kf_posis, std::vector<Eigen::Quaterniond>& kf_rot, std::string file_addr, std::vector<unsigned int> ids){
+        if(ids.size()==0){
+            return;
+        }
         Eigen::Vector3d gps_anchor;
         get_gps_from_block_id(gps_anchor, ids[0]);
         for(int i=0; i<ids.size(); i++){
@@ -223,7 +247,36 @@ namespace gm{
                 posi.z()=getFromFileF2D(input);
                 Eigen::Vector3d out_tar_xyz;
                 convert_to_another_anchor(cur_gps_anchor, gps_anchor, posi, out_tar_xyz);
-                posis.push_back(out_tar_xyz);
+                mp_posis.push_back(out_tar_xyz);
+            }
+            int frames_size;
+            frames_size = getFromFileI(input);
+            for(int i=0; i<frames_size; i++){
+                input.seekg ( 8, input.cur);
+                getFromFileS(input);
+                input.seekg ( 13*4, input.cur);
+                Eigen::Vector3d temp_posi;
+                Eigen::Quaterniond temp_qua;
+                temp_posi.x()=getFromFileF2D(input);
+                temp_posi.y()=getFromFileF2D(input);
+                temp_posi.z()=getFromFileF2D(input);
+                temp_qua.w()=getFromFileF2D(input);
+                temp_qua.x()=getFromFileF2D(input);
+                temp_qua.y()=getFromFileF2D(input);
+                temp_qua.z()=getFromFileF2D(input);
+                Eigen::Vector3d out_tar_xyz;
+                convert_to_another_anchor(cur_gps_anchor, gps_anchor, temp_posi, out_tar_xyz);
+                kf_posis.push_back(out_tar_xyz);
+                kf_rot.push_back(temp_qua);
+                input.seekg ( 15*4, input.cur);
+                int kps_size;
+                kps_size=getFromFileI(input);
+                input.seekg ( kps_size*4*5, input.cur);
+                int desc_width=getFromFileI(input);
+                int desc_count=getFromFileI(input);
+                input.seekg ( desc_width*desc_count, input.cur);
+                int imu_count=getFromFileI(input);
+                input.seekg ( imu_count*8*4+8, input.cur);
             }
         }
     }

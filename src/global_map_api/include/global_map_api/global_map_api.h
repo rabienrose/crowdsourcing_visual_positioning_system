@@ -20,11 +20,12 @@ namespace gm{
     public:
         bool init(std::string config_addr_, std::string map_addr_);
         bool load_map(std::vector<Eigen::Vector3d> gps_positions);
-        bool get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<unsigned int> ids);
-        bool process_bag(std::string bag_addr, std::string cache_addr_, std::string localmap_addr);
+        bool get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<Eigen::Vector3d>& kf_posis, std::vector<Eigen::Quaterniond>& kf_rot, std::vector<unsigned int> ids);
+        bool process_bag(std::string bag_addr, std::string cache_addr_, std::string localmap_addr, std::string& status);
         bool locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position,
             std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp
         );
+        bool get_mpkf_count(int& mp_count, int& kf_count, std::vector<unsigned int> ids);
     private:
         std::string config_addr;
         std::string map_addr;

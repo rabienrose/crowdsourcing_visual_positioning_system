@@ -13,19 +13,16 @@
 @end
 #define PI 3.1415
 @implementation ViewController
-- (IBAction)slider_z_min_action:(id)sender{
-    std::cout<<_z_min_slider.value<<std::endl;
+- (IBAction)slider_z_action:(id)sender{
+    [self update_scene];
     
 }
-- (IBAction)slider_z_max_action:(id)sender{
-    
-}
+
 - (void) handleTap:(UIGestureRecognizer*)gestureRecognize{
     //std::cout<<"tap"<<std::endl;
 }
 
 - (void) handlePan:(UIGestureRecognizer*)gestureRecognize{
-    std::cout<<"pan"<<std::endl;
     UIPanGestureRecognizer* reco = (UIPanGestureRecognizer*)gestureRecognize;
     CGPoint p = [reco translationInView:_image_view];
     if(reco.numberOfTouches==2){
@@ -80,30 +77,101 @@
     scene_w=900;
     scene_h=600;
 }
-- (void) set_cur_posi: (Eigen::Vector3d) posis{
-    center_posi =posis;
+- (void) set_cur_posi: (Eigen::Vector3d) cur_posis matches:(std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>) cur_matches{
+    center_posi =cur_posis;
+    matches=cur_matches;
 }
     
-- (void) showPC: (std::vector<Eigen::Vector3d>&) posis{
-    mps=posis;
+- (void) showPC: (std::vector<Eigen::Vector3d>&) mp_posis kf:(std::vector<Eigen::Vector3d>&) kf_posis{
+    mps=mp_posis;
+    kfs = kf_posis;
     [self update_scene];
+}
+- (bool) checkPtVisible:(Eigen::Vector3d)pt pix_pt:(Eigen::Vector3d&)pix_posi{
+    pix_posi = (pt-center_posi)*pix_per_meter;
+    if(fabs(pix_posi(1))<scene_h/2 && fabs(pix_posi(0))<scene_w/2){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 - (void) update_scene{
     UIImage *ui_image;
-    cv::Mat img=cv::Mat(scene_h,scene_w,CV_8UC4,cv::Scalar(0,0,0,255));
-    for(int i=0; i<mps.size(); i++){
-        Eigen::Vector3d pix_posi;
-        pix_posi = (mps[i]-center_posi)*pix_per_meter;
-        if(fabs(pix_posi(1))<scene_h/2 && fabs(pix_posi(0))<scene_w/2){
-            img.at<cv::Scalar_<unsigned char>>(-pix_posi(1)+scene_h/2, pix_posi(0)+scene_w/2)=cv::Scalar(255,255,255,255);
-            //cv::circle(img, cv::Point2f(pix_posi(1)+scene_w/2, pix_posi(0)+scene_h/2), 1, cv::Scalar(255,255,255,255));
+    cv::Mat img=cv::Mat(scene_h,scene_w,CV_8UC4,cv::Scalar(255,255,255,255));
+    if(self.mp_s.on){
+        for(int i=0; i<mps.size(); i++){
+            if(mps[i](2)>self.z_min_slider.value && mps[i](2)<self.z_max_slider.value){
+                Eigen::Vector3d pix_posi;
+                if([self checkPtVisible:mps[i] pix_pt:pix_posi]){
+                    img.at<cv::Scalar_<unsigned char>>(-pix_posi(1)+scene_h/2, pix_posi(0)+scene_w/2)=cv::Scalar(0,0,0,255);
+                }
+            }
         }
     }
+    if(self.kf_s.on){
+        for(int i=0; i<kfs.size(); i++){
+            Eigen::Vector3d pix_posi;
+            if([self checkPtVisible:kfs[i] pix_pt:pix_posi]){
+                for(int n=-1; n<=1; n++){
+                    for(int m=-1; m<=1; m++){
+                        int row=-pix_posi(1)+scene_h/2+n;
+                        int col=pix_posi(0)+scene_w/2+m;
+                        if(col<0 || col>=img.cols || row<0 || row>=img.rows){
+                            continue;
+                        }
+                        
+                        img.at<cv::Scalar_<unsigned char>>(row, col )=cv::Scalar(0,255,0,255);
+                    }
+                }
+                
+                //cv::circle(img, cv::Point2f(pix_posi(0)+scene_w/2, -pix_posi(1)+scene_h/2), 2,  cv::Scalar(0,255,0,255), 3);
+            }
+        }
+    }
+    if(self.traj_s.on){
+        for(int i=0; i<traj.size(); i++){
+            Eigen::Vector3d pix_posi;
+            if([self checkPtVisible:traj[i] pix_pt:pix_posi]){
+                cv::circle(img, cv::Point2f(pix_posi(0)+scene_w/2, -pix_posi(1)+scene_h/2), 2,  cv::Scalar(0,255,0,255), 3);
+            }
+        }
+    }
+    if(self.match_s.on){
+        for(int i=0; i<matches.size(); i++){
+            Eigen::Vector3d pix_posi1;
+            if([self checkPtVisible:matches[i].first pix_pt:pix_posi1]){
+                Eigen::Vector3d pix_posi2;
+                if([self checkPtVisible:matches[i].second pix_pt:pix_posi2]){
+                    cv::line(img, cv::Point2f(pix_posi1(0), pix_posi1(1)), cv::Point2f(pix_posi2(0), pix_posi2(1)),  cv::Scalar(0,0,255,255), 1);
+                }
+            }
+        }
+    }
+    
     ui_image = [mm_Try UIImageFromCVMat:img];
     dispatch_async( dispatch_get_main_queue(), ^{
         self.image_view.image=ui_image;
     });
 }
+
+- (IBAction)go_map_list:(id)sender {
+}
+- (IBAction)clear_all:(id)sender {
+    
+}
+- (IBAction)mp_switch:(id)sender {
+    [self update_scene];
+}
+- (IBAction)kf_switch:(id)sender {
+    [self update_scene];
+}
+- (IBAction)traj_switch:(id)sender {
+    [self update_scene];
+}
+- (IBAction)match_switch:(id)sender {
+    [self update_scene];
+}
+
 
 @end

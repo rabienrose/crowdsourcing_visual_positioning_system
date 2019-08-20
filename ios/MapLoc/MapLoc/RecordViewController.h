@@ -21,6 +21,7 @@
 @interface RecordViewController : UIViewController<AVCaptureVideoDataOutputSampleBufferDelegate>{
     CMMotionManager *motionManager;
     dispatch_queue_t sessionQueue;
+    dispatch_queue_t updateQueue;
     NSOperationQueue *quene;
     AVCaptureSession *session;
     AVCaptureDeviceInput *videoDeviceInput;
@@ -37,8 +38,17 @@
     int last_kf_count;
     BagListDelegate *dele_map;
     gm::GlobalMapApi api;
+    std::string status_mapping;
 }
-@property (weak, nonatomic) IBOutlet UILabel *debug_record;
+@property (weak, nonatomic) IBOutlet UILabel *status_label;
+@property (weak, nonatomic) IBOutlet UILabel *mem_label;
+@property (weak, nonatomic) IBOutlet UILabel *proc_label;
+@property (weak, nonatomic) IBOutlet UILabel *bag_label;
+@property (weak, nonatomic) IBOutlet UILabel *mp_label;
+@property (weak, nonatomic) IBOutlet UILabel *kf_label;
+
+
+
 
 @property (nonatomic, weak) id<FrameInfoDelegate> frameDelegate;
 @property (nonatomic, weak) id<SceneInfoDelegate> sceneDelegate;

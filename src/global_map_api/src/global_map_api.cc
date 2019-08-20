@@ -180,15 +180,18 @@ namespace gm{
         cur_map=nullptr;
         Eigen::Matrix3d cam_inter;
         Eigen::Vector4d cam_distort;
-        read_cam_info(config_addr+"/camera_config.txt", cam_inter, cam_distort);
-        fx=cam_inter(0,0);
-        fy=cam_inter(1,1);
-        cx=cam_inter(0,2);
-        cy=cam_inter(1,2);
-        k1=cam_distort(0);
-        k2=cam_distort(1);
-        p1=cam_distort(2);
-        p2=cam_distort(3);
+        if(config_addr_.size()>0){
+            read_cam_info(config_addr+"/camera_config.txt", cam_inter, cam_distort);
+            fx=cam_inter(0,0);
+            fy=cam_inter(1,1);
+            cx=cam_inter(0,2);
+            cy=cam_inter(1,2);
+            k1=cam_distort(0);
+            k2=cam_distort(1);
+            p1=cam_distort(2);
+            p2=cam_distort(3);
+        }
+        
         return true;
     }
     bool GlobalMapApi::load_map(std::vector<Eigen::Vector3d> gps_positions){
@@ -205,31 +208,47 @@ namespace gm{
         matcher->LoadMap(config_addr+"/words_projmat.fstream", *cur_map ,est_posi);
         return true;
     }
-    bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<unsigned int> ids){
-        gm::fast_load_mps(out_pointcloud, map_addr, ids);
+    bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<Eigen::Vector3d>& kf_posis, std::vector<Eigen::Quaterniond>& kf_rot, std::vector<unsigned int> ids){
+        gm::fast_load_mps(out_pointcloud,kf_posis, kf_rot, map_addr, ids);
         return true;
     }
     
-    bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr){
+    bool GlobalMapApi::get_mpkf_count(int& mp_count, int& kf_count, std::vector<unsigned int> ids){
+        gm::read_mpkf_count(mp_count, kf_count, map_addr, ids);
+        return true;
+    }
+    
+    bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
+        status="extract bag";
         extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
+        status="slam";
         do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
         //block_ids.push_back(112224160);
+        status="align";
         convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
+        status="merge";
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         map.AssignKpToMp();
+        status="match";
         update_corresponds(map, config_addr+"/words_projmat.fstream");
         reset_all_status(map, "doMatch", true);
+        status="pose opt";
         pose_graph_opti_se3(map);
         FLAGS_max_repro_err=100;
+        status="1st BA";
         optimize_BA(map, true);
         FLAGS_max_repro_err=20;
+        status="2nd BA";
         optimize_BA(map, false);
+        status="culling";
         culling_frame(map);
         reset_all_status(map, "all", false);
+        status="save";
         gm::save_global_map(map, map_addr);
+        status="done";
         return true;
     }
     bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
