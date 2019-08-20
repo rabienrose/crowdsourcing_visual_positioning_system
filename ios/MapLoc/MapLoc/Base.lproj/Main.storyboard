@@ -177,15 +177,15 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3mQ-z1-hh2">
-                                <rect key="frame" x="44" y="0.0" width="500" height="393"/>
+                                <rect key="frame" x="44" y="0.0" width="250" height="393"/>
                                 <subviews>
                                     <pickerView contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qQq-6x-6yj" userLabel="Map List">
-                                        <rect key="frame" x="0.0" y="0.0" width="500" height="393"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="250" height="393"/>
                                     </pickerView>
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="500" id="Gnn-hs-WI7"/>
+                                    <constraint firstAttribute="width" constant="250" id="Gnn-hs-WI7"/>
                                     <constraint firstAttribute="trailing" secondItem="qQq-6x-6yj" secondAttribute="trailing" id="ILD-Mg-0W8"/>
                                     <constraint firstItem="qQq-6x-6yj" firstAttribute="leading" secondItem="3mQ-z1-hh2" secondAttribute="leading" id="OQ6-EF-nnm"/>
                                     <constraint firstItem="qQq-6x-6yj" firstAttribute="top" secondItem="3mQ-z1-hh2" secondAttribute="top" id="uzu-zq-Y0v"/>
@@ -193,7 +193,7 @@
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mIB-71-jnv">
-                                <rect key="frame" x="544" y="0.0" width="100" height="393"/>
+                                <rect key="frame" x="294" y="0.0" width="100" height="393"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SJU-oJ-b9m">
                                         <rect key="frame" x="0.0" y="0.0" width="100" height="30"/>
@@ -228,6 +228,14 @@
                                         <state key="normal" title="New"/>
                                         <connections>
                                             <action selector="new_btn:" destination="9ls-vt-jnu" eventType="touchUpInside" id="dDh-kQ-y1w"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Gcl-9y-5w3" userLabel="Clear">
+                                        <rect key="frame" x="0.0" y="181" width="100" height="30"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <state key="normal" title="Clear"/>
+                                        <connections>
+                                            <action selector="new_btn:" destination="9ls-vt-jnu" eventType="touchUpInside" id="oga-4v-zhX"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UPL-GN-Yts">

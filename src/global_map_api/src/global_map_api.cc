@@ -228,6 +228,7 @@ namespace gm{
         FLAGS_max_repro_err=20;
         optimize_BA(map, false);
         culling_frame(map);
+        reset_all_status(map, "all", false);
         gm::save_global_map(map, map_addr);
         return true;
     }

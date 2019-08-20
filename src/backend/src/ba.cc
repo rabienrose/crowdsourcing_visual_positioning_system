@@ -60,6 +60,7 @@ namespace g2o {
 
 void optimize_BA(gm::GlobalMap& map, bool re_triangle){
     map.CalConnections();
+    map.FilterTrack();
     int pose_opt_count=0;
     std::vector<std::shared_ptr<gm::Frame>> cur_level_frames;
     std::vector<Eigen::Vector3d> debug_points;
