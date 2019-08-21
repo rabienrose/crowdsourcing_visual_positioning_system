@@ -213,11 +213,12 @@ namespace gm{
             std::string full_file_name=file_addr+"/"+ss.str()+".map";
             std::ifstream input(full_file_name.c_str(), std::ios::binary);
             if(!input.is_open()){
-                return;
+                continue;
             }
             mp_count=mp_count+getFromFileI(input);
             input.seekg ( mp_count*20, input.cur);
             kf_count=kf_count+getFromFileI(input);
+            input.close();
         }
     }
     
@@ -236,7 +237,7 @@ namespace gm{
             std::string full_file_name=file_addr+"/"+ss.str()+".map";
             std::ifstream input(full_file_name.c_str(), std::ios::binary);
             if(!input.is_open()){
-                return;
+                continue;
             }
             int mappoints_size=getFromFileI(input);
             for(int i=0; i<mappoints_size; i++){
@@ -278,6 +279,7 @@ namespace gm{
                 int imu_count=getFromFileI(input);
                 input.seekg ( imu_count*8*4+8, input.cur);
             }
+            input.close();
         }
     }
 

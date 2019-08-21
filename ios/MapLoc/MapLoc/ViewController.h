@@ -6,14 +6,13 @@
 
 @interface ViewController : UIViewController<SceneInfoDelegate>{
     dispatch_queue_t sessionQueue;
-    DetailViewController *detail_view;
     Eigen::Vector2f cam_center;
     float pix_per_meter;
     Eigen::Vector3d center_posi;
     std::vector<Eigen::Vector3d> mps;
      std::vector<Eigen::Vector3d> kfs;
     std::vector<Eigen::Vector3d> traj;
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> matches;
+    std::vector<Eigen::Vector3d> matches;
     
     int scene_w;
     int scene_h;

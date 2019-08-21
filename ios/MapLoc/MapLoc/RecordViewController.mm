@@ -8,18 +8,38 @@
 #include <cv_bridge/cv_bridge.h>
 #include <chamo_common/common.h>
 #import <mach/mach.h>
+#include <math.h>
+
+#include <sensor_msgs/NavSatFix.h>
 
 @implementation RecordViewController
-
+static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     sessionQueue = dispatch_queue_create( "session queue", DISPATCH_QUEUE_SERIAL );
     updateQueue = dispatch_queue_create( "update queue", DISPATCH_QUEUE_SERIAL );
+    recordingQueue = dispatch_queue_create( "recording queue", DISPATCH_QUEUE_SERIAL );
+    sensorQueue = dispatch_queue_create( "sensor queue", DISPATCH_QUEUE_SERIAL );
     quene =[[NSOperationQueue alloc] init];
     quene.maxConcurrentOperationCount=1;
-    //motionManager = [[CMMotionManager alloc] init];
-
+    locate_count=0;
+    UIStoryboard* storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+    frame_view = [storyboard instantiateViewControllerWithIdentifier:@"DetailViewController"];
+    map_view = [storyboard instantiateViewControllerWithIdentifier:@"ViewController"];
+    _sceneDelegate=map_view;
+    _frameDelegate=frame_view;
+    frame_view_update_count=0;
+    sync_sensor_time =-1;
+    _locationManager = [[CLLocationManager alloc] init];
+    self.locationManager.delegate = self;
+    self.locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    self.locationManager.distanceFilter = kCLDistanceFilterNone;
+    if ([_locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
+        [_locationManager requestWhenInUseAuthorization];
+    }
+    motionManager = [[CMMotionManager alloc] init];
+    is_locating=false;
     session = [[AVCaptureSession alloc] init];
     NSError *error = nil;
     [session beginConfiguration];
@@ -51,9 +71,22 @@
         NSLog(@"add output wrong!!!");
     }
 
-    [video_output setSampleBufferDelegate:self queue:sessionQueue];
-
+    [video_output setSampleBufferDelegate:self queue:sensorQueue];
     [session commitConfiguration];
+    if ( [videoDevice lockForConfiguration:&error] ) {
+        if ( [videoDevice isFocusModeSupported:AVCaptureFocusModeLocked] ) {
+            videoDevice.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+        }
+        if([videoDevice isExposureModeSupported:AVCaptureExposureModeCustom]){
+            videoDevice.exposureMode=AVCaptureExposureModeCustom;
+        }
+        //[videoDevice setFocusModeLockedWithLensPosition:0.8 completionHandler:nil];
+        [videoDevice setExposureModeCustomWithDuration:CMTimeMakeWithSeconds( 0.01, 1000*1000*1000 ) ISO:AVCaptureISOCurrent completionHandler:nil];
+        [videoDevice unlockForConfiguration];
+    }else {
+        NSLog( @"Could not lock device for configuration: %@", error );
+    }
+
     img_count=0;
     dele_map= [[BagListDelegate alloc] init];
     self.map_list_ui.delegate = dele_map;
@@ -78,6 +111,74 @@
             [NSThread sleepForTimeInterval:1.0f];
         }
     });
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
+    
+    if (context == ExposureTargetOffsetContext){
+        frame_view_update_count++;
+        float newExposureTargetOffset = [change[NSKeyValueChangeNewKey] floatValue];
+        //NSLog(@"Offset is : %f, ISO: %f, shutter: %f",newExposureTargetOffset, videoDevice.ISO, CMTimeGetSeconds(videoDevice.exposureDuration));
+        if(frame_view_update_count%10==0){
+            [self.frameDelegate showCurInfo:-1 match_count:-1 expo_time:CMTimeGetSeconds(videoDevice.exposureDuration) iso:videoDevice.ISO offset:newExposureTargetOffset gps_accu: -1];
+        }
+       
+        
+        if(!videoDevice) return;
+        
+        CGFloat currentISO = videoDevice.ISO;
+        CGFloat biasISO = 0;
+        float isoChangeStep=0;
+        float limit = 0.05;
+        if (fabs(newExposureTargetOffset) > 1) {
+            isoChangeStep = 50;
+        } else if (fabs(newExposureTargetOffset) > 0.5) {
+            isoChangeStep = 30;
+        } else if (fabs(newExposureTargetOffset) > 0.2) {
+            isoChangeStep = 10;
+        } else if (fabs(newExposureTargetOffset) > 0.1) {
+            isoChangeStep = 3;
+        } else {
+            isoChangeStep = 1;
+        }
+        if (newExposureTargetOffset > limit) {
+            biasISO -= isoChangeStep;
+        } else if (newExposureTargetOffset < -limit) {
+            biasISO += isoChangeStep;
+        } else {
+            return;
+        }
+        
+        if(biasISO){
+            //Normalize ISO level for the current device
+            CGFloat newISO = currentISO+biasISO;
+            newISO = newISO > videoDevice.activeFormat.maxISO? videoDevice.activeFormat.maxISO : newISO;
+            newISO = newISO < videoDevice.activeFormat.minISO? videoDevice.activeFormat.minISO : newISO;
+            
+            NSError *error = nil;
+            if ([videoDevice lockForConfiguration:&error]) {
+                [videoDevice setExposureModeCustomWithDuration:CMTimeMakeWithSeconds( 0.01, 1000*1000*1000 ) ISO:newISO completionHandler:^(CMTime syncTime) {}];
+                [videoDevice unlockForConfiguration];
+            }
+        }
+    }
+}
+- (IBAction)del:(id)sender {
+    NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
+    bool isDir;
+    NSFileManager *fileManager= [NSFileManager defaultManager];
+    if([fileManager fileExistsAtPath:full_map_addr isDirectory:&isDir]){
+        [fileManager removeItemAtPath:full_map_addr error:nil];
+    }
+    [self update_maplist];
+}
+
+- (IBAction)goto_frame_btn:(id)sender {
+    [self presentViewController:frame_view animated:NO completion:nil];
+}
+- (IBAction)goto_map_btn:(id)sender {
+    [self presentViewController:map_view animated:NO completion:nil];
 }
 
 void interDouble(double v1, double v2, double t1, double t2, double& v3_out, double t3){
@@ -109,7 +210,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
                 msg.header.seq=imu_data_seq;
                 msg.header.stamp= ros::Time(gyros[i][3]);
                 msg.header.frame_id="map";
-                dispatch_async(sessionQueue, ^{
+                dispatch_async(recordingQueue, ^{
                     if (is_recording_bag){
                         if(bag_ptr->isOpen()){
                             NSDate * t1 = [NSDate date];
@@ -198,10 +299,27 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
     CMTime timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
-    double sync_sensor_time = (double)timestamp.value/(double)timestamp.timescale;
+    sync_sensor_time = (double)timestamp.value/(double)timestamp.timescale;
+    sync_sys_time = [NSDate date];
     double time_sec = (double)timestamp.value/(double)timestamp.timescale;
     UIImage *image = [self imageFromSampleBuffer:sampleBuffer];
     cv::Mat img_cv = [mm_Try cvMatFromUIImage:image];
+    if(is_locating){
+        locate_count++;
+        if(locate_count%5==0){
+            dispatch_async( recordingQueue, ^{
+                Eigen::Matrix4d pose;
+                std::vector<cv::Point2f> inliers_kp;
+                std::vector<Eigen::Vector3d> inliers_mp;
+                cv::Mat img_gray;
+                cv::cvtColor(img_cv, img_gray, CV_BGRA2GRAY);
+                api.locate_img(img_gray, pose, Eigen::Vector3d(-1,-1,-1), inliers_kp, inliers_mp);
+                if(inliers_kp.size()>20){
+                    [self.sceneDelegate set_cur_posi: pose.block(0,3,3,1) matches:inliers_mp update_center:false];
+                }
+            });
+        }
+    }
     [self.frameDelegate showFrame: img_cv];
     sensor_msgs::CompressedImage img_ros_img;
     std::vector<unsigned char> binaryBuffer_;
@@ -218,7 +336,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
 //    img_ros_img->encoding="bgra8";
 //    img_ros_img->header.seq=img_count;
 //    img_ros_img->header.stamp= ros::Time(sync_sensor_time);
-    dispatch_async( sessionQueue, ^{
+    dispatch_async( recordingQueue, ^{
         if(is_recording_bag){
             if(bag_ptr->isOpen()){
                 NSDate * t1 = [NSDate date];
@@ -230,16 +348,11 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     img_count++;
 }
 
-- (IBAction)exit_btn:(id)sender {
-    [self dismissViewControllerAnimated:false completion: nil];
-}
-
 - (void)viewWillDisappear:(BOOL)animated{
 }
 - (IBAction)start_record:(id)sender {
     if(!is_recording_bag){
-        [self start_sensor];
-        dispatch_async( sessionQueue, ^{
+        dispatch_async( recordingQueue, ^{
             NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
             NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
             full_map_addr = [full_map_addr stringByAppendingString:@"/bag"];
@@ -262,26 +375,115 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             bag_ptr->open(full_file_name.c_str(), rosbag::bagmode::Write);
             is_recording_bag=true;
         });
-        //[self update_baglist];
-        [sender setTitle:@"Stop" forState:UIControlStateNormal];
+        [sender setTitle:@"Stop Re" forState:UIControlStateNormal];
     }else{
         is_recording_bag=false;
-        dispatch_async( sessionQueue, ^{
+        dispatch_async( recordingQueue, ^{
             bag_ptr->close();
             NSLog(@"close the bag");
-            [self start_sensor];
         });
         [sender setTitle:@"Record" forState:UIControlStateNormal];
-        [self update_maplist];
     }
+}
+- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation {
     
+    if (newLocation.horizontalAccuracy < 0) {
+        return;
+    }
+    NSTimeInterval locationAge = -[newLocation.timestamp timeIntervalSinceNow];
+    if (locationAge > 5.0) {
+        return;
+    }
+    [self recordGPS: newLocation];
 }
 
--(void) start_sensor {
+bool outOfChina(double lat, double lon) {
+    if (lon < 72.004 || lon > 137.8347) return true;
+    if (lat < 0.8293 || lat > 55.8271) return true;
+    return false;
+}
+double transformLat(double x, double y) {
+    double pi = 3.1415926535897932384626;
+    double ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y
+    + 0.2 * sqrt(fabs(x));
+    ret += (20.0 * sin(6.0 * x * pi) + 20.0 * sin(2.0 * x * pi)) * 2.0 / 3.0;
+    ret += (20.0 * sin(y * pi) + 40.0 * sin(y / 3.0 * pi)) * 2.0 / 3.0;
+    ret += (160.0 * sin(y / 12.0 * pi) + 320 * sin(y * pi / 30.0)) * 2.0 / 3.0;
+    return ret;
+}
+double transformLon(double x, double y) {
+    double pi = 3.1415926535897932384626;
+    double ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1* sqrt(fabs(x));
+    ret += (20.0 * sin(6.0 * x * pi) + 20.0 * sin(2.0 * x * pi)) * 2.0 / 3.0;
+    ret += (20.0 * sin(x * pi) + 40.0 * sin(x / 3.0 * pi)) * 2.0 / 3.0;
+    ret += (150.0 * sin(x / 12.0 * pi) + 300.0 * sin(x / 30.0 * pi)) * 2.0 / 3.0;
+    return ret;
+}
+
+void gps84_To_Gcj02(double& lat, double& lon) {
+    double pi = 3.1415926535897932384626;
+    double ee = 0.00669342162296594323;
+    double a = 6378245.0;
+    if (outOfChina(lat, lon)) {
+        return;
+    }
+    double dLat = transformLat(lon - 105.0, lat - 35.0);
+    double dLon = transformLon(lon - 105.0, lat - 35.0);
+    double radLat = lat / 180.0 * pi;
+    double magic = sin(radLat);
+    magic = 1 - ee * magic * magic;
+    double sqrtMagic = sqrt(magic);
+    dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
+    dLon = (dLon * 180.0) / (a / sqrtMagic * cos(radLat) * pi);
+    lat = lat + dLat;
+    lon = lon + dLon;
+}
+
+- (void)recordGPS:(CLLocation *)newLocation{
+    if(sync_sensor_time<0){
+        return;
+    }
+    
+    [self.frameDelegate showCurInfo:-1 match_count:-1 expo_time:-1 iso:-1 offset:-1  gps_accu: newLocation.horizontalAccuracy];
+    sensor_msgs::NavSatFix msg;
+    msg.latitude=newLocation.coordinate.latitude;
+    msg.longitude=newLocation.coordinate.longitude;
+    gps84_To_Gcj02(msg.latitude, msg.longitude);
+    msg.altitude=newLocation.altitude;
+    msg.position_covariance[0]=newLocation.horizontalAccuracy;
+    msg.position_covariance[3]=newLocation.horizontalAccuracy;
+    msg.position_covariance[6]=newLocation.verticalAccuracy;
+    static int gps_data_seq=0;
+    msg.header.seq=gps_data_seq;
+    gps_data_seq++;
+    NSDate* eventDate = newLocation.timestamp;
+    
+    double time_change = [eventDate timeIntervalSinceDate:sync_sys_time];
+    double howRecent = time_change+sync_sensor_time;
+    msg.header.stamp = ros::Time(howRecent);
+    msg.header.frame_id="map";
+    dispatch_async( recordingQueue, ^{
+        if (is_recording_bag){
+            if(bag_ptr->isOpen()){
+                NSDate * t1 = [NSDate date];
+                NSTimeInterval now = [t1 timeIntervalSince1970];
+                bag_ptr->write("gps", ros::Time(now), msg);
+            }
+        }
+    });
+}
+
+- (IBAction)start_sensor:(id)sender {
     if(session.running){
+        [sender setTitle:@"Sensor" forState:UIControlStateNormal];
+        [self removeObserver:self forKeyPath:@"videoDevice.exposureTargetOffset" context:ExposureTargetOffsetContext];
         [session stopRunning];
+        [self.locationManager stopUpdatingLocation];
     }else{
+        [sender setTitle:@"Stop Sen" forState:UIControlStateNormal];
+        [self addObserver:self forKeyPath:@"videoDevice.exposureTargetOffset" options:NSKeyValueObservingOptionNew context:ExposureTargetOffsetContext];
         [session startRunning];
+        [self.locationManager startUpdatingLocation];
     }
     
     if(motionManager.accelerometerActive){
@@ -376,10 +578,6 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
         self.mp_label.text=[NSString stringWithFormat:@"MP: %d", mp_count];
         self.kf_label.text=[NSString stringWithFormat:@"KF: %d", kf_count];
     }
-   
-    
-    
-    
 }
 
 - (IBAction)start_mapping:(id)sender {
@@ -433,6 +631,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             std::string cache_addr_std=std::string([full_cache_addr UTF8String]);
             std::string local_addr_std=std::string([full_local_addr UTF8String]);
             temp_api.process_bag(full_bag_name, cache_addr_std, local_addr_std, status_mapping);
+            [fileManager removeItemAtPath:[[NSString alloc] initWithUTF8String:full_bag_name.c_str()] error:nil];
         }
         dispatch_async( dispatch_get_main_queue(), ^{
             self.proc_label.text=@"None";
@@ -478,13 +677,14 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             unsigned int temp_id=stoul(filename_std);
             ids.push_back(temp_id);
         }
+        api.Release();
         gm::GlobalMapApi temp_api;
         api=temp_api;
         api.init(config_addr_std, map_addr_std);
+        api.load_map(ids);
         std::vector<Eigen::Vector3d> out_pointcloud;
         std::vector<Eigen::Vector3d> kf_posis;
         std::vector<Eigen::Quaterniond> kf_rot;
-        
         api.get_pointcloud(out_pointcloud, kf_posis, kf_rot, ids);
         Eigen::Vector3d av_posi;
         int mp_count=out_pointcloud.size();
@@ -494,21 +694,24 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
         for(int i=0; i<out_pointcloud.size(); i++){
             out_pointcloud[i](2)=out_pointcloud[i](2)-av_posi(2);
         }
-        std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> matches;
-        [self.sceneDelegate set_cur_posi: av_posi matches:matches];
+        std::vector<Eigen::Vector3d> matches;
+        [self.sceneDelegate set_cur_posi: av_posi matches:matches update_center:true];
         [self.sceneDelegate showPC: out_pointcloud kf:kf_posis];
     }
 }
 - (IBAction)locate:(id)sender {
+    if(!is_locating){
+        is_locating=true;
+        [sender setTitle:@"Stop Loc" forState:UIControlStateNormal];
+    }else{
+        is_locating=false;
+        [sender setTitle:@"Locate" forState:UIControlStateNormal];
+    }
+    
 }
 
 - (void)viewDidAppear:(BOOL)animated{
     [self update_maplist];
 }
-
-- (IBAction)go_to_frame_page:(id)sender {
-    [self dismissViewControllerAnimated:false completion: nil];
-}
-
 
 @end

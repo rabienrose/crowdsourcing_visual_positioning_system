@@ -6,18 +6,11 @@
 {
 	[super viewDidLoad];
     sessionQueue = dispatch_queue_create( "session queue", DISPATCH_QUEUE_SERIAL );
-    UIStoryboard* storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
-    record_view = [storyboard instantiateViewControllerWithIdentifier:@"RecordViewController"];
-    record_view.frameDelegate = self;
-    record_view.sceneDelegate=self.sceneDelegate;
+    
 }
 
 - (IBAction)exit_btn:(id)sender {
     [self dismissViewControllerAnimated:false completion: nil];
-}
-
-- (IBAction)record_btn:(id)sender {
-   [self presentViewController:record_view animated:NO completion:nil];
 }
 
 - (void)showFrame: (cv::Mat) img{
@@ -28,12 +21,24 @@
     });
 }
 
-- (void) showCurInfo: (float) repro_err match_count: (int) match_count mp_count: (int)mp_count kf_count:(int)kf_count{
+- (void) showCurInfo: (float) repro_err match_count: (int) match_count expo_time: (float )expo_time iso:(float )iso offset:(float )offset gps_accu:(int) gps_accu{
     dispatch_async( dispatch_get_main_queue(), ^{
-        self.reproj_err_label.text = [NSString stringWithFormat: @"err: %f", repro_err];
-        self.match_count_label.text = [NSString stringWithFormat: @"match: %d", match_count];
-        self.total_mp_label.text = [NSString stringWithFormat: @"mp: %d", mp_count];
-        self.total_kf_label.text = [NSString stringWithFormat: @"kf: %d", kf_count];
+        if(repro_err>0){
+            self.reproj_err_label.text = [NSString stringWithFormat: @"err: %f", repro_err];
+        }
+        if(match_count>0){
+            self.match_count_label.text = [NSString stringWithFormat: @"match: %d", match_count];
+        }
+        if(expo_time>0){
+            self.expo_time_label.text = [NSString stringWithFormat: @"expo: %f", expo_time];
+        }
+        if(iso>0){
+            self.iso_label.text = [NSString stringWithFormat: @"iso: %f", iso];
+            self.offset_label.text = [NSString stringWithFormat: @"offset: %f", offset];
+        }
+        if(gps_accu>0){
+            self.gps_accu_l.text = [NSString stringWithFormat: @"gps: %d", gps_accu];
+        }
     });
 }
 

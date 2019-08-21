@@ -194,13 +194,11 @@ namespace gm{
         
         return true;
     }
-    bool GlobalMapApi::load_map(std::vector<Eigen::Vector3d> gps_positions){
+    bool GlobalMapApi::load_map(std::vector<unsigned int> map_ids){
         cur_map=std::make_shared<GlobalMap>();
         matcher=std::make_shared<chamo::GlobalMatch>();
         extractor=std::make_shared<ORB_SLAM2::ORBextractor>(2000, 1.2, 8, 20, 7);
         GlobalMap temp_map;
-        std::vector<unsigned int> map_ids;
-        gm::get_blockids_frome_gps_list(gps_positions, map_ids);
         gm::load_global_map(temp_map, map_addr,map_ids);
         temp_map.AssignKpToMp();
         *cur_map=temp_map;
@@ -251,8 +249,14 @@ namespace gm{
         status="done";
         return true;
     }
+    
+    void GlobalMapApi::Release(){
+        if(cur_map!=nullptr){
+            cur_map->ReleaseMap();
+        }
+    }
     bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
-                                  std::vector<cv::Point2f>& inliers_kp, std::vector<int>& inliers_mp){
+                                  std::vector<cv::Point2f>& inliers_kp, std::vector<Eigen::Vector3d>& inliers_mp){
         std::vector<Eigen::Matrix4d> poses;
         
         cv::Mat descriptors;
@@ -299,7 +303,9 @@ namespace gm{
             for(int i=0; i<inliers_kps[0].size(); i++){
                 inliers_kp.push_back(loc_frame->kps[inliers_kps[0][i]].pt);
             }
-            inliers_mp=inliers_mps[0];
+            for(int i=0; i<inliers_mps[0].size(); i++){
+                inliers_mp.push_back(cur_map->mappoints[inliers_mps[0][i]]->position);
+            }
             return true;
         }else{
             return false;

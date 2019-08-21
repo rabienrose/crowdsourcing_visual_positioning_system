@@ -4,17 +4,17 @@
 #include <deque>
 #include <memory>
 #include <vector>
-#include "RecordViewController.h"
 #include "delegate_header.h"
 
 @interface DetailViewController : UIViewController<FrameInfoDelegate>{
     dispatch_queue_t sessionQueue;
-    RecordViewController *record_view;
 }
-@property (nonatomic, weak) id<SceneInfoDelegate> sceneDelegate;
 @property (weak, nonatomic) IBOutlet UIImageView *image_view;
 @property (nonatomic, weak) IBOutlet UILabel *reproj_err_label;
 @property (nonatomic, weak) IBOutlet UILabel *match_count_label;
-@property (nonatomic, weak) IBOutlet UILabel *total_mp_label;
-@property (nonatomic, weak) IBOutlet UILabel *total_kf_label;
+@property (nonatomic, weak) IBOutlet UILabel *expo_time_label;
+@property (nonatomic, weak) IBOutlet UILabel *iso_label;
+@property (nonatomic, weak) IBOutlet UILabel *offset_label;
+@property (weak, nonatomic) IBOutlet UILabel *gps_accu_l;
+
 @end
