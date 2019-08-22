@@ -118,12 +118,16 @@ int main(int argc, char* argv[]){
                 //std::cout<<u<<":"<<v<<"     "<<uv.x<<":"<<uv.y<<std::endl;
                 
                 float proj_err=sqrt((uv.x-u)*(uv.x-u)+(uv.y-v)*(uv.y-v));
+                if(proj_err>10000 || proj_err<-10000){
+                    std::cout<<uv.x<<":"<<uv.x<<":"<<v<<":"<<u<<std::endl;
+                    std::cout<<map.frames[i]->getPose()<<std::endl;
+                }
                 
                 t_proj_err=t_proj_err+proj_err;
                 mp_count++;
             }
         }
-        std::cout<<"avg. proj. err.: "<<t_proj_err/mp_count<<std::endl;
+        std::cout<<"avg. proj. err.: "<<t_proj_err<<":"<<mp_count<<std::endl;
         visualization::publishLines(matches, 0, visualization::kDefaultMapFrame,visualization::kDefaultNamespace, "vm_matches");
         if(ros::ok()){
             loop_rate.sleep();
