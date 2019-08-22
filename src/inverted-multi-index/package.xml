@@ -16,5 +16,4 @@
   <depend>glog_catkin</depend>
   <depend>libnabo</depend>
   <depend>maplab_common</depend>
-  <depend>protobuf_catkin</depend>
 </package>
