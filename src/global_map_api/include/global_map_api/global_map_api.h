@@ -5,6 +5,7 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 namespace ORB_SLAM2{
     class ORBextractor;

@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     visualization::RVizVisualizationSink::init();
     gm::GlobalMapApi api;
     api.init(FLAGS_config_root, FLAGS_map_root);
-    api.process_bag(FLAGS_bag_addr, FLAGS_cache_root, FLAGS_localmap_root);
+    std::string status;
+    api.process_bag(FLAGS_bag_addr, FLAGS_cache_root, FLAGS_localmap_root, status);
     return 0;
 }
