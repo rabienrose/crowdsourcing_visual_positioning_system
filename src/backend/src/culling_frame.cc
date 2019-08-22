@@ -43,11 +43,21 @@ void culling_frame(gm::GlobalMap& map){
                         }
                         //std::cout<<"cont_t :"<<cont_t<<std::endl;
                         if(it->first->isborder==false){
+                            double c1=it->first->gps_accu;
+                            double c2=map.frames[i]->gps_accu;
+                            Eigen::Vector3d p1=it->first->gps_position+(map.frames[i]->position-it->first->position);
+                            Eigen::Vector3d p2=map.frames[i]->gps_position;
+                            Eigen::Vector3d merged_gps=(c1*c1*p2+c2*c2*p1)/(c1*c1+c2*c2);
+                            double merged_cov=sqrt(1/(1/(c1*c1)+1/(c2*c2)));
+                            std::cout<<c1<<":"<<c2<<":"<<merged_cov<<std::endl;
+                            std::cout<<p2.transpose()<<std::endl;
+                            std::cout<<merged_gps.transpose()<<std::endl;
+                            map.frames[i]->gps_position=merged_gps;
+                            map.frames[i]->gps_accu=merged_cov;
                             if(map.DelFrame(it->first->id)){
                                 del_any_frame=true;
                                 break;
                             }
-                            
                         }
                     }
                 }
