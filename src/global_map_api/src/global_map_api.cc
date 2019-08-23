@@ -47,6 +47,7 @@ void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic)
 DECLARE_string(voc_addr);
 DECLARE_string(camera_config);
 DECLARE_double(max_repro_err);
+DECLARE_double(cull_frame_rate);
 namespace gm{
     
     void do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr){
@@ -56,7 +57,7 @@ namespace gm{
         std::string img_topic="img";
         int min_frame=2;
         int max_frame=10000;
-        int step=1;
+        int step=3;
         LOG(INFO)<<"max frame:"<<max_frame;
         ORB_SLAM2::System* sys_p=nullptr;
         rosbag::Bag bag;
@@ -233,7 +234,7 @@ namespace gm{
         map.AssignKpToMp();
         status="match";
         update_corresponds(map, config_addr+"/words_projmat.fstream");
-        reset_all_status(map, "doMatch", true);
+        //reset_all_status(map, "doMatch", true);
         status="pose opt";
         //pose_graph_opti_se3(map);
         FLAGS_max_repro_err=100;
@@ -243,6 +244,7 @@ namespace gm{
         status="2nd BA";
         optimize_BA(map, false);
         status="culling";
+        FLAGS_cull_frame_rate=0.6;
         culling_frame(map);
         reset_all_status(map, "all", false);
         status="save";
