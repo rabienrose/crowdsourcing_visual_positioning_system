@@ -50,7 +50,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
         matchid_2_frame.push_back(map.frames[i]);
         for(int j=0; j<inliers_kps.size(); j++){
             if(inliers_kps.size()>=2){
-                std::cout<<"match count: "<<map.frames[i]->id<<":"<<inliers_kps[j].size()<<std::endl;
+                //std::cout<<"match count: "<<map.frames[i]->id<<":"<<inliers_kps[j].size()<<std::endl;
                 
             }
         }

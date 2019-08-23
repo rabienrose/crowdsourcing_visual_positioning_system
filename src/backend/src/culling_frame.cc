@@ -49,11 +49,19 @@ void culling_frame(gm::GlobalMap& map){
                             Eigen::Vector3d p2=map.frames[i]->gps_position;
                             Eigen::Vector3d merged_gps=(c1*c1*p2+c2*c2*p1)/(c1*c1+c2*c2);
                             double merged_cov=sqrt(1/(1/(c1*c1)+1/(c2*c2)));
-                            std::cout<<c1<<":"<<c2<<":"<<merged_cov<<std::endl;
-                            std::cout<<p2.transpose()<<std::endl;
-                            std::cout<<merged_gps.transpose()<<std::endl;
-                            map.frames[i]->gps_position=merged_gps;
-                            map.frames[i]->gps_accu=merged_cov;
+                            //std::cout<<c1<<":"<<c2<<":"<<merged_cov<<std::endl;
+                            //std::cout<<p2.transpose()<<std::endl;
+                            //std::cout<<merged_gps.transpose()<<std::endl;
+                            if(c1>100 && c2>100){ 
+                            }else if(c1<100 && c2>100){
+                                map.frames[i]->gps_position=p1;
+                                map.frames[i]->gps_accu=c1;
+                            }else if(c1>100 && c2<100){
+                            }else{
+                                map.frames[i]->gps_position=merged_gps;
+                                map.frames[i]->gps_accu=merged_cov;
+                            }
+                            
                             if(map.DelFrame(it->first->id)){
                                 del_any_frame=true;
                                 break;

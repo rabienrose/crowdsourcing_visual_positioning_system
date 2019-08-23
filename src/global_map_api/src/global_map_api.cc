@@ -31,6 +31,7 @@
 #include "global_map_api/global_map_api.h"
 
 #ifdef VISUALIZATION
+#include "ros/ros.h"
 #include "visualization/color-palette.h"
 #include "visualization/color.h"
 #include "visualization/common-rviz-visualization.h"
@@ -234,7 +235,7 @@ namespace gm{
         update_corresponds(map, config_addr+"/words_projmat.fstream");
         reset_all_status(map, "doMatch", true);
         status="pose opt";
-        pose_graph_opti_se3(map);
+        //pose_graph_opti_se3(map);
         FLAGS_max_repro_err=100;
         status="1st BA";
         optimize_BA(map, true);

@@ -22,6 +22,15 @@
 #include "visualization/color-palette.h"
 #include "visualization/color.h"
 #include "visualization/common-rviz-visualization.h"
+
+void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
+    Eigen::Matrix3Xd points;
+    points.resize(3,mp_posis.size());
+    for(int i=0; i<mp_posis.size(); i++){
+        points.block<3,1>(0,i)=mp_posis[i];
+    }    
+    publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
+}
 #endif
 
 DECLARE_int32(opti_count);
@@ -49,14 +58,6 @@ namespace g2o {
     };
 }
 
-// void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
-//     Eigen::Matrix3Xd points;
-//     points.resize(3,mp_posis.size());
-//     for(int i=0; i<mp_posis.size(); i++){
-//         points.block<3,1>(0,i)=mp_posis[i];
-//     }    
-//     publish3DPointsAsPointCloud(points, visualization::kCommonRed, 1.0, visualization::kDefaultMapFrame,topic);
-// }
 
 void optimize_BA(gm::GlobalMap& map, bool re_triangle){
     map.CalConnections();
@@ -64,6 +65,14 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
     int pose_opt_count=0;
     std::vector<std::shared_ptr<gm::Frame>> cur_level_frames;
     std::vector<Eigen::Vector3d> debug_points;
+    debug_points.clear();
+    for(int n=0; n<map.frames.size(); n++){
+        map.frames[n]->isfix==false;
+        if(map.frames[n]->doMatch==true){
+            debug_points.push_back(map.frames[n]->position);
+        }
+    }
+    show_mp_as_cloud(debug_points, "doMatch");
     for(int n=0; n<map.frames.size(); n++){
         if(map.frames[n]->doMatch==false){
         }else{
@@ -96,11 +105,12 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         map.getFrameChildren(next_level_frames_temp, map.frames[i]);
         for(int j=0; j<next_level_frames_temp.size(); j++){
             if(next_level_frames_temp[j]->doMatch==false){
-                map.frames[j]->isfix=true;
+                map.frames[i]->isfix=true;
                 break;
             }
         }
     }
+    
     for(int n=0; n<map.frames.size(); n++){
         if(map.frames[n]->isborder){
             map.frames[n]->isfix=true;
@@ -112,24 +122,21 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         }
         
     }
-//     for(int n=0; n<map.frames.size(); n++){
-//         if(map.frames[n]->isborder==true){
-//             debug_points.push_back(map.frames[n]->position);
-//         }
-//     }
-//     show_mp_as_cloud(debug_points, "debug");
-//     for(int n=0; n<map.frames.size(); n++){
-//         if(map.frames[n]->isfix==true){
-//             debug_points.push_back(map.frames[n]->position);
-//         }
-//     }
-//     debug_points.clear();
-//     for(int n=0; n<map.frames.size(); n++){
-//         if(map.frames[n]->doMatch==true){
-//             debug_points.push_back(map.frames[n]->position);
-//         }
-//     }
-//     show_mp_as_cloud(debug_points, "debug1");
+    debug_points.clear();
+    for(int n=0; n<map.frames.size(); n++){
+        if(map.frames[n]->isfix==true){
+            debug_points.push_back(map.frames[n]->position);
+        }
+    }
+    show_mp_as_cloud(debug_points, "isfix");
+    debug_points.clear();
+    for(int n=0; n<map.frames.size(); n++){
+        if(map.frames[n]->doMatch==true){
+            debug_points.push_back(map.frames[n]->position);
+        }
+    }
+    show_mp_as_cloud(debug_points, "extend");
+    
 //     ros::spin();
 // 
 //     std::cout<<"pose edge count after match: "<<map.pose_graph_v1.size()<<std::endl;
@@ -215,7 +222,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         new g2o::BlockSolverX(
             new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>()));
     optimizer.setAlgorithm(solver);
-    optimizer.setVerbose(true);
+    optimizer.setVerbose(false);
     //add all vertice, number equal all poses 
     std::vector<g2o::VertexSE3Expmap*> kf_verts;
     long unsigned int maxKFid = 0;

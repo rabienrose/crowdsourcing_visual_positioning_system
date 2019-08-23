@@ -229,7 +229,7 @@ void pose_graph_opti_sim3(gm::GlobalMap& map){
 
 void pose_graph_opti_se3(gm::GlobalMap& map){
     g2o::SparseOptimizer optimizer;
-    optimizer.setVerbose(true);
+    optimizer.setVerbose(false);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(
         new g2o::BlockSolverX(
             new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>()));
