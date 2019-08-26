@@ -1,6 +1,6 @@
-ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test
+ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/office_merge_1
 MAP_ADDR=${ROOT_ADDR}/global
-BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/build_right
+BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/office_9_1
 CONFIG_ADDR=${ROOT_ADDR}/config
 CACHE_ROOT=${ROOT_ADDR}/cache
 LOCAL_ROOT=${ROOT_ADDR}/local
@@ -19,5 +19,5 @@ do
     mkdir ${LOCAL_ROOT}
     map_name=`basename "${map_bag_addr}"`
     echo process bag: ${map_name}
-    ${GLOBAL_MAP_ADDR} --map_root=${MAP_ADDR} --bag_addr=${BAG_ADDR}/${map_bag_addr} --cache_root=${CACHE_ROOT} --config_root=${CONFIG_ADDR} --localmap_root=${LOCAL_ROOT}
+    ${GLOBAL_MAP_ADDR} --map_root=${MAP_ADDR} --bag_addr=${BAG_ADDR}/${map_bag_addr} --cache_root=${CACHE_ROOT} --config_root=${CONFIG_ADDR} --localmap_root=${LOCAL_ROOT} --v=0
 done

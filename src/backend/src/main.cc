@@ -15,8 +15,8 @@ DEFINE_string(op_type, "", "");
 DEFINE_string(param1, "", "");
 DEFINE_string(map_ids, "", "");
 DEFINE_string(project_mat_file, "", "");
-DEFINE_string(reset_type, "all", "");
-DEFINE_bool(reset_val, false, "");
+DECLARE_string(reset_type);
+DECLARE_bool(reset_val);
 
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);

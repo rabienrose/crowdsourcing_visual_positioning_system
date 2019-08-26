@@ -101,9 +101,13 @@ int main(int argc, char* argv[]){
     }
     gm::GlobalMapApi api;
     api.init(FLAGS_config_root, FLAGS_map_name);
-    api.load_map(gps_hd_list);
+    std::vector<unsigned int> ids;
+    ids.push_back(112224160);
+    api.load_map(ids);
     std::vector<Eigen::Vector3d> mp_posis;
-    api.get_pointcloud(mp_posis);
+    std::vector<Eigen::Vector3d> kf_posis;
+    std::vector<Eigen::Quaterniond> kf_rot;
+    api.get_pointcloud(mp_posis, kf_posis, kf_rot, ids);
     show_mp_as_cloud(mp_posis, "global_match_test_mp");
     std::vector<Eigen::Vector3d> re_traj;
     rosbag::Bag bag;
@@ -145,7 +149,7 @@ int main(int argc, char* argv[]){
                 std::stringstream ss_time;
                 ss_time<<"img_"<<img_count<<".jpg";
                 
-                std::vector<int> inliers_mp;
+                std::vector<Eigen::Vector3d> inliers_mp;
                 std::vector<cv::Point2f> inliers_kp;
                 Eigen::Matrix4d pose;
                 clock_t start = clock();
@@ -201,9 +205,9 @@ int main(int argc, char* argv[]){
                         line_segment.color.green = 255;
                         line_segment.color.blue = 255;
                         Eigen::Vector3d mp_posi_eig;
-                        mp_posi_eig(0)=mp_posis[inliers_mp[i]].x();
-                        mp_posi_eig(1)=mp_posis[inliers_mp[i]].y();
-                        mp_posi_eig(2)=mp_posis[inliers_mp[i]].z();
+                        mp_posi_eig(0)=inliers_mp[i].x();
+                        mp_posi_eig(1)=inliers_mp[i].y();
+                        mp_posi_eig(2)=inliers_mp[i].z();
                         line_segment.to = mp_posi_eig;
                         //std::cout<<line_segment.to.transpose()<<std::endl;
                         //std::cout<<posi_match_vec.back()<<std::endl;

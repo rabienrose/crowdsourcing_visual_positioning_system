@@ -48,6 +48,7 @@ DECLARE_string(voc_addr);
 DECLARE_string(camera_config);
 DECLARE_double(max_repro_err);
 DECLARE_double(cull_frame_rate);
+DECLARE_double(gps_weight);
 namespace gm{
     
     void do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr){
@@ -57,7 +58,7 @@ namespace gm{
         std::string img_topic="img";
         int min_frame=2;
         int max_frame=10000;
-        int step=3;
+        int step=1;
         LOG(INFO)<<"max frame:"<<max_frame;
         ORB_SLAM2::System* sys_p=nullptr;
         rosbag::Bag bag;
@@ -224,7 +225,8 @@ namespace gm{
         status="slam";
         do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
-        //block_ids.push_back(112224160);
+//         block_ids.push_back(112224160);
+//         block_ids.push_back(112260160);
         status="align";
         convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
         status="merge";
@@ -234,18 +236,21 @@ namespace gm{
         map.AssignKpToMp();
         status="match";
         update_corresponds(map, config_addr+"/words_projmat.fstream");
-        //reset_all_status(map, "doMatch", true);
+        reset_all_status(map, "doMatch", true);
         status="pose opt";
-        //pose_graph_opti_se3(map);
+        pose_graph_opti_se3(map);
         FLAGS_max_repro_err=100;
+        FLAGS_gps_weight=0.00000000000001;
         status="1st BA";
         optimize_BA(map, true);
         FLAGS_max_repro_err=20;
         status="2nd BA";
         optimize_BA(map, false);
+        optimize_BA(map, true);
         status="culling";
         FLAGS_cull_frame_rate=0.6;
         culling_frame(map);
+        optimize_BA(map, false);
         reset_all_status(map, "all", false);
         status="save";
         gm::save_global_map(map, map_addr);

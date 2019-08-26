@@ -250,7 +250,6 @@ namespace chamo {
         
         //std::cout<<"components.size(): "<<components.size()<<std::endl;
         for (Components::iterator it=components.begin(); it!=components.end(); it++) {
-            //std::cout<<it->second.size()<<std::endl;
             if(it->second.size()<20){
                 continue;
             }
@@ -307,11 +306,13 @@ namespace chamo {
             cam_inter_cv.at<float>(0,2)=query_frame->cx;
             cam_inter_cv.at<float>(1,2)=query_frame->cy;
             //std::cout<<"point3ds: "<<point3ds.size()<<std::endl;
+            std::cout<<"before: "<<point3ds.size()<<std::endl;
             cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
-            
+            std::cout<<"after: "<<inliers.rows<<std::endl;
             if(inliers.rows<20){
                 continue;
             }
+            
 //             std::cout<<"=========================="<<std::endl;
 //             for(int i=0; i<inliers.rows; i++){
 //                 Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic> query_desc = query_frame->descriptors.col(ransac_to_kpid[inliers.at<int>(i)]);
@@ -328,6 +329,18 @@ namespace chamo {
             pose_inv.block(0,0,3,3)=rot_m_eigen;
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
+            std::vector<int> inliers_kp;
+            std::vector<int> inliers_mp;
+            for(int i=0; i<inliers.rows; i++){
+                //std::cout<<inliers_after_project.at<int>(i)<<std::endl;
+                inliers_kp.push_back(ransac_to_kpid[inliers.at<int>(i)]);
+                inliers_mp.push_back(ransac_to_mpid[inliers.at<int>(i)]);
+            }
+            
+            poses.push_back(pose_inv.inverse());
+            inliers_kps.push_back(inliers_kp);
+            inliers_mps.push_back(inliers_mp);
+            return;
             Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
             k_mat(0, 0) = query_frame->fx;
             k_mat(1, 1) = query_frame->fy;
@@ -387,17 +400,17 @@ namespace chamo {
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
             //std::cout<<"inliers_after_project.rows: "<<inliers_after_project.rows<<std::endl;
-            std::vector<int> inliers_kp;
-            std::vector<int> inliers_mp;
-            for(int i=0; i<inliers_after_project.rows; i++){
-                //std::cout<<inliers_after_project.at<int>(i)<<std::endl;
-                inliers_kp.push_back(ransac_to_kpid[inliers_after_project.at<int>(i)]);
-                inliers_mp.push_back(ransac_to_mpid[inliers_after_project.at<int>(i)]);
-            }
-            
-            poses.push_back(pose_inv.inverse());
-            inliers_kps.push_back(inliers_kp);
-            inliers_mps.push_back(inliers_mp);
+//             std::vector<int> inliers_kp;
+//             std::vector<int> inliers_mp;
+//             for(int i=0; i<inliers_after_project.rows; i++){
+//                 //std::cout<<inliers_after_project.at<int>(i)<<std::endl;
+//                 inliers_kp.push_back(ransac_to_kpid[inliers_after_project.at<int>(i)]);
+//                 inliers_mp.push_back(ransac_to_mpid[inliers_after_project.at<int>(i)]);
+//             }
+//             
+//             poses.push_back(pose_inv.inverse());
+//             inliers_kps.push_back(inliers_kp);
+//             inliers_mps.push_back(inliers_mp);
         }
     }
 }

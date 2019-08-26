@@ -79,8 +79,10 @@ void alignToIMU(gm::GlobalMap& map){
     double scale_confi;
     double grav_confi;
     CalGravityAndScale(pose_vec_mat, preints, chamo::Converter::toCvMat(Tbc), sstar, gwstar, scale_confi, grav_confi);
+    std::cout<<"sstar: "<<sstar<<std::endl;
     cv::Mat gI = cv::Mat::zeros(3,1,CV_32F);
     gI.at<float>(2) = 1;
+    gwstar=-gwstar;
     cv::Mat gwn = gwstar/cv::norm(gwstar);
     cv::Mat gIxgwn = gI.cross(gwn);
     double normgIxgwn = cv::norm(gIxgwn);
@@ -89,7 +91,8 @@ void alignToIMU(gm::GlobalMap& map){
     Eigen::Vector3d vhateig = chamo::Converter::toVector3d(vhat);
     Eigen::Matrix3d Rwi_ = Sophus::SO3::exp(vhateig*theta).matrix();
     Eigen::Vector3d bias_a=Eigen::Vector3d::Zero();
-    CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
+    //CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
+    //std::cout<<"reafined sstar: "<<sstar<<std::endl;
     cv::Mat Tbc_mat=chamo::Converter::toCvMat(Tbc);
     cv::Mat Rwi_mat=chamo::Converter::toCvMat(Rwi_);
     Eigen::Matrix4d Twi = Eigen::Matrix4d::Identity();
@@ -457,7 +460,8 @@ void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::Glo
     }
 
     alignToIMU(map);
-    alignToGPS(map, out_maps);
+    out_maps.push_back(map);
+    //alignToGPS(map, out_maps);
 }
 
 void convert_to_visual_map(std::string config_root, std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {

@@ -222,7 +222,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         new g2o::BlockSolverX(
             new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>()));
     optimizer.setAlgorithm(solver);
-    optimizer.setVerbose(false);
+    optimizer.setVerbose(true);
     //add all vertice, number equal all poses 
     std::vector<g2o::VertexSE3Expmap*> kf_verts;
     long unsigned int maxKFid = 0;

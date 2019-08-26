@@ -14,10 +14,10 @@ ${BACKEND_ADDR} \
     --res_root=${IN_ADDR} \
     --out_root=${OUT_ADDR} \
     --map_ids=${MAP_IDS}\
-    --project_mat_file=${IN_ADDR}/words_projmat.fstream \
+    --project_mat_file=${IN_ADDR}/../config/words_projmat.fstream \
     --op_type=${OP_TYPE} \
     --max_repro_err=10 \
-    --gps_weight=0.01 \
+    --gps_weight=0.0001 \
     --reset_type=doMatch \
     --reset_val=true \
     --cull_frame_rate=0.8 \

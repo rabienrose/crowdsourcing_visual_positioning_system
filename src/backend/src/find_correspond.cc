@@ -61,7 +61,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
         for(int n=0; n<posess[i].size(); n++){
             CHECK_GT(frame_inliers_kps.size(), i);
             CHECK_GT(frame_inliers_kps[i].size(), n);
-            if(frame_inliers_kps[i][n].size()>20){
+            if(frame_inliers_kps[i][n].size()>40){
                 if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
                 }else{
                     continue;
