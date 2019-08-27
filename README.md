@@ -17,6 +17,7 @@
   - Align layout with localization map.
   - Localization with only global match.
   - Average GPS to get more accurate global position.
+  - Copy out the recorded bag with itune.
   - There is memory leak problem, some memory could not be released.
 ## Backlog
 | Sprint | Target |
@@ -60,6 +61,6 @@
   - Open the xcode file: ios/MapLoc/GlobalMap.xcodeproj, and build it use xcode. You may need to reset the path of lib and header in thirdpart folder.
 ## Usage
   - Build map: run_script/run_globalmap_api.sh
-  - Test global localiation: run_script/run_global_match_test.sh
+  - Test global localization: run_script/run_global_match_test.sh
   - Visualization of map: src/display_map
   - The scripts or packages named here are used for as a start point to look into the details of how to use.
