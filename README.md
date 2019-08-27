@@ -4,6 +4,10 @@
   - In the future, there will be more and more cameras around us, especially after AR glasses become popular. Using these huge amount of visual information to build a virtual parallel world is a wonderful dream. The goal of this project is to provide vision-based positioning capabilities for this parallel world.
   - This project is also called chamo_vps for short. 
   - The specific goal in the near future is to establish a location system based on the map which is formed by feature points. And all data used to create map are from mobile phone level sensors (monocular camera, imu, gps). And provide a positioning service that give position with gps coordinate system. The accuracy is expected around 20 cm.
+<a href="https://www.bilibili.com/video/av65482154" target="_blank"><img src="https://github.com/rabienrose/crowdsourcing_visual_positioning_system/blob/master/doc/map_loc.jpg" 
+alt="Chamo" width="240" height="180" border="10" /></a>
+<a href="https://www.bilibili.com/video/av65569066" target="_blank"><img src="https://github.com/rabienrose/crowdsourcing_visual_positioning_system/blob/master/doc/app.jpg" 
+alt="Chamo" width="240" height="180" border="10" /></a>
 ## Main Content
   - Video data collection and LocalMap creation on the mobile phone.
   - Image data collection and feature point extraction. These means the system supports both sequence frame and single picture update.
