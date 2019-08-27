@@ -10,15 +10,32 @@
   - After uploading the LocalMap or image feature points to the server, the server merges the data.
   - The merging process includes the culling of map to maintain trackable map size.
   - New data that is not matched by the map will be stored, waiting for matching with future data.
+## Status
+  - Map visualization in APP.
+  - Merging new sensor data is OK, but not stable. After the clean function complete, it will be more stable.
+  - Recording sensor data with custom exposure adjustment fucntion (Fix expousre time and adjust ISO).
+  - Align layout with localization map.
+  - Localization with only global match.
+  - Average GPS to get more accurate global position.
+  - There is memory leak problem, some memory could not be released.
 ## Backlog
 | Sprint | Target |
 | ------ | ------ |
-| August 11th | Generate merged map |
-| August 18th | Locate image on APP |
-| August 25st | Use covisibility to choose update candidators |
-| September 1th | Merge GPS in frame culling |
-| September 8th | Preview map on APP |
+| September 1st | Use covisibility to choose update candidators |
+| September 8th | Clean all distached or bad data in the end |
 | September 15th | Self-calibration on APP |
+| September 22th | Tracking with odomtry and global match |
+## Future Function
+  - Resume function for interrupt in processing a bag.
+  - Reset the change caused by the lasted bag update.
+  - Make global match realtime on IOS.
+  - Show keypoints on frame image during SLAM and localization.
+  - BA with IMU function
+  - Automatical divide the bag.
+  - Exposure duration max limitation.
+  - Use SIM3 to transform the whole map before se3 pose optimization.
+  - Further reduce memory leak.
+  - Show percentage of mapping process.
 ## Technical Details
   - Compilation framework: catkin
   - Serialization method: custom format based on fstream read and write
@@ -31,3 +48,18 @@
   - The purple box represents the processing flow on the clinet end. The final piece of data is split into multiple LocalMaps according to the covisibilities.
   - The blue box represents the processing flow on the server end.
   - The red box represents the data stored on the server after all processing.
+## Build for ubuntu
+  - Clone this project.
+  - Download third-party code from link: https://drive.google.com/file/d/10ht85TEX7BfTgujHfyDWa96j6SfmQ0C3/view?usp=sharing
+  - Extract and copy the download folder into src folder.
+  - Run: bash build_all.sh to compile.
+## Build for IOS
+  - Clone this project.
+  - Download third-party code from link: https://drive.google.com/file/d/1tGzyzI1jp5T0dIiNuiiF43nxzoMBHrCJ/view?usp=sharing
+  - Extract and copy the download folder into ios folder.
+  - Open the xcode file: ios/MapLoc/GlobalMap.xcodeproj, and build it use xcode. You may need to reset the path of lib and header in thirdpart folder.
+## Usage
+  - Build map: run_script/run_globalmap_api.sh
+  - Test global localiation: run_script/run_global_match_test.sh
+  - Visualization of map: src/display_map
+  - The scripts or packages named here are used for as a start point to look into the details of how to use.
