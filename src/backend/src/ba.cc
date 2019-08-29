@@ -72,6 +72,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
             debug_points.push_back(map.frames[n]->position);
         }
     }
+#ifdef VISUALIZATION
     show_mp_as_cloud(debug_points, "doMatch");
     for(int n=0; n<map.frames.size(); n++){
         if(map.frames[n]->doMatch==false){
@@ -79,6 +80,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
             cur_level_frames.push_back(map.frames[n]);
         }
     }
+#endif
         
         
     for(int i=0; i<10; i++){
@@ -122,12 +124,14 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         }
         
     }
+#ifdef VISUALIZATION
     debug_points.clear();
     for(int n=0; n<map.frames.size(); n++){
         if(map.frames[n]->isfix==true){
             debug_points.push_back(map.frames[n]->position);
         }
     }
+    
     show_mp_as_cloud(debug_points, "isfix");
     debug_points.clear();
     for(int n=0; n<map.frames.size(); n++){
@@ -136,6 +140,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         }
     }
     show_mp_as_cloud(debug_points, "extend");
+#endif
     
 //     ros::spin();
 // 

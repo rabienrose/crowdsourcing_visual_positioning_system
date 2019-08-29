@@ -6,10 +6,11 @@
 #include <sensor_msgs/image_encodings.h>
 #include <rosbag/view.h>
 #include <cv_bridge/cv_bridge.h>
+#include<opencv2/core/core.hpp>
 #include <chamo_common/common.h>
 #import <mach/mach.h>
 #include <math.h>
-
+#include "chamo_common/common.h"
 #include <sensor_msgs/NavSatFix.h>
 
 @implementation RecordViewController
@@ -60,7 +61,7 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
         [session commitConfiguration];
         return;
     }
-    [videoDevice setActiveVideoMinFrameDuration:CMTimeMake(1, 10)];
+    [videoDevice setActiveVideoMinFrameDuration:CMTimeMake(1, 30)];
     video_output = [[AVCaptureVideoDataOutput alloc] init];
     NSDictionary *newSettings = @{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) };
     video_output.videoSettings = newSettings;
@@ -306,7 +307,7 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     cv::Mat img_cv = [mm_Try cvMatFromUIImage:image];
     if(is_locating){
         locate_count++;
-        if(locate_count%5==0){
+        if(locate_count%15==0){
             dispatch_async( recordingQueue, ^{
                 Eigen::Matrix4d pose;
                 std::vector<cv::Point2f> inliers_kp;
@@ -652,7 +653,9 @@ void gps84_To_Gcj02(double& lat, double& lon) {
     if((int)[dele_map.file_list count]>0){
         NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
+        NSString *background_map_addr = [full_map_addr stringByAppendingString:@"/background"];
         full_map_addr = [full_map_addr stringByAppendingString:@"/global"];
+        
         NSBundle* myBundle = [NSBundle mainBundle];
         NSString*  mycam_str = [myBundle pathForResource:@"camera_config" ofType:@"txt"];
         NSString *config_addr = [mycam_str stringByDeletingLastPathComponent];
@@ -677,6 +680,36 @@ void gps84_To_Gcj02(double& lat, double& lon) {
             unsigned int temp_id=stoul(filename_std);
             ids.push_back(temp_id);
         }
+        BOOL isDir;
+        cv::Mat background_img;
+        double rot=0;
+        double trans_x=0;
+        double trans_y=0;
+        double scale=1;
+        bool hasTrans=false;
+        std::string trans_map_addr_std;
+        if([[NSFileManager defaultManager] fileExistsAtPath:background_map_addr isDirectory:&isDir]){
+            NSString *background_img_map_addr = [background_map_addr stringByAppendingString:@"/back_img.jpg"];
+            if([[NSFileManager defaultManager] fileExistsAtPath:background_img_map_addr isDirectory:&isDir]){
+                std::string background_img_std=std::string([background_img_map_addr UTF8String]);
+                background_img= cv::imread(background_img_std, cv::IMREAD_COLOR );
+            }
+            NSString *trans_map_addr = [background_map_addr stringByAppendingString:@"/trans.txt"];
+            trans_map_addr_std=std::string([trans_map_addr UTF8String]);
+            if([[NSFileManager defaultManager] fileExistsAtPath:trans_map_addr isDirectory:&isDir]){
+                hasTrans=true;
+                std::string line;
+                std::ifstream infile(trans_map_addr_std.c_str());
+                std::getline(infile, line);
+                std::vector<std::string> splited = chamo::split(line, ",");
+                rot=atof(splited[0].c_str());
+                trans_x=atof(splited[1].c_str());
+                trans_y=atof(splited[2].c_str());
+                scale=atof(splited[3].c_str());
+            }
+        }
+       
+        
         api.Release();
         gm::GlobalMapApi temp_api;
         api=temp_api;
@@ -697,6 +730,13 @@ void gps84_To_Gcj02(double& lat, double& lon) {
         std::vector<Eigen::Vector3d> matches;
         [self.sceneDelegate set_cur_posi: av_posi matches:matches update_center:true];
         [self.sceneDelegate showPC: out_pointcloud kf:kf_posis];
+        if(!background_img.empty()){
+            if(hasTrans==false){
+                scale=-1;
+            }
+            [self.sceneDelegate setBackground: background_img rot:rot trans_x:trans_x trans_y:trans_y scale:scale file:trans_map_addr_std];
+        }
+        
     }
 }
 - (IBAction)locate:(id)sender {

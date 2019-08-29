@@ -13,6 +13,8 @@
 #include <gflags/gflags.h>
 #include<mutex>
 #include "chamo_common/common.h"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 DEFINE_bool(use_orb, false, "Choose use orb or freak descriptor. Set to true if use orb.");
 DEFINE_string(camera_config, "", "Config file of camera calibiration.");
 DEFINE_int32(max_step_KF, 25, "The max number of frame between two KeyFrames.");
