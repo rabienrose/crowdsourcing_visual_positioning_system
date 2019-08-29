@@ -4,7 +4,7 @@
 #include <Eigen/Core>
 #include <math.h>
 #include <unordered_map>
-
+#include <time.h>
 #include <backend/header.h>
 #include "opencv2/opencv.hpp"
 #include <glog/logging.h>
@@ -207,6 +207,18 @@ namespace gm{
         *cur_map=temp_map;
         Eigen::Vector3d est_posi(-1, -1,-1);
         matcher->LoadMap(config_addr+"/words_projmat.fstream", *cur_map ,est_posi);
+        cv::Mat K = cv::Mat::eye(3,3,CV_32F);
+        K.at<float>(0,0) = fx;
+        K.at<float>(1,1) = fy;
+        K.at<float>(0,2) = cx;
+        K.at<float>(1,2) = cy;
+        
+        cv::Mat DistCoef(4,1,CV_32F);
+        DistCoef.at<float>(0) = k1;
+        DistCoef.at<float>(1) = k2;
+        DistCoef.at<float>(2) = p1;
+        DistCoef.at<float>(3) = p2;
+        cv::initUndistortRectifyMap(K,DistCoef,cv::Mat(),K, cv::Size(1280, 720), CV_32FC1, map1,map2);
         return true;
     }
     bool GlobalMapApi::get_pointcloud(std::vector<Eigen::Vector3d>& out_pointcloud, std::vector<Eigen::Vector3d>& kf_posis, std::vector<Eigen::Quaterniond>& kf_rot, std::vector<unsigned int> ids){
@@ -274,27 +286,27 @@ namespace gm{
             cur_map->ReleaseMap();
         }
     }
-    bool GlobalMapApi::locate_img(cv::Mat img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position, 
+    bool GlobalMapApi::locate_img(cv::Mat img, cv::Mat& debug_img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position,
                                   std::vector<cv::Point2f>& inliers_kp, std::vector<Eigen::Vector3d>& inliers_mp){
         std::vector<Eigen::Matrix4d> poses;
-        
+        std::clock_t start, end;
+        double time_taken;
         cv::Mat descriptors;
         std::vector<cv::KeyPoint> keypoints;
-        cv::Mat undistort_img;
-        cv::Mat K = cv::Mat::eye(3,3,CV_32F);
-        K.at<float>(0,0) = fx;
-        K.at<float>(1,1) = fy;
-        K.at<float>(0,2) = cx;
-        K.at<float>(1,2) = cy;
-
-        cv::Mat DistCoef(4,1,CV_32F);
-        DistCoef.at<float>(0) = k1;
-        DistCoef.at<float>(1) = k2;
-        DistCoef.at<float>(2) = p1;
-        DistCoef.at<float>(3) = p2;
-        cv::undistort(img, undistort_img, K, DistCoef);
         
+        //cv::undistort(img, undistort_img, K, DistCoef);
+        start = clock();
+        cv::Mat undistort_img;
+        cv::remap(img,undistort_img,map1,map2,cv::INTER_CUBIC);
+        end = clock();
+        time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+        //std::cout<<"undist time: "<<time_taken<<std::endl;
+        start = clock();
+        debug_img=undistort_img;
         extractor->ExtractDesc(undistort_img, cv::Mat() ,keypoints, descriptors, false);
+        end = clock();
+        time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+        //std::cout<<"extract time: "<<time_taken<<std::endl;
         
         std::shared_ptr<Frame> loc_frame=std::make_shared<Frame>();
         loc_frame->fx=fx;
@@ -316,9 +328,20 @@ namespace gm{
         }
         std::vector<std::vector<int>> inliers_kps;
         std::vector<std::vector<int>> inliers_mps;
+        
+        start = clock();
         matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
+        end = clock();
+        time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+        std::cout<<"match time: "<<time_taken<<std::endl;
         if(poses.size()>0){
-            pose=poses[0];
+            int max_inlier=-1;
+            Eigen::Matrix4d max_pose;
+            for(int i=0; i<poses.size(); i++){
+                max_inlier<inliers_kps[i].size();
+                max_pose=poses[i];
+            }
+            pose=max_pose;
             for(int i=0; i<inliers_kps[0].size(); i++){
                 inliers_kp.push_back(loc_frame->kps[inliers_kps[0][i]].pt);
             }

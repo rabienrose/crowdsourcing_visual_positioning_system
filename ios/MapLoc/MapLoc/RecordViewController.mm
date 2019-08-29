@@ -126,7 +126,6 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
        
         
         if(!videoDevice) return;
-        
         CGFloat currentISO = videoDevice.ISO;
         CGFloat biasISO = 0;
         float isoChangeStep=0;
@@ -155,10 +154,21 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
             CGFloat newISO = currentISO+biasISO;
             newISO = newISO > videoDevice.activeFormat.maxISO? videoDevice.activeFormat.maxISO : newISO;
             newISO = newISO < videoDevice.activeFormat.minISO? videoDevice.activeFormat.minISO : newISO;
-            
+            double newDur=0.01;
+            AVCaptureDeviceFormat *activeFormat = videoDevice.activeFormat;
+            if(newISO<=activeFormat.minISO){
+                newDur=CMTimeGetSeconds(videoDevice.exposureDuration)-0.001;
+                if(newDur<0.001){
+                    newDur=0.001;
+                }
+            }else if(newISO>activeFormat.minISO){
+                if(CMTimeGetSeconds(videoDevice.exposureDuration)<0.01){
+                    newDur=CMTimeGetSeconds(videoDevice.exposureDuration)+0.001;
+                }
+            }
             NSError *error = nil;
             if ([videoDevice lockForConfiguration:&error]) {
-                [videoDevice setExposureModeCustomWithDuration:CMTimeMakeWithSeconds( 0.01, 1000*1000*1000 ) ISO:newISO completionHandler:^(CMTime syncTime) {}];
+                [videoDevice setExposureModeCustomWithDuration:CMTimeMakeWithSeconds( newDur, 1000*1000*1000 ) ISO:newISO completionHandler:^(CMTime syncTime) {}];
                 [videoDevice unlockForConfiguration];
             }
         }
@@ -307,52 +317,71 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     cv::Mat img_cv = [mm_Try cvMatFromUIImage:image];
     if(is_locating){
         locate_count++;
-        if(locate_count%15==0){
+        NSDate *methodStart = [NSDate date];
+        if(locate_count%1==0){
             dispatch_async( recordingQueue, ^{
-                Eigen::Matrix4d pose;
-                std::vector<cv::Point2f> inliers_kp;
-                std::vector<Eigen::Vector3d> inliers_mp;
-                cv::Mat img_gray;
-                cv::cvtColor(img_cv, img_gray, CV_BGRA2GRAY);
-                api.locate_img(img_gray, pose, Eigen::Vector3d(-1,-1,-1), inliers_kp, inliers_mp);
-                if(inliers_kp.size()>20){
-                    [self.sceneDelegate set_cur_posi: pose.block(0,3,3,1) matches:inliers_mp update_center:false];
+                NSDate *methodFinish = [NSDate date];
+                NSTimeInterval executionTime = [methodFinish timeIntervalSinceDate:methodStart];
+                if(executionTime<1){
+                    Eigen::Matrix4d pose;
+                    std::vector<cv::Point2f> inliers_kp;
+                    std::vector<Eigen::Vector3d> inliers_mp;
+                    cv::Mat img_gray;
+                    cv::Mat debug_gray;
+                    cv::cvtColor(img_cv, img_gray, CV_BGRA2GRAY);
+                    api.locate_img(img_gray, debug_gray, pose, Eigen::Vector3d(-1,-1,-1), inliers_kp, inliers_mp);
+                    
+                    if(inliers_kp.size()>20){
+                        cv::cvtColor(debug_gray, debug_gray, CV_GRAY2BGRA);
+                        for(int i=0; i<inliers_kp.size(); i++){
+                            for(int n=-3; n<=3; n++){
+                                for(int m=-3; m<=3; m++){
+                                    int row=inliers_kp[i].y+n;
+                                    int col=inliers_kp[i].x+m;
+                                    if(col<0 || col>=debug_gray.cols || row<0 || row>=debug_gray.rows){
+                                        continue;
+                                    }
+                                    debug_gray.at<cv::Scalar_<unsigned char>>(row, col )=cv::Scalar(0,0,255,255);
+                                }
+                            }
+                        }
+                        [self.frameDelegate showFrame: debug_gray];
+                        [self.sceneDelegate set_cur_posi: pose.block(0,3,3,1) matches:inliers_mp update_center:false];
+                    }
                 }
             });
         }
-    }
-    [self.frameDelegate showFrame: img_cv];
-    sensor_msgs::CompressedImage img_ros_img;
-    std::vector<unsigned char> binaryBuffer_;
-    cv::imencode(".jpg", img_cv, binaryBuffer_);
-    img_ros_img.data=binaryBuffer_;
-    img_ros_img.header.seq=img_count;
-    img_ros_img.header.stamp= ros::Time(sync_sensor_time);
-    img_ros_img.format="jpeg";
-    
-//    sensor_msgs::ImagePtr img_ros_img;
-//    cv_bridge::CvImage img_cvbridge;
-//    img_cvbridge.image=img_cv;
-//    img_ros_img=img_cvbridge.toImageMsg();
-//    img_ros_img->encoding="bgra8";
-//    img_ros_img->header.seq=img_count;
-//    img_ros_img->header.stamp= ros::Time(sync_sensor_time);
-    dispatch_async( recordingQueue, ^{
-        if(is_recording_bag){
-            if(bag_ptr->isOpen()){
-                NSDate * t1 = [NSDate date];
-                NSTimeInterval now = [t1 timeIntervalSince1970];
-                bag_ptr->write("img", ros::Time(now), img_ros_img);
+    }else{
+        [self.frameDelegate showFrame: img_cv];
+        sensor_msgs::CompressedImage img_ros_img;
+        std::vector<unsigned char> binaryBuffer_;
+        cv::imencode(".jpg", img_cv, binaryBuffer_);
+        img_ros_img.data=binaryBuffer_;
+        img_ros_img.header.seq=img_count;
+        img_ros_img.header.stamp= ros::Time(sync_sensor_time);
+        img_ros_img.format="jpeg";
+        dispatch_async( recordingQueue, ^{
+            if(is_recording_bag){
+                if(bag_ptr->isOpen()){
+                    NSDate * t1 = [NSDate date];
+                    NSTimeInterval now = [t1 timeIntervalSince1970];
+                    bag_ptr->write("img", ros::Time(now), img_ros_img);
+                    if(bag_ptr->getSize()>3500000000){
+                        [self switch_recording: false];
+                        [self switch_recording: true];
+                    }
+                }
             }
-        }
-    });
+        });
+    }
     img_count++;
 }
 
 - (void)viewWillDisappear:(BOOL)animated{
 }
-- (IBAction)start_record:(id)sender {
-    if(!is_recording_bag){
+
+- (void) switch_recording: (bool) doRecord{
+    if(doRecord){
         dispatch_async( recordingQueue, ^{
             NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
             NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
@@ -376,13 +405,20 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
             bag_ptr->open(full_file_name.c_str(), rosbag::bagmode::Write);
             is_recording_bag=true;
         });
-        [sender setTitle:@"Stop Re" forState:UIControlStateNormal];
     }else{
         is_recording_bag=false;
         dispatch_async( recordingQueue, ^{
             bag_ptr->close();
             NSLog(@"close the bag");
         });
+    }
+}
+- (IBAction)start_record:(id)sender {
+    if(!is_recording_bag){
+        [self switch_recording: true];
+        [sender setTitle:@"Stop Re" forState:UIControlStateNormal];
+    }else{
+        [self switch_recording: false];
         [sender setTitle:@"Record" forState:UIControlStateNormal];
     }
 }

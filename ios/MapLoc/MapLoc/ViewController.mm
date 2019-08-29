@@ -92,6 +92,7 @@
     pix_per_meter=1;
     scene_w=900;
     scene_h=600;
+    [self update_scene_img];
     return self;
 }
 
@@ -209,6 +210,8 @@
 - (void) update_scene{
     UIImage *ui_image;
     cv::Mat img=scene_img.clone();
+    if(img.cols==0 || img.rows==0){
+    }
     if(self.mp_s.on){
         for(int i=0; i<mps.size(); i++){
             if(mps[i](2)>self.z_min_slider.value && mps[i](2)<self.z_max_slider.value){
@@ -219,26 +222,36 @@
             }
         }
     }
+    if(img.cols==0 || img.rows==0){
+    }
     if(self.kf_s.on){
         [self show_pcs:kfs img:img color:cv::Scalar(255,0,0,255)];
+    }
+    if(img.cols==0 || img.rows==0){
     }
     if(self.traj_s.on){
         [self show_pcs:traj img:img color:cv::Scalar(0,255,0,255)];
     }
+    if(img.cols==0 || img.rows==0){
+    }
     if(self.match_s.on){
         Eigen::Vector3d pix_posi1;
-        if([self checkPtVisible:traj.back() pix_pt:pix_posi1]){
-            for(int i=0; i<matches.size(); i++){
-                Eigen::Vector3d pix_posi2;
-                if([self checkPtVisible:matches[i] pix_pt:pix_posi2]){
-                    cv::Point2f pt1( pix_posi1(0)+scene_w/2,-pix_posi1(1)+scene_h/2);
-                    cv::Point2f pt2( pix_posi2(0)+scene_w/2,-pix_posi2(1)+scene_h/2);
-                    cv::line(img, pt1, pt2,  cv::Scalar(0,255,0,255), 1);
+        if(traj.size()>0){
+            if([self checkPtVisible:traj.back() pix_pt:pix_posi1]){
+                for(int i=0; i<matches.size(); i++){
+                    Eigen::Vector3d pix_posi2;
+                    if([self checkPtVisible:matches[i] pix_pt:pix_posi2]){
+                        cv::Point2f pt1( pix_posi1(0)+scene_w/2,-pix_posi1(1)+scene_h/2);
+                        cv::Point2f pt2( pix_posi2(0)+scene_w/2,-pix_posi2(1)+scene_h/2);
+                        cv::line(img, pt1, pt2,  cv::Scalar(0,255,0,255), 1);
+                    }
                 }
             }
         }
     }
-    
+    if(img.cols==0 || img.rows==0){
+        return;
+    }
     ui_image = [mm_Try UIImageFromCVMat:img];
     dispatch_async( dispatch_get_main_queue(), ^{
         self.image_view.image=ui_image;

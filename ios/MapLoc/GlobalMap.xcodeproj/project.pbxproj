@@ -122,6 +122,7 @@
 		0456D557225788D800A00865 /* SceneKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0456D556225788D800A00865 /* SceneKit.framework */; };
 		0456D5682257897100A00865 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0456D55C2257897100A00865 /* opencv2.framework */; };
 		047AFB892259DA2500BA3710 /* try_mm.mm in Sources */ = {isa = PBXBuildFile; fileRef = 047AFB872259DA2400BA3710 /* try_mm.mm */; };
+		04CC47FE2317D626000FB2CB /* cal_subgroup.cc in Sources */ = {isa = PBXBuildFile; fileRef = 04CC47FD2317D626000FB2CB /* cal_subgroup.cc */; };
 		04E7AB3C2306BA8A000C1C31 /* liblib_merge.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04E7AB3B2306BA8A000C1C31 /* liblib_merge.a */; };
 		04F153EF22634C3C006D0B36 /* UIListDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 04F153EE22634C3B006D0B36 /* UIListDelegate.mm */; };
 /* End PBXBuildFile section */
@@ -378,6 +379,7 @@
 		0456D57022579D4F00A00865 /* boost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = boost.a; path = ThirdParty/boost.a; sourceTree = "<group>"; };
 		047AFB872259DA2400BA3710 /* try_mm.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = try_mm.mm; sourceTree = "<group>"; };
 		047AFB882259DA2400BA3710 /* common_header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common_header.h; sourceTree = "<group>"; };
+		04CC47FD2317D626000FB2CB /* cal_subgroup.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cal_subgroup.cc; sourceTree = "<group>"; };
 		04E7AB3B2306BA8A000C1C31 /* liblib_merge.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblib_merge.a; path = ../ThirdParty/liblib_merge.a; sourceTree = "<group>"; };
 		04F153ED22634C3A006D0B36 /* UIListDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIListDelegate.h; sourceTree = "<group>"; };
 		04F153EE22634C3B006D0B36 /* UIListDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = UIListDelegate.mm; sourceTree = "<group>"; };
@@ -727,6 +729,7 @@
 		041C0BBF2302BF23004610C6 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				04CC47FD2317D626000FB2CB /* cal_subgroup.cc */,
 				041C0BC12302BF23004610C6 /* ba.cc */,
 				041C0BC22302BF23004610C6 /* culling_frame.cc */,
 				041C0BC32302BF23004610C6 /* pose_graph_opti.cc */,
@@ -1378,6 +1381,7 @@
 				043F0B39225B7C63000104D4 /* RecordViewController.mm in Sources */,
 				0456D44B225741DD00A00865 /* main.m in Sources */,
 				041C0CBA2302BF24004610C6 /* parameter.cpp in Sources */,
+				04CC47FE2317D626000FB2CB /* cal_subgroup.cc in Sources */,
 				041C0CD32302BF24004610C6 /* os_specific.c in Sources */,
 				041C0C9C2302BF24004610C6 /* map_tool.cc in Sources */,
 				041C0CC52302BF24004610C6 /* hyper_graph_action.cpp in Sources */,
