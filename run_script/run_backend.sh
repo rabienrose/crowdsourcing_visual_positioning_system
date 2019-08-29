@@ -17,10 +17,10 @@ ${BACKEND_ADDR} \
     --project_mat_file=${IN_ADDR}/../config/words_projmat.fstream \
     --op_type=${OP_TYPE} \
     --max_repro_err=20 \
-    --gps_weight=1 \
-    --reset_type=doMatch \
-    --reset_val=true \
-    --cull_frame_rate=0.8 \
+    --gps_weight=0.000001 \
+    --reset_type=all \
+    --reset_val=false \
+    --cull_frame_rate=0.9 \
     --v=0 \
     --logtostderr=true \
     --colorlogtostderr=true

@@ -14,7 +14,8 @@
   <depend>g2o_catkin</depend>
   <depend>global_map</depend>
   <depend>global_match</depend>
-  <depend>sim3_ransac</depend>
   <depend>imu_visual_lib</depend>
   <depend>visualization</depend>
+  <depend>chamo_common</depend>
+  <depend>sim3_ransac</depend>
 </package>

@@ -102,7 +102,7 @@ int main(int argc, char* argv[]){
     gm::GlobalMapApi api;
     api.init(FLAGS_config_root, FLAGS_map_name);
     std::vector<unsigned int> ids;
-    ids.push_back(112224160);
+    ids.push_back(112260160);
     api.load_map(ids);
     std::vector<Eigen::Vector3d> mp_posis;
     std::vector<Eigen::Vector3d> kf_posis;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
     f.open(res_root+"/frame_pose_opt.txt");
     Eigen::Vector3d t_c_g;
     t_c_g<<FLAGS_t_cg_x_match,FLAGS_t_cg_y_match,FLAGS_t_cg_z_match;
-    
+    std::cout<<"start loc"<<std::endl;
     for(;it!=view.end();it++){
         if(!ros::ok()){
             break;

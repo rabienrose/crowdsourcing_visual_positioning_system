@@ -222,10 +222,10 @@ namespace gm{
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
         status="extract bag";
         std::cout<<status<<std::endl;
-        extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
-        status="slam";
+        //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
+        status="slam"; 
         std::cout<<status<<std::endl;
-        do_vslam(cache_addr, config_addr, bag_addr);
+        //do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
 //         block_ids.push_back(112224160);
 //         block_ids.push_back(112260160);
@@ -253,13 +253,13 @@ namespace gm{
         FLAGS_max_repro_err=20;
         status="2nd BA";
         std::cout<<status<<std::endl;
-        optimize_BA(map, false);
         optimize_BA(map, true);
+        //optimize_BA(map, true);
         status="culling";
         std::cout<<status<<std::endl;
         FLAGS_cull_frame_rate=0.9;
         culling_frame(map);
-        optimize_BA(map, false);
+        //optimize_BA(map, true);
         reset_all_status(map, "all", false);
         status="save";
         std::cout<<status<<std::endl;

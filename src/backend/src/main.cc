@@ -39,15 +39,19 @@ int main(int argc, char* argv[]) {
         optimize_BA(map, true);
     }else if(FLAGS_op_type=="BA"){
         optimize_BA(map, false);
+    }else if(FLAGS_op_type=="pose_opt"){
+        pose_graph_opti_se3(map);
     }else if(FLAGS_op_type=="Match"){
         update_corresponds(map, FLAGS_project_mat_file);
     }else if(FLAGS_op_type=="CullingFrame"){
         culling_frame(map);
     }else if(FLAGS_op_type=="Reset"){
         reset_all_status(map, FLAGS_reset_type, FLAGS_reset_val);
-    }
-    else if(FLAGS_op_type=="Pose"){
+    }else if(FLAGS_op_type=="sim3"){
         pose_graph_opti_sim3(map);
+    }else if(FLAGS_op_type=="test"){
+        std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
+        cal_subgroup(map, group_frames);
     }
     gm::save_global_map(map, FLAGS_out_root);
 }

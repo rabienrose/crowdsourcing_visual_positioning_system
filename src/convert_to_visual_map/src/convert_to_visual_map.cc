@@ -114,15 +114,7 @@ void alignToIMU(gm::GlobalMap& map){
     
 }
 
-void transformPoseUseSim3(Eigen::Matrix4d& sim3, double scale,  Eigen::Matrix4d& in_pose,  Eigen::Matrix4d& out_pose){
-    Eigen::Matrix3d R_tran=sim3.block(0,0,3,3)/scale;
-    Eigen::Matrix3d R_in=in_pose.block(0,0,3,3);
-    Eigen::Matrix3d R_out=R_tran*R_in;
-    Eigen::Vector4d t_out=sim3*in_pose.block(0,3,4,1);
-    out_pose= Eigen::Matrix4d::Identity();
-    out_pose.block(0,0,3,3) = R_out;
-    out_pose.block(0,3,4,1) = t_out;
-}
+
 
 void alignToGPS(gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
     int last_frame_id=0;
@@ -164,7 +156,7 @@ void alignToGPS(gm::GlobalMap& map, std::vector<gm::GlobalMap>& out_maps){
                 for(int j=0; j<submap.frames.size(); j++){
                     Eigen::Matrix4d pose_transformed_temp;
                     Eigen::Matrix4d temp_pose=submap.frames[j]->getPose();
-                    transformPoseUseSim3(T12, scale_12, temp_pose, pose_transformed_temp);
+                    chamo::transformPoseUseSim3(T12, temp_pose, pose_transformed_temp);
                     submap.frames[j]->setPose(pose_transformed_temp);
                 }
                 for(int j=0; j<submap.mappoints.size(); j++){

@@ -7,7 +7,7 @@
 <a href="https://www.bilibili.com/video/av65482154" target="_blank"><img src="https://github.com/rabienrose/crowdsourcing_visual_positioning_system/blob/master/doc/map_loc.jpg" 
 alt="Chamo" width="240" height="180" border="10" /></a>
 <a href="https://www.bilibili.com/video/av65569066" target="_blank"><img src="https://github.com/rabienrose/crowdsourcing_visual_positioning_system/blob/master/doc/app.jpg" 
-alt="Chamo" width="260" height="180" border="10" /></a>
+alt="Chamo" width="280" height="180" border="10" /></a>
 ## Main Content
   - Video data collection and LocalMap creation on the mobile phone.
   - Image data collection and feature point extraction. These means the system supports both sequence frame and single picture update.

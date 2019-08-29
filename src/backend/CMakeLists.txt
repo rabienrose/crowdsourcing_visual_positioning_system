@@ -12,6 +12,7 @@ cs_add_library(${PROJECT_NAME}_lib
     src/ba.cc
     src/culling_frame.cc
     src/map_tool.cc
+    src/cal_subgroup.cc
 )
 
 cs_add_executable(${PROJECT_NAME}

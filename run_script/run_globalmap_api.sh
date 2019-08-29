@@ -1,6 +1,6 @@
-ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/office_merge_1
-MAP_ADDR=${ROOT_ADDR}/global
-BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/office_9_1
+ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/merge_two_map
+MAP_ADDR=${ROOT_ADDR}/test
+BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/office_9/bag
 CONFIG_ADDR=${ROOT_ADDR}/config
 CACHE_ROOT=${ROOT_ADDR}/cache
 LOCAL_ROOT=${ROOT_ADDR}/local
@@ -13,8 +13,8 @@ mkdir ${MAP_ADDR}
 map_bag_list=`ls ${BAG_ADDR}`
 for map_bag_addr in ${map_bag_list}
 do
-    rm -rf ${CACHE_ROOT}
-    rm -rf ${LOCAL_ROOT}
+    #rm -rf ${CACHE_ROOT}
+    #rm -rf ${LOCAL_ROOT}
     mkdir ${CACHE_ROOT}
     mkdir ${LOCAL_ROOT}
     map_name=`basename "${map_bag_addr}"`
