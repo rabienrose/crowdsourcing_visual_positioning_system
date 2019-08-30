@@ -312,7 +312,6 @@ namespace chamo {
             if(inliers.rows<40){
                 continue;
             }
-            std::cout<<"inlier: "<<inliers.rows<<std::endl;
             cv::Mat rot_m;
             cv::Rodrigues(rvec, rot_m);
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> rot_m_eigen;
@@ -324,7 +323,7 @@ namespace chamo {
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
             
-            bool do_reproj=false;
+            bool do_reproj=true;
             if(do_reproj){
                 Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
                 k_mat(0, 0) = query_frame->fx;
@@ -376,7 +375,7 @@ namespace chamo {
                 if(inliers.rows<20){
                     continue;
                 }
-                std::cout<<"inlier2: "<<inliers.rows<<std::endl;
+                //std::cout<<"inlier2: "<<inliers.rows<<std::endl;
             }
 
             cv::Rodrigues(rvec, rot_m);

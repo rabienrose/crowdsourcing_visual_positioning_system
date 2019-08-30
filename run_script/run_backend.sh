@@ -16,7 +16,7 @@ ${BACKEND_ADDR} \
     --map_ids=${MAP_IDS}\
     --project_mat_file=${IN_ADDR}/../config/words_projmat.fstream \
     --op_type=${OP_TYPE} \
-    --max_repro_err=20 \
+    --max_repro_err=100 \
     --gps_weight=0.000001 \
     --reset_type=all \
     --reset_val=false \

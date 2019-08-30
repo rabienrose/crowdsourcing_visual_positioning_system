@@ -306,7 +306,7 @@ namespace chamo
             double tmp = sqrt(pow(P1[i][0] - local_to_global[0], 2) +
                             pow(P1[i][1] - local_to_global[1], 2) +
                             pow(P1[i][2] - local_to_global[2], 2));
-            if(tmp < 2.0){
+            if(tmp < 0.5){
                 b_inliners[i] = true;
                 inlier++;
             }
@@ -337,28 +337,21 @@ namespace chamo
             all_indices.push_back(i);
         }
 
-        float ransac_prob = 0.99;
-        int ransac_min_inliers = 50;
-        int ransac_max_iter = 1000;
-
-        // Adjust Parameters according to number of correspondences
-        float epsilon = (float)ransac_min_inliers / match_size;
-
-        // Set RANSAC iterations according to probability, epsilon, and max iterations
-        int n_iterations;
-
-//         if (ransac_min_inliers == match_size)
-//             n_iterations = 1;
-//         else
-//             n_iterations = ceil(log(1 - ransac_prob) / log(1 - pow(epsilon, 3)));
-
-        //ransac_max_iter = max(1, min(n_iterations, ransac_max_iter));
-        ransac_max_iter=1000;
+        float ransac_prob = 0.90;
+        int ransac_max_inliers = match_size*ransac_prob;
+        int ransac_min_inliers = 0.2*match_size;
+        if(match_size<100){
+            ransac_min_inliers=20;
+        }
+        int ransac_max_iter = 200;
         int count_iter = 0;
         int ninliers_final=0;
+        Eigen::Matrix4d best_T12;
+        double best_scale_12;
+        int best_inlier=-1;
         while (count_iter < ransac_max_iter) {
             count_iter++;
-
+            
             std::vector<size_t> available_indices;
             available_indices = all_indices;
 
@@ -378,13 +371,14 @@ namespace chamo
                 available_indices[randi] = available_indices.back();
                 available_indices.pop_back();
             }
+            Eigen::Matrix4d temp_T12;
+            double temp_scale_12;
 
-            ComputeSim3(P3D1, P3D2, T12, scale_12);
+            ComputeSim3(P3D1, P3D2, temp_T12, temp_scale_12);
 
             std::vector<bool> b_inliners = std::vector<bool>(match_size,false);
-            int ninliers = CheckInliers(P1, P2, T12, scale_12, b_inliners);
-            //std::cout<<"ransac ninliers: "<<ninliers<<std::endl; 
-            if (ninliers > ransac_min_inliers) {
+            int ninliers = CheckInliers(P1, P2, temp_T12, temp_scale_12, b_inliners);
+            if(ninliers>ransac_min_inliers){
                 std::vector<Eigen::Vector3d> P3D1_inlier, P3D2_inlier;
                 // std::vector<cv::KeyPoint> local_kp_inlier;
                 P3D1_inlier.reserve(match_size);
@@ -403,21 +397,26 @@ namespace chamo
 
                 ninliers_final = OptimizeSim3Align(P3D1_inlier,
                                                                         P3D2_inlier,
-                                                                        T12,
-                                                                        scale_12,
-                                                                        2.0);
-                
-                // chamo::ComputeSim3(P3D1_inlier, P3D2_inlier, T12, scale_12);
-                // int ninliers_final = CheckInliers(P3D1_inlier, P3D2_inlier, T12, scale_12, b_inliners);
-                // if(ninliers_final > 0.5 * ninliers){
-                if(ninliers_final > ransac_min_inliers){
-                    return true;
+                                                                        temp_T12,
+                                                                        temp_scale_12,
+                                                                                      2.0);
+                if(best_inlier<ninliers_final){
+                    best_inlier=ninliers_final;                                                             
+                    best_T12=temp_T12;
+                    best_scale_12=temp_scale_12;
+                    std::cout<<best_inlier/(float)match_size<<std::endl;
+                }
+                if(best_inlier>ransac_max_inliers){
+                    break;
                 }
             }
         }
-        if(ninliers_final<20){
+        std::cout<<"ninliers: "<<best_inlier/(float)match_size<<std::endl; 
+        if(best_inlier<ransac_min_inliers){
             return false;
         }else{
+            T12=best_T12;
+            scale_12=best_scale_12;
             return true;
         }
     }

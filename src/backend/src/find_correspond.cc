@@ -186,7 +186,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                 for(int j=0; j<group_sim3_1.size(); j++){
                     if(group_sim3_1[j]==ranked_groupid[k] && group_sim3_2[j]==ranked_groupid[i]){
                         trans_ind=j;
-                        T_1_t = group_sim3[trans_ind]; //group_sim3 is from 2 to 1, but 2 is the smaller one
+                        T_1_t = group_sim3[trans_ind]; //group_sim3 is from 2 to 1, 2 is the smaller one
                         std::cout<<"2 is smaller"<<std::endl;
                         break;
                     }
@@ -195,17 +195,17 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     continue;
                 }
                 
-                for(int n=0; n<group_frames[i].size(); n++){
+                for(int n=0; n<group_frames[ranked_groupid[i]].size(); n++){
                     Eigen::Matrix4d pose_transformed_temp;
-                    Eigen::Matrix4d temp_pose=group_frames[i][n]->getPose();
+                    Eigen::Matrix4d temp_pose=group_frames[ranked_groupid[i]][n]->getPose();
                     chamo::transformPoseUseSim3(T_1_t, temp_pose, pose_transformed_temp);
-                    group_frames[i][n]->setPose(pose_transformed_temp);
+                    group_frames[ranked_groupid[i]][n]->setPose(pose_transformed_temp);
                 }
                 std::set<std::shared_ptr<gm::MapPoint>> need_mod_mps;
-                for(int n=0; n<group_frames[i].size(); n++){
-                    for(int m=0; m<group_frames[i][n]->obss.size(); m++){
-                        if(group_frames[i][n]->obss[m]!=nullptr){
-                            need_mod_mps.insert(group_frames[i][n]->obss[m]);
+                for(int n=0; n<group_frames[ranked_groupid[i]].size(); n++){
+                    for(int m=0; m<group_frames[ranked_groupid[i]][n]->obss.size(); m++){
+                        if(group_frames[ranked_groupid[i]][n]->obss[m]!=nullptr){
+                            need_mod_mps.insert(group_frames[ranked_groupid[i]][n]->obss[m]);
                         }
                     }
                 }
@@ -217,6 +217,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     Eigen::Vector4d posi_gps_homo = T_1_t*posi_homo;
                     mp->position=posi_gps_homo.block(0,0,3,1);   
                 }
+                break;
             }
         }
     }
@@ -243,10 +244,10 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
             CHECK_GT(frame_inliers_kps.size(), i);
             CHECK_GT(frame_inliers_kps[i].size(), n);
             if(frame_inliers_kps[i][n].size()>20){
-                if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
-                }else{
-                    continue;
-                }
+//                 if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
+//                 }else{
+//                     continue;
+//                 }
                 Eigen::Matrix4d T_tar_sour;
                 double scale_tar_sour; 
                 bool succ=true;

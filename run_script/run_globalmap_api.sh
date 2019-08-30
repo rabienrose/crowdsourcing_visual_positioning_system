@@ -1,5 +1,5 @@
 ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/merge_two_map
-MAP_ADDR=${ROOT_ADDR}/test
+MAP_ADDR=${ROOT_ADDR}/global
 BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/office_9/bag
 CONFIG_ADDR=${ROOT_ADDR}/config
 CACHE_ROOT=${ROOT_ADDR}/cache
