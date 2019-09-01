@@ -220,25 +220,26 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                 break;
             }
         }
-    }
-    frame_inliers_mps.clear();
-    frame_inliers_kps.clear();
-    posess.clear();
-    matchid_2_frame.clear();
-    for(int i=0; i<map.frames.size(); i++){
-        std::vector<std::vector<int>> inliers_mps;
-        std::vector<std::vector<int>> inliers_kps;
-        if(map.frames[i]->doMatch==false){
-            continue;
+        frame_inliers_mps.clear();
+        frame_inliers_kps.clear();
+        posess.clear();
+        matchid_2_frame.clear();
+        for(int i=0; i<map.frames.size(); i++){
+            std::vector<std::vector<int>> inliers_mps;
+            std::vector<std::vector<int>> inliers_kps;
+            if(map.frames[i]->doMatch==false){
+                continue;
+            }
+            std::vector<Eigen::Matrix4d> poses;
+            global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
+            frame_inliers_mps.push_back(inliers_mps);
+            frame_inliers_kps.push_back(inliers_kps);
+            posess.push_back(poses);
+            matchid_2_frame.push_back(map.frames[i]);
         }
-        std::vector<Eigen::Matrix4d> poses;
-        global_matcher.MatchImg(map.frames[i], inliers_mps, inliers_kps, poses, FLAGS_match_project_range, FLAGS_match_project_desc_diff);
-        frame_inliers_mps.push_back(inliers_mps);
-        frame_inliers_kps.push_back(inliers_kps);
-        posess.push_back(poses);
-        matchid_2_frame.push_back(map.frames[i]);
     }
     
+    map.AssignKpToMp();
     for(int i=0; i<posess.size(); i++){
         for(int n=0; n<posess[i].size(); n++){
             CHECK_GT(frame_inliers_kps.size(), i);
@@ -267,14 +268,19 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                 }
                 if(succ){
                     std::map<std::shared_ptr<gm::Frame>, int> frame_list;
+                    //std::cout<<"=========================="<<std::endl;
+                    //std::cout<<"matched count: "<<frame_inliers_mps[i][n].size()<<std::endl;
                     for(int j=0; j<frame_inliers_mps[i][n].size(); j++){
                         std::shared_ptr<gm::MapPoint> temp_tar_mp = map.mappoints[frame_inliers_mps[i][n][j]];
                         for(int k=0; k<temp_tar_mp->track.size(); k++){
-                            if(frame_list.count(temp_tar_mp->track[k].frame)==0){
-                                frame_list[temp_tar_mp->track[k].frame]=1;
-                            }else{
-                                frame_list[temp_tar_mp->track[k].frame]=frame_list[temp_tar_mp->track[k].frame]+1;
+                            if(temp_tar_mp->track[k].frame->id!=matchid_2_frame[i]->id){
+                                if(frame_list.count(temp_tar_mp->track[k].frame)==0){
+                                    frame_list[temp_tar_mp->track[k].frame]=1;
+                                }else{
+                                    frame_list[temp_tar_mp->track[k].frame]=frame_list[temp_tar_mp->track[k].frame]+1;
+                                }
                             }
+                            
                         }
                     }
                     
@@ -284,16 +290,19 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     int max_count=0;
                     std::shared_ptr<gm::Frame> max_frame=nullptr;
                     for ( it = frame_list.begin(); it != frame_list.end(); it++ ){
-                        if(it->second>30){
-                            connected_weights.push_back(it->second);
-                            connected_frames.push_back(it->first);
+                        if(it->second>max_count){
+                            max_count=it->second;
+                            max_frame=it->first;
                         }
                     }
-                    for(int j=0; j<connected_frames.size(); j++){
-                        T_tar_sour=connected_frames[j]->getPose().inverse()*posess[i][n];
+                    if(max_count>20){
+                        T_tar_sour=max_frame->getPose().inverse()*posess[i][n];
                         Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
                         Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
-                        map.AddConnection(matchid_2_frame[i], connected_frames[j], posi, rot, scale_tar_sour, connected_weights[j]);
+                        if(matchid_2_frame[i]->id!=max_frame->id){
+                            map.AddConnection(matchid_2_frame[i], max_frame, posi, rot, scale_tar_sour, max_count);
+                        }
+                        
                     }
                 }
             }else{
@@ -308,41 +317,55 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     std::vector<std::set<long unsigned int >> to_merge_mps;
     for(int i=0; i<frame_inliers_kps.size(); i++){
         for(int j=0; j<frame_inliers_kps[i].size(); j++){
-            if(frame_inliers_kps[i][j].size()>10){
+            if(frame_inliers_kps[i][j].size()>40){
                 for(int k=0; k<frame_inliers_kps[i][j].size(); k++){
                     CHECK_GT(matchid_2_frame[i]->obss.size(), frame_inliers_kps[i][j][k]);
-                    if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]==nullptr){
-                        CHECK_GT(map.mappoints.size(), frame_inliers_mps[i][j][k]);
-                        matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]=map.mappoints[frame_inliers_mps[i][j][k]];
-                        //find new pair.
-                        new_match_count++;
-                    }else{
-                        if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id==map.mappoints[frame_inliers_mps[i][j][k]]->id){
-                            //find the same pair, do nothing.
+                    CHECK_GT(map.mappoints.size(), frame_inliers_mps[i][j][k]);
+                    std::shared_ptr<gm::MapPoint> temp_tar_mp = map.mappoints[frame_inliers_mps[i][j][k]];
+                    bool find_same_frame=false;
+                    for(int n=0; n<temp_tar_mp->track.size(); n++){
+                        if(matchid_2_frame[i]->id==temp_tar_mp->track[n].frame->id){
+                            find_same_frame=true;
+                            break;
+                        }
+                    }
+                    if(!find_same_frame){
+                        if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]==nullptr){
+                            matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]=temp_tar_mp;
+                            gm::TrackItem item_t;
+                            item_t.kp_ind=frame_inliers_kps[i][j][k];
+                            item_t.frame=matchid_2_frame[i];
+                            temp_tar_mp->track.push_back(item_t);
+                            //find new pair.
+                            new_match_count++;
                         }else{
-                            bool find_one=false;
-                            for(int n=0; n<to_merge_mps.size(); n++){
-                                auto search = to_merge_mps[n].find(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
-                                if (search != to_merge_mps[n].end()) {
-                                    to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
-                                    to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
-                                    find_one=true;
+                            if(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id==temp_tar_mp->id){
+                                //find the same pair, do nothing.
+                            }else{
+                                bool find_one=false;
+                                for(int n=0; n<to_merge_mps.size(); n++){
+                                    auto search = to_merge_mps[n].find(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                    if (search != to_merge_mps[n].end()) {
+                                        to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                        to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
+                                        find_one=true;
+                                    }
+                                    search = to_merge_mps[n].find(map.mappoints[frame_inliers_mps[i][j][k]]->id);
+                                    if (search != to_merge_mps[n].end()) {
+                                        to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                        to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
+                                        find_one=true;
+                                    }
                                 }
-                                search = to_merge_mps[n].find(map.mappoints[frame_inliers_mps[i][j][k]]->id);
-                                if (search != to_merge_mps[n].end()) {
-                                    to_merge_mps[n].insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
-                                    to_merge_mps[n].insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
-                                    find_one=true;
+                                if(find_one==false){
+                                    std::set<long unsigned int> temp_set;
+                                    temp_set.insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
+                                    temp_set.insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
+                                    to_merge_mps.push_back(temp_set);
                                 }
+                                merge_count++;
+                                //find conflicted pair, merge two.
                             }
-                            if(find_one==false){
-                                std::set<long unsigned int> temp_set;
-                                temp_set.insert(matchid_2_frame[i]->obss[frame_inliers_kps[i][j][k]]->id);
-                                temp_set.insert(map.mappoints[frame_inliers_mps[i][j][k]]->id);
-                                to_merge_mps.push_back(temp_set);
-                            }
-                            merge_count++;
-                            //find conflicted pair, merge two.
                         }
                     }
                 }
@@ -380,4 +403,6 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     }
     std::cout<<"del_count: "<<del_count<<std::endl;
     map.AssignKpToMp();
+    map.FilterTrack();
+    map.CalConnections();
 }

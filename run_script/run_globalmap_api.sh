@@ -13,8 +13,8 @@ mkdir ${MAP_ADDR}
 map_bag_list=`ls ${BAG_ADDR}`
 for map_bag_addr in ${map_bag_list}
 do
-    #rm -rf ${CACHE_ROOT}
-    #rm -rf ${LOCAL_ROOT}
+    rm -rf ${CACHE_ROOT}
+    rm -rf ${LOCAL_ROOT}
     mkdir ${CACHE_ROOT}
     mkdir ${LOCAL_ROOT}
     map_name=`basename "${map_bag_addr}"`

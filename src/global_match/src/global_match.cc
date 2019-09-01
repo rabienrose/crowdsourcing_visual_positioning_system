@@ -288,7 +288,7 @@ namespace chamo {
                 }
                 //std::cout << "["<<item.first<<": "<<item.second.size()<<"]";
             }
-            if(point3ds.size()<20){
+            if(point3ds.size()<40){
                 continue;
             }
             //std::cout<<std::endl;
@@ -323,7 +323,7 @@ namespace chamo {
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
             
-            bool do_reproj=true;
+            bool do_reproj=false;
             if(do_reproj){
                 Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
                 k_mat(0, 0) = query_frame->fx;
@@ -366,13 +366,13 @@ namespace chamo {
                         }
                     }
                 }
-                if(point3ds.size()<20){
+                if(point3ds.size()<40){
                     continue;
                 }
                 inliers=cv::Mat();
                 //std::cout<<"ran before: "<<point3ds.size()<<std::endl;
                 cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
-                if(inliers.rows<20){
+                if(inliers.rows<40){
                     continue;
                 }
                 //std::cout<<"inlier2: "<<inliers.rows<<std::endl;

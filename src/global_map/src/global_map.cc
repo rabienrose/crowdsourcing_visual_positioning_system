@@ -80,7 +80,6 @@ namespace gm{
         for(int i=0; i<frames.size(); i++){
             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
             for(int j=0; j<frames[i]->obss.size(); j++){
-                
                 if(frames[i]->obss[j]!=nullptr){
                     
                     for(int k=0; k<frames[i]->obss[j]->track.size(); k++){
@@ -92,7 +91,7 @@ namespace gm{
             for(std::map<std::shared_ptr<gm::Frame>,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
             {
                 //std::cout<<mit->first->id<<" : "<<mit->second<<std::endl;
-                if(mit->second<=20){
+                if(mit->second<=40){
                     continue;
                 }
                 //std::cout<<element.second<<std::endl;

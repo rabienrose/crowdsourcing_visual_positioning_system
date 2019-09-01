@@ -60,6 +60,7 @@ namespace g2o {
 
 
 void optimize_BA(gm::GlobalMap& map, bool re_triangle){
+    map.AssignKpToMp();
     map.CalConnections();
     map.FilterTrack();
     int pose_opt_count=0;
@@ -174,8 +175,20 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
                 map.mappoints[i]->track[last_id].getUV(u, v, octave);
                 cv::Point2f pt2( u, v);
                 pts2.push_back(pt2);
-                cv::Mat proj1=proj_cv_mats[map.mappoints[i]->track[0].frame];
-                cv::Mat proj2=proj_cv_mats[map.mappoints[i]->track[last_id].frame];
+                auto it1=proj_cv_mats.find(map.mappoints[i]->track[0].frame);
+                if(it1==proj_cv_mats.end()){
+                    map.mappoints[i]->isbad=true;
+                    std::cout<<"link non exist frame!"<<std::endl;
+                    continue;
+                }
+                cv::Mat proj1=proj_cv_mats[it1->first];
+                auto it2=proj_cv_mats.find(map.mappoints[i]->track[last_id].frame);
+                if(it2==proj_cv_mats.end()){
+                    map.mappoints[i]->isbad=true;
+                    std::cout<<"link non exist frame!"<<std::endl;
+                    continue;
+                }
+                cv::Mat proj2=proj_cv_mats[it2->first];
                 cv::Mat out_posi;
                 cv::triangulatePoints(proj1, proj2, pts1, pts2, out_posi);
                 Eigen::Vector3d temp_posi;
