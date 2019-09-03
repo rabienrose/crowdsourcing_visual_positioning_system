@@ -12,6 +12,7 @@ public:
     bool doBA;
     bool doGraphOpti;
     bool doMatch;
+    bool willDel;
     double time_stamp;
     std::string frame_file_name;
     std::vector<cv::KeyPoint> kps;

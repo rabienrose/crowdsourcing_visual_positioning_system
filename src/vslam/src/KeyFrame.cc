@@ -83,6 +83,7 @@ void KeyFrame::setData(int kf_id, double timestamp, std::vector<cv::KeyPoint>& k
     file_name_=file_name;
     N=keysUn.size();
     mvKeysUn=keysUn;
+    mbFirstConnection=true;
     if(N>0){
         mvpMapPoints.resize(mvKeysUn.size());
     }
@@ -469,17 +470,17 @@ void KeyFrame::UpdateConnections()
             KFcounter[mit->first]++;
         }
     }
-
     // This should not happen
-    if(KFcounter.empty())
+    if(KFcounter.empty()){
+        std::cout<<"KFcounter.empty()"<<std::endl;
         return;
-
+    }
+        
     //If the counter is greater than threshold add connection
     //In case no keyframe counter is over threshold add the one with maximum counter
     int nmax=0;
     KeyFrame* pKFmax=NULL;
     int th = 15;
-
     vector<pair<int,KeyFrame*> > vPairs;
     vPairs.reserve(KFcounter.size());
     for(map<KeyFrame*,int>::iterator mit=KFcounter.begin(), mend=KFcounter.end(); mit!=mend; mit++)
@@ -495,13 +496,11 @@ void KeyFrame::UpdateConnections()
             (mit->first)->AddConnection(this,mit->second);
         }
     }
-
     if(vPairs.empty())
     {
         vPairs.push_back(make_pair(nmax,pKFmax));
         pKFmax->AddConnection(this,nmax);
     }
-
     sort(vPairs.begin(),vPairs.end());
     list<KeyFrame*> lKFs;
     list<int> lWs;
@@ -519,18 +518,26 @@ void KeyFrame::UpdateConnections()
         mvpOrderedConnectedKeyFrames = vector<KeyFrame*>(lKFs.begin(),lKFs.end());
         mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
 
-        if(mbFirstConnection && mnId!=0)
-        {
-            mpParent = mvpOrderedConnectedKeyFrames.front();
-            mpParent->AddChild(this);
-            mbFirstConnection = false;
-        }
+//         if(mbFirstConnection && mnId!=0)
+//         {
+//             for(int i=0;i<mvpOrderedConnectedKeyFrames.size(); i++){
+//                 if(mvpOrderedConnectedKeyFrames[i]->mpParent!=NULL && mvpOrderedConnectedKeyFrames[i]->mpParent->mnId==mnId){
+//                     continue;
+//                 }else{
+//                     mpParent = mvpOrderedConnectedKeyFrames[i];
+//                     mpParent->AddChild(this);
+//                     break;
+//                 }    
+//             }
+//             mbFirstConnection = false;
+//         }
     }
 }
 
 void KeyFrame::AddChild(KeyFrame *pKF)
 {
     //unique_lock<mutex> lockCon(mMutexConnections);
+    //std::cout<<mnId<<"->"<<pKF->mnId<<std::endl;
     mspChildrens.insert(pKF);
 }
 

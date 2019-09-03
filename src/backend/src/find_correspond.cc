@@ -61,7 +61,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     }
     std::cout<<"done raw match!!"<<std::endl;
     
-    bool do_sim3_trans=true;
+    bool do_sim3_trans=false;
     if(do_sim3_trans){
         std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
         cal_subgroup(map, group_frames);
@@ -244,7 +244,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
         for(int n=0; n<posess[i].size(); n++){
             CHECK_GT(frame_inliers_kps.size(), i);
             CHECK_GT(frame_inliers_kps[i].size(), n);
-            if(frame_inliers_kps[i][n].size()>20){
+            if(frame_inliers_kps[i][n].size()>40){
 //                 if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
 //                 }else{
 //                     continue;
@@ -295,12 +295,12 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                             max_frame=it->first;
                         }
                     }
-                    if(max_count>20){
+                    if(max_count>40){
                         T_tar_sour=max_frame->getPose().inverse()*posess[i][n];
                         Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
                         Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
                         if(matchid_2_frame[i]->id!=max_frame->id){
-                            map.AddConnection(matchid_2_frame[i], max_frame, posi, rot, scale_tar_sour, max_count);
+                            map.AddConnection(matchid_2_frame[i], max_frame, posi, rot, scale_tar_sour, max_count*1000);
                         }
                         
                     }

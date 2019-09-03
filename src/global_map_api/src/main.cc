@@ -23,6 +23,6 @@ int main(int argc, char* argv[]) {
     gm::GlobalMapApi api;
     api.init(FLAGS_config_root, FLAGS_map_root);
     std::string status;
-    api.process_bag(FLAGS_bag_addr, FLAGS_cache_root, FLAGS_localmap_root, status);
+    api.process_bag_orb(FLAGS_bag_addr, FLAGS_cache_root, FLAGS_localmap_root, status);
     return 0;
 }

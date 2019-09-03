@@ -323,7 +323,7 @@ namespace chamo {
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
             
-            bool do_reproj=false;
+            bool do_reproj=true;
             if(do_reproj){
                 Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
                 k_mat(0, 0) = query_frame->fx;

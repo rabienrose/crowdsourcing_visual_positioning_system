@@ -29,7 +29,7 @@ void culling_frame(gm::GlobalMap& map){
                     obss_cont++;
                 }
             }
-            if(obss_cont<50){
+            if(obss_cont<10){
                 if(map.DelFrame(map.frames[i]->id)){
                     del_count++;
                     del_any_frame=true;
@@ -55,7 +55,7 @@ void culling_frame(gm::GlobalMap& map){
             }
             double avg_err= total_err/mp_count;
             //std::cout<<avg_err<<std::endl;
-            if(avg_err>2){
+            if(avg_err>10){
                 if(map.DelFrame(map.frames[i]->id)){
                     del_count++;
                     del_any_frame=true;

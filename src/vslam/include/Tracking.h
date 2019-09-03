@@ -54,7 +54,8 @@ public:
     cv::Mat GrabImageMonocular(Frame mframe);
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
-
+    cv::Mat Loc(const cv::Mat &im, const double &timestamp, std::string file_name);
+    bool Relocalization(bool b_update_pose = true);
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when projecting points
     // TODO: Modify MapPoint::PredictScale to take into account focal lenght

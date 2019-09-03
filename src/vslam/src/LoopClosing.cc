@@ -55,11 +55,13 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 
 void LoopClosing::DoLoopDetect()
 {
+    return;
     while(CheckNewKeyFrames())
     {
         // Detect loop candidates and check covisibility consistency
         if(DetectLoop())
         {
+            std::cout<<"DetectLoop"<<std::endl;
             // Compute similarity transformation [sR|t]
             // In the stereo/RGBD case s=1
             if(ComputeSim3())
@@ -280,7 +282,7 @@ bool LoopClosing::ComputeSim3()
         }
 
         int nmatches = matcher.SearchByBoW(mpCurrentKF,pKF,vvpMapPointMatches[i]);
-
+        std::cout<<"nmatches: "<<nmatches<<std::endl;
         if(nmatches<20)
         {
             vbDiscarded[i] = true;
@@ -297,6 +299,7 @@ bool LoopClosing::ComputeSim3()
     }
 
     bool bMatch = false;
+    
 
     // Perform alternatively RANSAC iterations for each candidate
     // until one is succesful or all fail
@@ -341,7 +344,7 @@ bool LoopClosing::ComputeSim3()
 
                 g2o::Sim3 gScm(Converter::toMatrix3d(R),Converter::toVector3d(t),s);
                 const int nInliers = Optimizer::OptimizeSim3(mpCurrentKF, pKF, vpMapPointMatches, gScm, 10, mbFixScale);
-
+                std::cout<<"nInliers: "<<nInliers<<std::endl;
                 // If optimization is succesful stop ransacs and continue
                 if(nInliers>=20)
                 {
@@ -357,6 +360,8 @@ bool LoopClosing::ComputeSim3()
             }
         }
     }
+    
+    
 
     if(!bMatch)
     {
@@ -398,8 +403,8 @@ bool LoopClosing::ComputeSim3()
         if(mvpCurrentMatchedPoints[i])
             nTotalMatches++;
     }
-
-    if(nTotalMatches>=40)
+    std::cout<<"nTotalMatches: "<<nTotalMatches<<std::endl;
+    if(nTotalMatches>=20)
     {
         for(int i=0; i<nInitialCandidates; i++)
             if(mvpEnoughConsistentCandidates[i]!=mpMatchedKF)
@@ -542,39 +547,39 @@ void LoopClosing::CorrectLoop()
 
 
     // After the MapPoint fusion, new links in the covisibility graph will appear attaching both sides of the loop
-    map<KeyFrame*, set<KeyFrame*> > LoopConnections;
-
-    for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
-    {
-        KeyFrame* pKFi = *vit;
-        vector<KeyFrame*> vpPreviousNeighbors = pKFi->GetVectorCovisibleKeyFrames();
-
-        // Update connections. Detect new links.
-        pKFi->UpdateConnections();
-        LoopConnections[pKFi]=pKFi->GetConnectedKeyFrames();
-        for(vector<KeyFrame*>::iterator vit_prev=vpPreviousNeighbors.begin(), vend_prev=vpPreviousNeighbors.end(); vit_prev!=vend_prev; vit_prev++)
-        {
-            LoopConnections[pKFi].erase(*vit_prev);
-        }
-        for(vector<KeyFrame*>::iterator vit2=mvpCurrentConnectedKFs.begin(), vend2=mvpCurrentConnectedKFs.end(); vit2!=vend2; vit2++)
-        {
-            LoopConnections[pKFi].erase(*vit2);
-        }
-    }
-
-    // Optimize graph
-    Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, mbFixScale);
-
-    mpMap->InformNewBigChange();
-
-    // Add loop edge
-    mpMatchedKF->AddLoopEdge(mpCurrentKF);
-    mpCurrentKF->AddLoopEdge(mpMatchedKF);
-
-    RunGlobalBundleAdjustment(mpCurrentKF->mnId);
-
-    // Loop closed. Release Local Mapping.
-    mpLocalMapper->Release();    
+//     map<KeyFrame*, set<KeyFrame*> > LoopConnections;
+// 
+//     for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
+//     {
+//         KeyFrame* pKFi = *vit;
+//         vector<KeyFrame*> vpPreviousNeighbors = pKFi->GetVectorCovisibleKeyFrames();
+// 
+//         // Update connections. Detect new links.
+//         pKFi->UpdateConnections();
+//         LoopConnections[pKFi]=pKFi->GetConnectedKeyFrames();
+//         for(vector<KeyFrame*>::iterator vit_prev=vpPreviousNeighbors.begin(), vend_prev=vpPreviousNeighbors.end(); vit_prev!=vend_prev; vit_prev++)
+//         {
+//             LoopConnections[pKFi].erase(*vit_prev);
+//         }
+//         for(vector<KeyFrame*>::iterator vit2=mvpCurrentConnectedKFs.begin(), vend2=mvpCurrentConnectedKFs.end(); vit2!=vend2; vit2++)
+//         {
+//             LoopConnections[pKFi].erase(*vit2);
+//         }
+//     }
+// 
+//     // Optimize graph
+//     Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, mbFixScale);
+// 
+//     mpMap->InformNewBigChange();
+// 
+//     // Add loop edge
+//     mpMatchedKF->AddLoopEdge(mpCurrentKF);
+//     mpCurrentKF->AddLoopEdge(mpMatchedKF);
+// 
+//     RunGlobalBundleAdjustment(mpCurrentKF->mnId);
+// 
+//     // Loop closed. Release Local Mapping.
+//     mpLocalMapper->Release();    
 
     mLastLoopKFid = mpCurrentKF->mnId;   
 }
