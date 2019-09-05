@@ -238,7 +238,7 @@ namespace gm{
         FLAGS_map_addr=map_addr;
         std::string out_str=cache_addr;
         std::string img_topic="img";
-        int min_frame=600;
+        int min_frame=2;
         int max_frame=10000;
         int step=1;
         LOG(INFO)<<"max frame:"<<max_frame;
@@ -282,8 +282,8 @@ namespace gm{
                         sys_p=new ORB_SLAM2::System();
                     }
                     bool re=true;
-                    //sys_p->TrackLocalization(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
-                    sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
+                    sys_p->TrackLocalization(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
+                    //sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
 //                    std::cout<<img_count<<std::endl;
 //                    if(img_count%300==0){
 //                        re=false;
@@ -307,6 +307,7 @@ namespace gm{
                         if(!img_display.empty()){
                             cv::imshow("chamo", img_display);
                             show_mp_as_cloud(posis, "vslam_output_posi");
+                            show_mp_as_cloud(pcs, "vslam_output_mp");
                             cv::waitKey(1);
                         }
 #endif
@@ -348,10 +349,10 @@ namespace gm{
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
         status="extract bag";
         std::cout<<status<<std::endl;
-        //extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
+        extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
         status="slam"; 
         std::cout<<status<<std::endl;
-        //do_vslam(cache_addr, config_addr, bag_addr);
+        do_vslam(cache_addr, config_addr, bag_addr);
         std::vector<unsigned int> block_ids;
         //block_ids.push_back(112224160);
 //         block_ids.push_back(112260160);
@@ -361,37 +362,37 @@ namespace gm{
         status="merge";
         std::cout<<status<<std::endl;
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
-//         gm::GlobalMap map;
-//         gm::load_global_map(map, map_addr,block_ids);
-//         map.AssignKpToMp();
-//         status="match";
-//         std::cout<<status<<std::endl;
-//         update_corresponds(map, config_addr+"/words_projmat.fstream");
-//         reset_all_status(map, "doMatch", true);
-//         status="pose opt";
-//         std::cout<<status<<std::endl;
-//         pose_graph_opti_se3(map);
-//         FLAGS_max_repro_err=100;
-//         FLAGS_gps_weight=0.00000000000001;
-//         status="1st BA";
-//         std::cout<<status<<std::endl;
-//         optimize_BA(map, true);
-//         //FLAGS_max_repro_err=50;
-//         status="2nd BA";
-//         std::cout<<status<<std::endl;
-//         optimize_BA(map, true);
-//         optimize_BA(map, true);
-//         status="culling";
-//         std::cout<<status<<std::endl;
-//         FLAGS_cull_frame_rate=0.9;
-//         culling_frame(map);
-//         optimize_BA(map, true);
-//         reset_all_status(map, "all", false);
-//         status="save";
-//         std::cout<<status<<std::endl;
-//         gm::save_global_map(map, map_addr);
-//         status="done";
-//         std::cout<<status<<std::endl;
+        gm::GlobalMap map;
+        gm::load_global_map(map, map_addr,block_ids);
+        map.AssignKpToMp();
+        status="match";
+        std::cout<<status<<std::endl;
+        update_corresponds(map, config_addr+"/words_projmat.fstream");
+        reset_all_status(map, "doMatch", true);
+        status="pose opt";
+        std::cout<<status<<std::endl;
+        pose_graph_opti_se3(map);
+        FLAGS_max_repro_err=100;
+        FLAGS_gps_weight=0.00000000000001;
+        status="1st BA";
+        std::cout<<status<<std::endl;
+        optimize_BA(map, true);
+        FLAGS_max_repro_err=50;
+        status="2nd BA";
+        std::cout<<status<<std::endl;
+        optimize_BA(map, true);
+        optimize_BA(map, true);
+        status="culling";
+        std::cout<<status<<std::endl;
+        FLAGS_cull_frame_rate=0.8;
+        culling_frame(map);
+        optimize_BA(map, true);
+        reset_all_status(map, "all", false);
+        status="save";
+        std::cout<<status<<std::endl;
+        gm::save_global_map(map, map_addr);
+        status="done";
+        std::cout<<status<<std::endl;
         return true;
     }
     

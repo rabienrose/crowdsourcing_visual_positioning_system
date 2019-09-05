@@ -62,6 +62,7 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
     void SetdoLoop(bool flag);
+    void SetLocMode(bool flag);
     void InterruptBA();
 
     void RequestFinish();
@@ -123,6 +124,7 @@ protected:
     std::mutex mMutexAccept;
     
     bool doLoop;
+    bool b_localization_mode;
 };
 
 } //namespace ORB_SLAM

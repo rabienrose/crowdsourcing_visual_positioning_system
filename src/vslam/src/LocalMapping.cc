@@ -30,7 +30,8 @@ namespace ORB_SLAM2
 
 LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
-    mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),doLoop(true)
+    mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),doLoop(true),
+    b_localization_mode(false)
 {
 }
 
@@ -47,8 +48,13 @@ void LocalMapping::SetdoLoop(bool flag)
 {
     doLoop = flag;
 }
+void LocalMapping::SetLocMode(bool flag)
+{
+    b_localization_mode = flag;
+}
 void LocalMapping::DoMapping(){
     mbFinished = false;
+    bool b_detect_loop_in_loc = true;
     // Check if there are keyframes in the queue
     while(CheckNewKeyFrames())
     {
@@ -82,12 +88,22 @@ void LocalMapping::DoMapping(){
         }
         finish=clock();
         totaltime=(double)(finish-start)/CLOCKS_PER_SEC;
-//         std::cout<<"LocalBundleAdjustment Time: "<<totaltime<<std::endl;
+        // std::cout<<"LocalBundleAdjustment Time: "<<totaltime<<std::endl;
+        int count = 0;
+        for(int i = 0; i < mpCurrentKeyFrame->mvpMapPoints.size(); i++) {
+            if(mpCurrentKeyFrame->mvpMapPoints[i])
+                if(!mpCurrentKeyFrame->mvpMapPoints[i]->isBad())
+                    if(mpCurrentKeyFrame->mvpMapPoints[i]->GetGlobalMapFlag())
+                        count++;
         
-        if(doLoop)
+        }
+
+        if(count > 20 && b_localization_mode)
+            b_detect_loop_in_loc = false;
+        if(doLoop && b_detect_loop_in_loc)
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);        
     }
-    if(doLoop)
+    if(doLoop && b_detect_loop_in_loc)
         mpLoopCloser->DoLoopDetect();
 
 }

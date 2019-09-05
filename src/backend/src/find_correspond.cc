@@ -29,7 +29,6 @@ void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint
 
 void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     chamo::GlobalMatch global_matcher;
-    map.CalConnections();
     
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
@@ -61,37 +60,15 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     }
     std::cout<<"done raw match!!"<<std::endl;
     
-    bool do_sim3_trans=false;
+    bool do_sim3_trans=true;
     if(do_sim3_trans){
-        std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
-        cal_subgroup(map, group_frames);
-        for(int i=0; i<group_frames.size(); i++){
-            std::cout<<group_frames[i].size()<<std::endl;
-        }
-        std::map<int, int> groupid_to_sizes;
+        std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
+        cal_subgroup_remove(map, 100, ranked_group_frames);
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
-        for(int i=0; i<group_frames.size(); i++){
-            groupid_to_sizes[i]=group_frames[i].size();
-            std::cout<<i<<"::"<<groupid_to_sizes[i]<<std::endl;
-            for(int j=0; j<group_frames[i].size(); j++){
-                frame_to_groupid[group_frames[i][j]]=i;
+        for(int i=0; i<ranked_group_frames.size(); i++){
+            for(int j=0; j<ranked_group_frames[i].size(); j++){
+                frame_to_groupid[ranked_group_frames[i][j]]=i;
             }
-        }
-        typedef std::function<bool(std::pair<int, int>, std::pair<int, int>)> Comparator;
-        Comparator compFunctor =
-                [](std::pair<int, int> elem1 ,std::pair<int, int> elem2)
-                {
-                    return elem1.second > elem2.second;
-                };
-        std::set<std::pair<int, int>, Comparator> setOfWords(
-                groupid_to_sizes.begin(), groupid_to_sizes.end(), compFunctor);
-        std::vector<int> ranked_groupid;
-        for (std::pair<int, int> element : setOfWords){
-            ranked_groupid.push_back(element.first);
-            
-        }
-        for(int i=0; i<ranked_groupid.size(); i++){
-            std::cout<<"sdfsdf: "<<group_frames[ranked_groupid[i]].size()<<std::endl;
         }
         std::vector<int> groupid_1;
         std::vector<int> groupid_2;
@@ -138,8 +115,8 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
         std::vector<int> group_sim3_1;
         std::vector<int> group_sim3_2;
         std::vector<Eigen::Matrix4d> group_sim3;
-        for(int i=0; i<group_frames.size()-1; i++){
-            for(int j=i+1; j<group_frames.size(); j++){
+        for(int i=0; i<ranked_group_frames.size()-1; i++){
+            for(int j=i+1; j<ranked_group_frames.size(); j++){
                 std::vector<Eigen::Vector3d> pc1;
                 std::vector<Eigen::Vector3d> pc2;
                 for(int k=0; k<groupid_1.size(); k++){
@@ -170,13 +147,13 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                 }
             }
         }
-        
-        for(int i=1; i<ranked_groupid.size(); i++){ //s
+        std::set<long unsigned int> transformed_frames;
+        for(int i=1; i<ranked_group_frames.size(); i++){ //s
             for(int k=0; k<i; k++){ //l
                 int trans_ind=-1;
                 Eigen::Matrix4d T_1_t;
                 for(int j=0; j<group_sim3_1.size(); j++){
-                    if(group_sim3_1[j]==ranked_groupid[i] && group_sim3_2[j]==ranked_groupid[k]){
+                    if(group_sim3_1[j]==i && group_sim3_2[j]==k){
                         trans_ind=j;
                         T_1_t = group_sim3[trans_ind].inverse(); //group_sim3 is from 2 to 1, but 1 is the smaller one, so should convert 1 to 2
                         std::cout<<"1 is smaller"<<std::endl;
@@ -184,7 +161,7 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     }
                 }
                 for(int j=0; j<group_sim3_1.size(); j++){
-                    if(group_sim3_1[j]==ranked_groupid[k] && group_sim3_2[j]==ranked_groupid[i]){
+                    if(group_sim3_1[j]==k && group_sim3_2[j]==i){
                         trans_ind=j;
                         T_1_t = group_sim3[trans_ind]; //group_sim3 is from 2 to 1, 2 is the smaller one
                         std::cout<<"2 is smaller"<<std::endl;
@@ -195,17 +172,22 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     continue;
                 }
                 
-                for(int n=0; n<group_frames[ranked_groupid[i]].size(); n++){
+                for(int n=0; n<ranked_group_frames[i].size(); n++){
+                    if(transformed_frames.find(ranked_group_frames[i][n]->id)!=transformed_frames.end()){
+                        std::cout<<"transform trasformed frame!!"<<std::endl;
+                        continue;
+                    }
                     Eigen::Matrix4d pose_transformed_temp;
-                    Eigen::Matrix4d temp_pose=group_frames[ranked_groupid[i]][n]->getPose();
+                    Eigen::Matrix4d temp_pose=ranked_group_frames[i][n]->getPose();
                     chamo::transformPoseUseSim3(T_1_t, temp_pose, pose_transformed_temp);
-                    group_frames[ranked_groupid[i]][n]->setPose(pose_transformed_temp);
+                    ranked_group_frames[i][n]->setPose(pose_transformed_temp);
+                    transformed_frames.insert(ranked_group_frames[i][n]->id);
                 }
                 std::set<std::shared_ptr<gm::MapPoint>> need_mod_mps;
-                for(int n=0; n<group_frames[ranked_groupid[i]].size(); n++){
-                    for(int m=0; m<group_frames[ranked_groupid[i]][n]->obss.size(); m++){
-                        if(group_frames[ranked_groupid[i]][n]->obss[m]!=nullptr){
-                            need_mod_mps.insert(group_frames[ranked_groupid[i]][n]->obss[m]);
+                for(int n=0; n<ranked_group_frames[i].size(); n++){
+                    for(int m=0; m<ranked_group_frames[i][n]->obss.size(); m++){
+                        if(ranked_group_frames[i][n]->obss[m]!=nullptr){
+                            need_mod_mps.insert(ranked_group_frames[i][n]->obss[m]);
                         }
                     }
                 }
@@ -240,15 +222,12 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     }
     
     map.AssignKpToMp();
+    map.CalConnections();
     for(int i=0; i<posess.size(); i++){
         for(int n=0; n<posess[i].size(); n++){
             CHECK_GT(frame_inliers_kps.size(), i);
             CHECK_GT(frame_inliers_kps[i].size(), n);
             if(frame_inliers_kps[i][n].size()>40){
-//                 if((posess[i][n].block(0,3,3,1)-matchid_2_frame[i]->position).norm()>1){
-//                 }else{
-//                     continue;
-//                 }
                 Eigen::Matrix4d T_tar_sour;
                 double scale_tar_sour; 
                 bool succ=true;
@@ -290,19 +269,27 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
                     int max_count=0;
                     std::shared_ptr<gm::Frame> max_frame=nullptr;
                     for ( it = frame_list.begin(); it != frame_list.end(); it++ ){
-                        if(it->second>max_count){
-                            max_count=it->second;
-                            max_frame=it->first;
+                        if(it->second>40){
+                            T_tar_sour=it->first->getPose().inverse()*posess[i][n];
+                            Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
+                            Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
+                            if(matchid_2_frame[i]->id!=it->first->id){
+                                map.AddConnection(matchid_2_frame[i], it->first, posi, rot, scale_tar_sour, max_count*1);
+                            }
                         }
+//                         if(it->second>max_count){
+//                             max_count=it->second;
+//                             max_frame=it->first;
+//                         }
                     }
                     if(max_count>40){
-                        T_tar_sour=max_frame->getPose().inverse()*posess[i][n];
-                        Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
-                        Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
-                        if(matchid_2_frame[i]->id!=max_frame->id){
-                            map.AddConnection(matchid_2_frame[i], max_frame, posi, rot, scale_tar_sour, max_count*1000);
-                        }
-                        
+//                         T_tar_sour=max_frame->getPose().inverse()*posess[i][n];
+//                         Eigen::Matrix3d rot=T_tar_sour.block(0,0,3,3)/scale_tar_sour;
+//                         Eigen::Vector3d posi=T_tar_sour.block(0,3,3,1);
+//                         if(matchid_2_frame[i]->id!=max_frame->id){
+//                             std::cout<<"add one"<<std::endl;
+//                             map.AddConnection(matchid_2_frame[i], max_frame, posi, rot, scale_tar_sour, max_count*1);
+//                         }
                     }
                 }
             }else{
@@ -404,5 +391,5 @@ void update_corresponds(gm::GlobalMap& map, std::string project_mat_file){
     std::cout<<"del_count: "<<del_count<<std::endl;
     map.AssignKpToMp();
     map.FilterTrack();
-    map.CalConnections();
+//     //map.CalConnections();
 }

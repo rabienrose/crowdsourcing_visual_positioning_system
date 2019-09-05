@@ -17,19 +17,19 @@ class KeyFrameDatabase;
 class System
 {
 public:
-    System(bool do_loop_detect_flag=true);
+    System(bool do_loop_detect_flag=true, bool loop_for_loc = false);
     ~System();
     void saveResult(string map_filename);
     bool TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
-    cv::Mat TrackLocalization(const cv::Mat &im, const double &timestamp, std::string file_name);
-    void getPC(std::vector<Eigen::Vector3d>& pcs);
+    cv::Mat TrackLocalization(const cv::Mat &im, const double &timestamp, std::string file_name="");
+    void getPC(std::vector<Eigen::Vector3d>& pcs, bool b_global_mp = false);
     void getTraj(std::vector<Eigen::Vector3d>& posis, std::vector<Eigen::Quaterniond>& quas);
     void getDebugImg(cv::Mat& img, float& err, int& count, int & mp_count_, int& kf_count_);
     void saveToVisualMap(string map_filename);
     Frame getCurrentFrame(); 
     Map*  getMapPointer();
     Tracking* getTrackPointer();
-    void LoadORBMap(std::string mapname, 
+    void LoadORBMap(std::string map_name, 
                                  ORB_SLAM2::ORBVocabulary*& mpVocabulary, 
                                  ORB_SLAM2::KeyFrameDatabase*& mpKeyFrameDatabase, 
                                  ORB_SLAM2::Map*& mpMap

@@ -73,7 +73,7 @@ void KeyFrameDatabase::clear()
 }
 
 
-vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float minScore)
+vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float minScore, bool only_global_map)
 {
     set<KeyFrame*> spConnectedKeyFrames = pKF->GetConnectedKeyFrames();
     list<KeyFrame*> lKFsSharingWords;
@@ -134,7 +134,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
 
             pKFi->mLoopScore = si;
             if(si>=minScore)
-                lScoreAndMatch.push_back(make_pair(si,pKFi));
+                if((only_global_map && pKFi->GetGlobalMapFlag()) || !only_global_map)
+                    lScoreAndMatch.push_back(make_pair(si,pKFi));
         }
     }
 
@@ -196,7 +197,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
     return vpLoopCandidates;
 }
 
-vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
+vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, bool only_global_map)
 {
     list<KeyFrame*> lKFsSharingWords;
 
@@ -218,7 +219,9 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
                 {
                     pKFi->mnRelocWords=0;
                     pKFi->mnRelocQuery=F->mnId;
-                    lKFsSharingWords.push_back(pKFi);
+                    //changsq edit for localization
+                    if((only_global_map && pKFi->GetGlobalMapFlag()) || !only_global_map)
+                        lKFsSharingWords.push_back(pKFi);
                 }
                 pKFi->mnRelocWords++;
             }

@@ -81,6 +81,7 @@ public:
     void DoLoopDetect();
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    void SetLoopLoc(bool is_loc);
 protected:
 
     bool CheckNewKeyFrames();
@@ -143,6 +144,7 @@ protected:
 
 
     bool mnFullBAIdx;
+    bool loop_for_loc;
 };
 
 } //namespace ORB_SLAM

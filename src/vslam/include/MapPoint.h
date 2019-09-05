@@ -82,6 +82,8 @@ public:
     int PredictScale(const float &currentDist, KeyFrame*pKF);
     int PredictScale(const float &currentDist, Frame* pF);
 
+    void SetGlobalMapFlag(bool is_global_map);
+    bool GetGlobalMapFlag();
 public:
     long unsigned int mnId;
     static long unsigned int nNextId;
@@ -151,6 +153,7 @@ public:
      std::mutex mMutexPos;
      std::mutex mMutexFeatures;
 
+     bool flag_global_map;
 };
 
 } //namespace ORB_SLAM

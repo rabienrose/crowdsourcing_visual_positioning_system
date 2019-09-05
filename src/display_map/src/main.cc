@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
     for(int i=0; i<map.pose_graph_e_posi.size(); i++){
         visualization::LineSegment line_segment;
         line_segment.from = map.pose_graph_v1[i]->position;
-        line_segment.scale = 0.003;
+        line_segment.scale = 0.0003;
         line_segment.alpha = 1;
 
         line_segment.color.red = 0;

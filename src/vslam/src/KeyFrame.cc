@@ -156,7 +156,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
     mnMaxY(F.mnMaxY), mK(F.mK), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
-    mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), file_name_(F.file_name_)
+    mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), file_name_(F.file_name_),
+    flag_global_map(false)
 {
     mnId=nNextId++;
     mvColors=F.mvColors;
@@ -181,8 +182,7 @@ KeyFrame::KeyFrame():
     fx(0.0), fy(0.0), cx(0.0), cy(0.0), invfx(0.0), invfy(0.0),
     mbf(0.0), mb(0.0), mThDepth(0.0), N(0), mnScaleLevels(0), mfScaleFactor(0),
     mfLogScaleFactor(0.0),mpParent(NULL), mbNotErase(false), mbToBeErased(false), mbBad(false),
-    mnMinX(0), mnMinY(0), mnMaxX(0),
-    mnMaxY(0)
+    mnMinX(0), mnMinY(0), mnMaxX(0), mnMaxY(0),flag_global_map(false)
 {
     
 #if 0
@@ -333,6 +333,25 @@ vector<KeyFrame*> KeyFrame::GetBestCovisibilityKeyFrames(const int &N)
 
 }
 
+vector<KeyFrame* > KeyFrame::GetVectorCovisibleKeyFramesInGlobalMap()
+{
+    vector<KeyFrame*> ConnectedKeyFramesInGlobalMap;
+    // ConnectedKeyFramesInGlobalMap.reserve(mConnectedKeyFrameWeights.size());
+    ConnectedKeyFramesInGlobalMap.reserve(mvpOrderedConnectedKeyFrames.size());
+    // for(const auto& it : mvpOrderedConnectedKeyFrames)
+    // {
+    //     if(it->GetGlobalMapFlag())
+    //         ConnectedKeyFramesInGlobalMap.push_back(it);
+    // }
+    for (map<KeyFrame*, int>::iterator mit = mConnectedKeyFrameWeights.begin();
+         mit != mConnectedKeyFrameWeights.end();
+         mit++) {
+        if (mit->first->GetGlobalMapFlag())
+            ConnectedKeyFramesInGlobalMap.push_back(mit->first);
+    }
+
+    return ConnectedKeyFramesInGlobalMap;
+}
 vector<KeyFrame*> KeyFrame::GetCovisiblesByWeight(const int &w)
 {
     //unique_lock<mutex> lock(mMutexConnections);
@@ -518,19 +537,19 @@ void KeyFrame::UpdateConnections()
         mvpOrderedConnectedKeyFrames = vector<KeyFrame*>(lKFs.begin(),lKFs.end());
         mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
 
-//         if(mbFirstConnection && mnId!=0)
-//         {
-//             for(int i=0;i<mvpOrderedConnectedKeyFrames.size(); i++){
-//                 if(mvpOrderedConnectedKeyFrames[i]->mpParent!=NULL && mvpOrderedConnectedKeyFrames[i]->mpParent->mnId==mnId){
-//                     continue;
-//                 }else{
-//                     mpParent = mvpOrderedConnectedKeyFrames[i];
-//                     mpParent->AddChild(this);
-//                     break;
-//                 }    
-//             }
-//             mbFirstConnection = false;
-//         }
+        if(mbFirstConnection && mnId!=0)
+        {
+            for(int i=0;i<mvpOrderedConnectedKeyFrames.size(); i++){
+                if(mvpOrderedConnectedKeyFrames[i]->mpParent!=NULL && mvpOrderedConnectedKeyFrames[i]->mpParent->mnId==mnId){
+                    continue;
+                }else{
+                    mpParent = mvpOrderedConnectedKeyFrames[i];
+                    mpParent->AddChild(this);
+                    break;
+                }    
+            }
+            mbFirstConnection = false;
+        }
     }
 }
 
@@ -817,4 +836,13 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     return vDepths[(vDepths.size()-1)/q];
 }
 
+void KeyFrame::SetGlobalMapFlag(bool is_global_map)
+{
+    flag_global_map = is_global_map;
+}
+
+bool KeyFrame::GetGlobalMapFlag()
+{
+    return flag_global_map;
+}
 } //namespace ORB_SLAM

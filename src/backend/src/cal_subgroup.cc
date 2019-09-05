@@ -22,10 +22,10 @@ void getAllChildren(gm::GlobalMap& map, std::set<std::shared_ptr<gm::Frame>>& ch
     }
 }
 
-void cal_subgroup(gm::GlobalMap& map, std::vector<std::vector<std::shared_ptr<gm::Frame>>>& group_frames){
+void cal_subgroup(gm::GlobalMap& map, std::vector<std::vector<std::shared_ptr<gm::Frame>>>& ranked_group_frames){
     map.CalConnections();
     map.FilterTrack();
-    group_frames.clear();
+    std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
     std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames_temp;
     std::set<std::shared_ptr<gm::Frame>> processed;
     for(int i=0; i<map.frames.size(); i++){
@@ -47,53 +47,54 @@ void cal_subgroup(gm::GlobalMap& map, std::vector<std::vector<std::shared_ptr<gm
             group_frames.push_back(group_frames_temp[i]);
         }
     }
+    for(int i=0; i<group_frames.size(); i++){
+        std::cout<<group_frames[i].size()<<std::endl;
+    }
+    std::map<int, int> groupid_to_sizes;
+    for(int i=0; i<group_frames.size(); i++){
+        groupid_to_sizes[i]=group_frames[i].size();
+    }
+    typedef std::function<bool(std::pair<int, int>, std::pair<int, int>)> Comparator;
+    Comparator compFunctor =
+            [](std::pair<int, int> elem1 ,std::pair<int, int> elem2)
+            {
+                return elem1.second > elem2.second;
+            };
+    std::set<std::pair<int, int>, Comparator> setOfWords(
+            groupid_to_sizes.begin(), groupid_to_sizes.end(), compFunctor);
+    std::vector<int> ranked_groupid;
+    for (std::pair<int, int> element : setOfWords){
+        ranked_group_frames.push_back(group_frames[element.first]);
+    }
 }
 
-void RemoveSmallGroup(gm::GlobalMap& map){
-//     std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
-//     cal_subgroup(map, group_frames);
-//     for(int i=0; i<group_frames.size(); i++){
-//         std::cout<<group_frames[i].size()<<std::endl;
-//     }
-//     std::map<int, int> groupid_to_sizes;
-//     std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
-//     for(int i=0; i<group_frames.size(); i++){
-//         groupid_to_sizes[i]=group_frames[i].size();
-//         std::cout<<i<<"::"<<groupid_to_sizes[i]<<std::endl;
-//         for(int j=0; j<group_frames[i].size(); j++){
-//             frame_to_groupid[group_frames[i][j]]=i;
-//         }
-//     }
-//     typedef std::function<bool(std::pair<int, int>, std::pair<int, int>)> Comparator;
-//     Comparator compFunctor =
-//             [](std::pair<int, int> elem1 ,std::pair<int, int> elem2)
-//             {
-//                 return elem1.second > elem2.second;
-//             };
-//     std::set<std::pair<int, int>, Comparator> setOfWords(
-//             groupid_to_sizes.begin(), groupid_to_sizes.end(), compFunctor);
-//     std::vector<int> ranked_groupid;
-//     for (std::pair<int, int> element : setOfWords){
-//         ranked_groupid.push_back(element.first);
-//     }
-//     for(int i=0; i<map.frames.size(); i++){
-//         map.frames[i]->willDel=true;
-//     }
-//     for(int i=0; i<ranked_groupid[0].size(); i++){
-//         ranked_groupid[i]->willDel=false;
-//     }
-//     bool del_one=true;
-//     int del_count=0;
-//     while(del_one==true){
-//         del_one=false;
-//         for(int i=0; i<map.frames.size(); i++){
-//             if(map.frames[i]->willDel==true){
-//                 if(map.DelFrame(map.frames[i]->id)){
-//                     del_count++;
-//                     del_one=true;
-//                     break;
-//                 }
-//             }
-//         }
-//     }
+void cal_subgroup_remove(gm::GlobalMap& map, int N, std::vector<std::vector<std::shared_ptr<gm::Frame>>>& ranked_group_frames){
+    std::vector<std::vector<std::shared_ptr<gm::Frame>>> group_frames;
+    cal_subgroup(map, group_frames);
+    for(int i=0; i<map.frames.size(); i++){
+        map.frames[i]->willDel=true;
+    }
+    for(int n=0; n<N; n++){
+        if(group_frames.size()>n){
+            ranked_group_frames.push_back(group_frames[n]);
+            for(int i=0; i<group_frames[n].size(); i++){
+                group_frames[n][i]->willDel=false;
+            }
+        }
+    }
+    bool del_one=true;
+    int del_count=0;
+    while(del_one==true){
+        del_one=false;
+        for(int i=0; i<map.frames.size(); i++){
+            if(map.frames[i]->willDel==true){
+                if(map.DelFrame(map.frames[i]->id)){
+                    del_count++;
+                    del_one=true;
+                    break;
+                }
+            }
+        }
+    }
+    map.AssignKpToMp();
 }

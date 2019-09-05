@@ -271,10 +271,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     const float deltaMono = sqrt(5.991);
     const float deltaStereo = sqrt(7.815);
 
-
-    {
-    ////unique_lock<mutex> lock(MapPoint::mGlobalMutex);
-
+    int count = 0;
     for(int i=0; i<N; i++)
     {
         MapPoint* pMP = pFrame->mvpMapPoints[i];
@@ -283,6 +280,8 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             // Monocular observation
             {
                 nInitialCorrespondences++;
+                if(pMP->GetGlobalMapFlag())
+                    count++;
                 pFrame->mvbOutlier[i] = false;
 
                 Eigen::Matrix<double,2,1> obs;
@@ -315,8 +314,6 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 vnIndexEdgeMono.push_back(i);
             }
         }
-
-    }
     }
 
 
@@ -337,6 +334,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
         optimizer.initializeOptimization(0);
         optimizer.optimize(its[it]);
         nBad=0;
+        int in_conut=0;
         for(size_t i=0, iend=vpEdgesMono.size(); i<iend; i++)
         {
             g2o::EdgeSE3ProjectXYZOnlyPose* e = vpEdgesMono[i];
@@ -359,42 +357,14 @@ int Optimizer::PoseOptimization(Frame *pFrame)
             else
             {
                 pFrame->mvbOutlier[idx]=false;
+                in_conut++;
                 e->setLevel(0);
             }
-
+            //std::cout<<"in_conut: "<<in_conut<<std::endl;
             if(it==2)
                 e->setRobustKernel(0);
         }
-
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-        {
-            g2o::EdgeStereoSE3ProjectXYZOnlyPose* e = vpEdgesStereo[i];
-
-            const size_t idx = vnIndexEdgeStereo[i];
-
-            if(pFrame->mvbOutlier[idx])
-            {
-                e->computeError();
-            }
-
-            const float chi2 = e->chi2();
-
-            if(chi2>chi2Stereo[it])
-            {
-                pFrame->mvbOutlier[idx]=true;
-                e->setLevel(1);
-                nBad++;
-            }
-            else
-            {                
-                e->setLevel(0);
-                pFrame->mvbOutlier[idx]=false;
-            }
-
-            if(it==2)
-                e->setRobustKernel(0);
-        }
-
+        //std::cout<<optimizer.edges().size()<<std::endl;
         if(optimizer.edges().size()<10)
             break;
     }    
@@ -416,8 +386,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
-    // const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
-    const vector<KeyFrame*> vNeighKFs = pKF->GetBestCovisibilityKeyFrames(20);
+    const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
+    // const vector<KeyFrame*> vNeighKFs = pKF->GetBestCovisibilityKeyFrames(20);
     for(int i=0, iend=vNeighKFs.size(); i<iend; i++)
     {
         KeyFrame* pKFi = vNeighKFs[i];
@@ -483,7 +453,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Converter::toSE3Quat(pKFi->GetPose()));
         vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(pKFi->mnId==0);
+        vSE3->setFixed(pKFi->mnId==0 || pKFi->GetGlobalMapFlag());
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
@@ -526,6 +496,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     const float thHuberMono = sqrt(5.991);
     const float thHuberStereo = sqrt(7.815);
 
+    // int mp_count = 0;
     for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
     {
         MapPoint* pMP = *lit;
@@ -534,6 +505,11 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
+        // if(pMP->GetGlobalMapFlag()) {
+        //     mp_count++;
+        // }
+        // vPoint->setFixed(pMP->GetGlobalMapFlag());
+        vPoint->setFixed(false);
         optimizer.addVertex(vPoint);
 
         const map<KeyFrame*,size_t> observations = pMP->GetObservations();
@@ -558,7 +534,11 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
                     e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
                     e->setMeasurement(obs);
                     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
-                    e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+                    if (pMP->GetGlobalMapFlag()) {
+                        e->setInformation(Eigen::Matrix2d::Identity() * 10 * invSigma2);
+                    } else {
+                        e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
+                    }
 
                     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
                     e->setRobustKernel(rk);
@@ -577,16 +557,15 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             }
         }
     }
+    // float global_mp_partial = float(mp_count)/lLocalMapPoints.size();
+    // std::cout<<"pMP in Global: "<<global_mp_partial<<"  "<<mp_count<<std::endl;
 
     if(pbStopFlag)
         if(*pbStopFlag)
             return;
 
     optimizer.initializeOptimization();
-//     std::cout<<"start LocalBundleAdjustment----";
     optimizer.optimize(5);
-//     std::cout<<"end optimizer"<<std::endl;
-
     
     bool bDoMore= true;
 
@@ -632,9 +611,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     // Optimize again without the outliers
     optimizer.initializeOptimization(0);
-//     std::cout<<"start BA with inliers----";
     optimizer.optimize(10);
-//     std::cout<<"end"<<std::endl;
 
     }
     
@@ -686,7 +663,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     }
 
     // Recover optimized data
-
     //Keyframes
     for(list<KeyFrame*>::iterator lit=lLocalKeyFrames.begin(), lend=lLocalKeyFrames.end(); lit!=lend; lit++)
     {
@@ -697,13 +673,30 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     }
 
     //Points
+    // int d_count_1 = 0;
+    // int d_count_2 = 0;
     for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
     {
         MapPoint* pMP = *lit;
+        if(pMP->GetGlobalMapFlag())
+            continue;
         g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+        // if(pMP->GetGlobalMapFlag()) {
+        //     d_count_1++;
+        //     float dx = pMP->GetWorldPos().at<float>(0) - vPoint->estimate()(0);
+        //     float dy = pMP->GetWorldPos().at<float>(1) - vPoint->estimate()(1);
+        //     float dz = pMP->GetWorldPos().at<float>(2) - vPoint->estimate()(2);
+        //     float dist = sqrt(dx*dx + dy*dy + dz*dz);
+        //     if(dist > 0.1)
+        //         d_count_2++;
+
+        //     // std::cout << "delta: " <<dx<<"  "<<dy<<"  "<<dz<< std::endl;
+        //     // std::cout << "delta: " <<dist<< std::endl;
+        // }
         pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
         pMP->UpdateNormalAndDepth();
     }
+    // std::cout << "partial: " <<float(d_count_2)/d_count_1<< std::endl;
 }
 
 

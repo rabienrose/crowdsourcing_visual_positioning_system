@@ -157,12 +157,11 @@ void Frame::UpdatePoseMatrices()
 bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
 {
     pMP->mbTrackInView = false;
-
     // 3D in absolute coordinates
     cv::Mat P = pMP->GetWorldPos(); 
-
     // 3D in camera coordinates
     const cv::Mat Pc = mRcw*P+mtcw;
+    
     const float &PcX = Pc.at<float>(0);
     const float &PcY= Pc.at<float>(1);
     const float &PcZ = Pc.at<float>(2);
@@ -194,7 +193,6 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     cv::Mat Pn = pMP->GetNormal();
 
     const float viewCos = PO.dot(Pn)/dist;
-
     if(viewCos<viewingCosLimit)
         return false;
 
