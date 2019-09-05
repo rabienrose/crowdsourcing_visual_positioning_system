@@ -91,7 +91,7 @@ namespace gm{
             for(std::map<std::shared_ptr<gm::Frame>,int>::iterator mit=frame_list.begin(), mend=frame_list.end(); mit!=mend; mit++)
             {
                 //std::cout<<mit->first->id<<" : "<<mit->second<<std::endl;
-                if(mit->second<=40){
+                if(mit->second<=20){
                     continue;
                 }
                 //std::cout<<element.second<<std::endl;

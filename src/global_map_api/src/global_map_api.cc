@@ -49,6 +49,7 @@ DECLARE_string(camera_config);
 DECLARE_double(max_repro_err);
 DECLARE_double(cull_frame_rate);
 DECLARE_double(gps_weight);
+DECLARE_string(map_addr);
 namespace gm{
     
     void do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr){
@@ -231,6 +232,120 @@ namespace gm{
         return true;
     }
     
+    bool GlobalMapApi::process_bag_orb(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
+        FLAGS_voc_addr=config_addr+"/FreakAll.bin";
+        FLAGS_camera_config=config_addr+"/camera_config.txt";
+        FLAGS_map_addr=map_addr;
+        std::string out_str=cache_addr;
+        std::string img_topic="img";
+        int min_frame=2;
+        int max_frame=10000;
+        int step=1;
+        LOG(INFO)<<"max frame:"<<max_frame;
+        ORB_SLAM2::System* sys_p=nullptr;
+        rosbag::Bag bag;
+        bag.open(bag_addr,rosbag::bagmode::Read);
+        std::vector<std::string> topics;
+        topics.push_back(img_topic);
+        //topics.push_back("img");
+        rosbag::View view(bag, rosbag::TopicQuery(topics));
+        int img_count=-1;
+        rosbag::View::iterator it= view.begin();
+        
+        int map_count=0;
+        bool bReset=false;
+        for(;it!=view.end();it++){
+            rosbag::MessageInstance m =*it;
+            sensor_msgs::CompressedImagePtr simg = m.instantiate<sensor_msgs::CompressedImage>();
+            if(simg!=NULL){
+                cv_bridge::CvImagePtr cv_ptr;
+                img_count++;
+                if(img_count%step!=0){
+                    continue;
+                }
+                if(img_count <min_frame){
+                    continue;
+                }
+                if(img_count >max_frame){
+                    break;
+                }
+                try{
+                    std::stringstream ss;
+                    ss<<"img_"<<img_count<<".jpg";
+                    cv_ptr = cv_bridge::toCvCopy(simg, "mono8");
+                    cv::Mat resize_img;
+                    //cv::resize(cv_ptr->image, resize_img, cv::Size(cv_ptr->image.cols/2, cv_ptr->image.rows/2));
+                    if(cv_ptr->image.empty()){
+                        std::cout<<"image empty"<<std::endl;
+                    }
+                    if(sys_p==nullptr){
+                        sys_p=new ORB_SLAM2::System();
+                    }
+                    bool re=true;
+                    sys_p->TrackLocalization(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
+                    //sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
+//                    std::cout<<img_count<<std::endl;
+//                    if(img_count%300==0){
+//                        re=false;
+//                    }else{
+//                        re=true;
+//                    }
+                    if(re){
+#ifdef VISUALIZATION
+                        std::vector<Eigen::Vector3d> pcs;
+                        sys_p->getPC(pcs);
+                        std::vector<Eigen::Vector3d> posis;
+                        std::vector<Eigen::Quaterniond> quas;
+                        sys_p->getTraj(posis, quas);
+                        float reproject_err_t;
+                        int match_count_t;
+                        int mp_count_t;
+                        int kf_count_t;
+                        cv::Mat img_display;
+                        sys_p->getDebugImg(img_display, reproject_err_t, match_count_t, mp_count_t, kf_count_t);
+
+                        if(!img_display.empty()){
+                            cv::imshow("chamo", img_display);
+                            show_mp_as_cloud(posis, "vslam_output_posi");
+                            show_mp_as_cloud(pcs, "vslam_output_mp");
+                            cv::waitKey(1);
+                        }
+#endif
+                    }else{
+                        std::vector<Eigen::Vector3d> posis;
+                        std::vector<Eigen::Quaterniond> quas;
+                        sys_p->getTraj(posis, quas);
+                        if(posis.size()>10){
+                            std::stringstream ss;
+                            ss<<map_count;
+                            sys_p->saveToVisualMap(out_str+"/"+"submap_"+ss.str()+".map");
+                            map_count++;
+                        }
+                        if(sys_p!=nullptr){
+                            delete sys_p;
+                            sys_p=nullptr;
+                        }
+                    }
+                }catch (cv_bridge::Exception& e){
+                    std::cout<<"err in main!!"<<std::endl;
+                    if(sys_p!=nullptr){
+                        delete sys_p;
+                        sys_p=nullptr;
+                    }
+                    return false;
+                }
+            }
+        }
+        std::stringstream ss;
+        ss<<map_count;
+        out_str=out_str+"/"+"submap_"+ss.str()+".map";
+        sys_p->saveToVisualMap(out_str);
+        if(sys_p!=nullptr){
+            delete sys_p;
+            sys_p=nullptr;
+        }
+    }
+    
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
         status="extract bag";
         std::cout<<status<<std::endl;
@@ -262,7 +377,7 @@ namespace gm{
         status="1st BA";
         std::cout<<status<<std::endl;
         optimize_BA(map, true);
-        FLAGS_max_repro_err=20;
+        FLAGS_max_repro_err=50;
         status="2nd BA";
         std::cout<<status<<std::endl;
         optimize_BA(map, true);

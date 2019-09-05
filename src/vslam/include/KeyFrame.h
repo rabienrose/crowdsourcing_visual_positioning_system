@@ -132,7 +132,10 @@ public:
     void AssignFeaturesToGrid();
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
+    void SetGlobalMapFlag(bool is_global_map);
+    bool GetGlobalMapFlag();
 
+    std::vector<KeyFrame* > GetVectorCovisibleKeyFramesInGlobalMap();
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
 
@@ -250,6 +253,9 @@ public:
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
     std::mutex mMutexFeatures;
+
+    bool flag_global_map;
+    float global_kf_partial;
 };
 
 } //namespace ORB_SLAM

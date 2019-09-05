@@ -17,33 +17,9 @@
 #include "chamo_common/common.h"
 
 DEFINE_string(voc_addr, "", "Vocabulary file address.");
-
+DEFINE_string(map_addr, "", "map file address.");
 namespace ORB_SLAM2
 {
-    System::System(bool do_loop_detect_flag)
-    {
-        mpVocabulary = new ORBVocabulary();
-        LOG(INFO) <<"FLAGS_voc_addr: "<<FLAGS_voc_addr;
-        bool bVocLoad= mpVocabulary->loadFromBinaryFile(FLAGS_voc_addr);
-        if(bVocLoad==false){
-            std::cout<<"try binary voc failed, use txt format to load."<<std::endl;
-            mpVocabulary->load(FLAGS_voc_addr);
-        }
-        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
-        mpMap = new Map();
-        mpTracker = new Tracking(mpVocabulary, mpMap, mpKeyFrameDatabase,0 ,false);
-        mpLocalMapper = new LocalMapping(mpMap, true);
-        mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, false);
-        mpTracker->SetLocalMapper(mpLocalMapper);
-        mpTracker->SetLoopClosing(mpLoopCloser);
-        mpLocalMapper->SetTracker(mpTracker);
-        mpLocalMapper->SetLoopCloser(mpLoopCloser);
-        mpLoopCloser->SetTracker(mpTracker);
-        mpLoopCloser->SetLocalMapper(mpLocalMapper);
-        mpLocalMapper->SetdoLoop(do_loop_detect_flag);
-        last_kfcount=0;
-    }
-    
     bool System::TrackMonocular(const cv::Mat &im, const double &timestamp, std::string file_name)
     {
         return mpTracker->GrabImageMonocular(im,timestamp, file_name);
@@ -63,6 +39,112 @@ namespace ORB_SLAM2
     {
         return mpTracker;
     }
+    
+    void System::LoadORBMap(std::string mapname, 
+                                 ORB_SLAM2::ORBVocabulary*& mpVocabulary, 
+                                 ORB_SLAM2::KeyFrameDatabase*& mpKeyFrameDatabase, 
+                                 ORB_SLAM2::Map*& mpMap
+                   ){
+        gm::GlobalMap map;
+        std::vector<unsigned int> block_ids;
+        block_ids.push_back(112224160);
+        gm::load_global_map(map, mapname, block_ids);
+        map.AssignKpToMp();
+        mpMap = new ORB_SLAM2::Map();
+        CHECK_GT(map.frames.size(),0);
+        std::vector<float> cam_info;
+        cam_info.push_back(map.frames[0]->fx);
+        cam_info.push_back(map.frames[0]->fy);
+        cam_info.push_back(map.frames[0]->cx);
+        cam_info.push_back(map.frames[0]->cy);
+        cam_info.push_back(map.frames[0]->width);
+        cam_info.push_back(map.frames[0]->height);
+        std::map<long unsigned int, ORB_SLAM2::KeyFrame*> kfs;
+        for(int i=0; i<map.frames.size(); i++){
+            ORB_SLAM2::KeyFrame* pKF = new ORB_SLAM2::KeyFrame();
+            cv::Mat pose_c_w=ORB_SLAM2::Converter::toCvMat(map.frames[i]->getPose()).inv();
+            int desc_width=map.frames[i]->descriptors.rows();
+            int desc_count=map.frames[i]->descriptors.cols();
+            cv::Mat desc_mat = cv::Mat(desc_count, desc_width, CV_8UC1);
+            for(int j=0; j<desc_width; j++){
+                for(int k=0; k<desc_count; k++){
+                    desc_mat.at<unsigned char>(k, j) = map.frames[i]->descriptors(j, k);
+                } 
+            }
+            pKF->setData(i, map.frames[i]->time_stamp, map.frames[i]->kps, cam_info, map.frames[i]->frame_file_name, 8, 1.2, pose_c_w, 
+                        desc_mat, mpMap, mpKeyFrameDatabase, mpVocabulary);
+            //pKF->SetGlobalMapFlag(true);
+            mpMap->AddKeyFrame(pKF);
+            kfs[map.frames[i]->id]=pKF;
+        }
+        for(int i=0; i<map.mappoints.size(); i++){
+            int mp_id=i;
+            ORB_SLAM2::MapPoint* pMP=NULL;
+            for (int j=0; j<map.mappoints[i]->track.size(); j++){
+                int kp_id=map.mappoints[i]->track[j].kp_ind;
+                long unsigned int kpframe_id=map.mappoints[i]->track[j].frame->id;                
+                if(pMP==NULL){
+                    if(kfs.find(kpframe_id)==kfs.end()){
+                        std::cout<<"not exist frame in track"<<std::endl;
+                        continue;
+                    }
+                    pMP = new ORB_SLAM2::MapPoint(ORB_SLAM2::Converter::toCvMat(map.mappoints[i]->position),kfs[kpframe_id],mpMap);
+                }
+
+                kfs[kpframe_id]->AddMapPoint(pMP,kp_id);
+                pMP->AddObservation(kfs[kpframe_id],kp_id);     
+                //pMP->SetGlobalMapFlag(true);
+            }
+            if(pMP!=NULL){
+                mpMap->AddMapPoint(pMP);
+            }
+        }
+        std::vector<ORB_SLAM2::MapPoint*> mps_all=mpMap->GetAllMapPoints();
+        for(int i=0; i<mps_all.size(); i++){
+            
+            mps_all[i]->ComputeDistinctiveDescriptors();
+            mps_all[i]->UpdateNormalAndDepth();
+        }
+        vector<ORB_SLAM2::KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
+        for (vector<ORB_SLAM2::KeyFrame*>::iterator it = vpKFs.begin(); it != vpKFs.end(); ++it){
+            (*it)->finishDataSetting();
+            mpKeyFrameDatabase->add((*it));
+        }
+        for (vector<ORB_SLAM2::KeyFrame*>::iterator it = vpKFs.begin(); it != vpKFs.end(); ++it){
+            (*it)->UpdateConnections();
+        }
+        first_loc_frameid=vpKFs.size();
+        std::cout<<"map loaded!"<<std::endl;
+     }
+    
+    System::System(bool do_loop_detect_flag, bool loop_for_loc)
+    {
+        mpVocabulary = new ORBVocabulary();
+        LOG(INFO) <<"FLAGS_voc_addr: "<<FLAGS_voc_addr;
+        bool bVocLoad= mpVocabulary->loadFromBinaryFile(FLAGS_voc_addr);
+        if(bVocLoad==false){
+            std::cout<<"try binary voc failed, use txt format to load."<<std::endl;
+            mpVocabulary->load(FLAGS_voc_addr);
+        }
+        mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+        if(FLAGS_map_addr!=""){
+            LoadORBMap(FLAGS_map_addr, mpVocabulary,  mpKeyFrameDatabase, mpMap);
+        }else{
+            mpMap = new Map();
+        }
+        mpTracker = new Tracking(mpVocabulary, mpMap, mpKeyFrameDatabase,0 ,false);
+        mpLocalMapper = new LocalMapping(mpMap, true);
+        mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, false);
+        mpTracker->SetLocalMapper(mpLocalMapper);
+        mpTracker->SetLoopClosing(mpLoopCloser);
+        mpLocalMapper->SetTracker(mpTracker);
+        mpLocalMapper->SetLoopCloser(mpLoopCloser);
+        mpLoopCloser->SetTracker(mpTracker);
+        mpLoopCloser->SetLocalMapper(mpLocalMapper);
+        mpLocalMapper->SetdoLoop(do_loop_detect_flag);
+        last_kfcount=0;
+    }
+     
     void System::getTraj(std::vector<Eigen::Vector3d>& posis, std::vector<Eigen::Quaterniond>& quas){
         std::vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
         for(int i=0; i<vpKFs.size(); i++)
@@ -85,13 +167,27 @@ namespace ORB_SLAM2
         }
     }
     
-    void System::getPC(std::vector<Eigen::Vector3d>& pcs){
+    cv::Mat System::TrackLocalization(const cv::Mat &im, const double &timestamp, std::string file_name)
+    {
+        cv::Mat Tcw = mpTracker->Loc(im,timestamp, file_name);
+        return Tcw;
+    }
+    
+    void System::getPC(std::vector<Eigen::Vector3d>& pcs, bool b_global_mp){
         std::vector<MapPoint*> vpMPs= mpMap->GetAllMapPoints();
         for(int i=0; i<vpMPs.size(); i++){
             MapPoint* pMP=vpMPs[i];
             if(pMP->isBad()){
                 continue;
             }
+            if(b_global_mp) {
+                if(!pMP->GetGlobalMapFlag())
+                    continue;
+            } else {
+                if(pMP->GetGlobalMapFlag())
+                    continue;
+            }
+
             Eigen::Vector3d posi = Converter::toVector3d(pMP->GetWorldPos());
             pcs.push_back(posi);
         }

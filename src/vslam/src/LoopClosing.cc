@@ -41,6 +41,7 @@ LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, 
     mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
 {
     mnCovisibilityConsistencyTh = 3;
+    loop_for_loc = false;
 }
 
 void LoopClosing::SetTracker(Tracking *pTracker)
@@ -68,7 +69,7 @@ void LoopClosing::DoLoopDetect()
                 CorrectLoop();
             }
         }
-        //Optimizer::GlobalBundleAdjustemnt(mpMap,10,&mbStopGBA,0,true);
+        // Optimizer::GlobalBundleAdjustemnt(mpMap,10,&mbStopGBA,0,true);
     }       
 }
 
@@ -155,7 +156,7 @@ bool LoopClosing::DetectLoop()
     }
 
     // Query the database imposing the minimum score
-    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectLoopCandidates(mpCurrentKF, minScore);
+    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectLoopCandidates(mpCurrentKF, minScore, loop_for_loc);
 
     // If there are no loop candidates, just add new keyframe and return false
     if(vpCandidateKFs.empty())
@@ -266,6 +267,7 @@ bool LoopClosing::ComputeSim3()
 
     int nCandidates=0; //candidates with enough matches
 
+    // std::cout << "nInitialCandidates: " <<nInitialCandidates<< std::endl;
     for(int i=0; i<nInitialCandidates; i++)
     {
         KeyFrame* pKF = mvpEnoughConsistentCandidates[i];
@@ -298,8 +300,10 @@ bool LoopClosing::ComputeSim3()
 
     bool bMatch = false;
 
+    // std::cout << "nCandidates: " <<nCandidates<< std::endl;
     // Perform alternatively RANSAC iterations for each candidate
     // until one is succesful or all fail
+    bool get_scm = false;
     while(nCandidates>0 && !bMatch)
     {
         for(int i=0; i<nInitialCandidates; i++)
@@ -327,6 +331,7 @@ bool LoopClosing::ComputeSim3()
             // If RANSAC returns a Sim3, perform a guided matching and optimize with all correspondences
             if(!Scm.empty())
             {
+                get_scm = true;
                 vector<MapPoint*> vpMapPointMatches(vvpMapPointMatches[i].size(), static_cast<MapPoint*>(NULL));
                 for(size_t j=0, jend=vbInliers.size(); j<jend; j++)
                 {
@@ -341,6 +346,7 @@ bool LoopClosing::ComputeSim3()
 
                 g2o::Sim3 gScm(Converter::toMatrix3d(R),Converter::toVector3d(t),s);
                 const int nInliers = Optimizer::OptimizeSim3(mpCurrentKF, pKF, vpMapPointMatches, gScm, 10, mbFixScale);
+                // std::cout << "Ninliers after sim3: " <<nInliers<< std::endl;
 
                 // If optimization is succesful stop ransacs and continue
                 if(nInliers>=20)
@@ -363,6 +369,11 @@ bool LoopClosing::ComputeSim3()
         for(int i=0; i<nInitialCandidates; i++)
              mvpEnoughConsistentCandidates[i]->SetErase();
         mpCurrentKF->SetErase();
+        if(get_scm) {
+            // std::cout << "Not enough inliers after sim3" << std::endl;
+        } else {
+            // std::cout << "Fail to get sim3" << std::endl;
+        }
         return false;
     }
 
@@ -398,8 +409,9 @@ bool LoopClosing::ComputeSim3()
         if(mvpCurrentMatchedPoints[i])
             nTotalMatches++;
     }
+    std::cout << "nTotalMatches: " <<nTotalMatches<< std::endl;
 
-    if(nTotalMatches>=40)
+    if(nTotalMatches>=20)
     {
         for(int i=0; i<nInitialCandidates; i++)
             if(mvpEnoughConsistentCandidates[i]!=mpMatchedKF)
@@ -412,9 +424,6 @@ bool LoopClosing::ComputeSim3()
             mvpEnoughConsistentCandidates[i]->SetErase();
         mpCurrentKF->SetErase();
         return false;
-    }
-    for(int i=0; i<vpSim3Solvers.size(); i++){
-        delete vpSim3Solvers[i];
     }
 
 }
@@ -539,8 +548,8 @@ void LoopClosing::CorrectLoop()
     // into the current keyframe and neighbors using corrected poses.
     // Fuse duplications.
     SearchAndFuse(CorrectedSim3);
-
-
+    if(loop_for_loc)
+        return;
     // After the MapPoint fusion, new links in the covisibility graph will appear attaching both sides of the loop
     map<KeyFrame*, set<KeyFrame*> > LoopConnections;
 
@@ -611,6 +620,8 @@ void LoopClosing::SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap)
 void LoopClosing::RequestReset()
 {
     mlpLoopKeyFrameQueue.clear();
+    mLastLoopKFid=0;
+    mbResetRequested=false;
 }
 
 void LoopClosing::ResetIfRequested()
@@ -755,5 +766,10 @@ bool LoopClosing::isFinished()
     return mbFinished;
 }
 
+void LoopClosing::SetLoopLoc(bool is_loc)
+{
+    loop_for_loc = is_loc;
+    mnCovisibilityConsistencyTh = 1;
+}
 
 } //namespace ORB_SLAM

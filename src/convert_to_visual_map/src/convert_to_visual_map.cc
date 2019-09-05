@@ -91,8 +91,9 @@ void alignToIMU(gm::GlobalMap& map){
     Eigen::Vector3d vhateig = chamo::Converter::toVector3d(vhat);
     Eigen::Matrix3d Rwi_ = Sophus::SO3::exp(vhateig*theta).matrix();
     Eigen::Vector3d bias_a=Eigen::Vector3d::Zero();
-    //CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
-    //std::cout<<"reafined sstar: "<<sstar<<std::endl;
+    std::cout<<"reafined sstar: "<<sstar<<std::endl;
+    CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
+    std::cout<<"reafined sstar: "<<sstar<<std::endl;
     cv::Mat Tbc_mat=chamo::Converter::toCvMat(Tbc);
     cv::Mat Rwi_mat=chamo::Converter::toCvMat(Rwi_);
     Eigen::Matrix4d Twi = Eigen::Matrix4d::Identity();

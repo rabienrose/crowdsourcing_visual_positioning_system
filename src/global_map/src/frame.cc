@@ -10,6 +10,7 @@ Frame::Frame()
     doGraphOpti=false;
     doMatch=false;
     isborder=false;
+    willDel=false;
 }
 Eigen::Matrix4d Frame::getPose()
 {

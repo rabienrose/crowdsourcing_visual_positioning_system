@@ -48,10 +48,12 @@ class Tracking
 
 public:
     Tracking(ORBVocabulary* pVoc, Map* pMap,
-             KeyFrameDatabase* pKFDB, const int sensor, bool bReuse);
+             KeyFrameDatabase* pKFDB, const int sensor, bool bReuse, bool bloc_mode = false);
 
     bool GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string file_name="");
     cv::Mat GrabImageMonocular(Frame mframe);
+    cv::Mat Loc(const cv::Mat &im, const double &timestamp, std::string file_name="");
+
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
 
@@ -111,6 +113,7 @@ public:
 
     void Reset();
 
+    bool b_localization_mode;
 protected:
 
     // Main tracking function. It is independent of the input sensor.
@@ -124,6 +127,9 @@ protected:
     bool TrackReferenceKeyFrame();
     void UpdateLastFrame();
     bool TrackWithMotionModel();
+
+    bool SearchGlobalConnection();
+    bool Relocalization(bool b_update_pose = true);
 
     void UpdateLocalMap();
     void UpdateLocalPoints();
@@ -200,6 +206,7 @@ protected:
 
     list<MapPoint*> mlpTemporalPoints;
     int reloc_fail_count; //if many frames continue to be failed in relocalization, do the re-initialization
+
 };
 
 } //namespace ORB_SLAM
