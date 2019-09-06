@@ -373,7 +373,7 @@ namespace gm{
         std::cout<<status<<std::endl;
         pose_graph_opti_se3(map);
         FLAGS_max_repro_err=100;
-        FLAGS_gps_weight=0.00000000000001;
+        FLAGS_gps_weight=0.01;
         status="1st BA";
         std::cout<<status<<std::endl;
         optimize_BA(map, true);
@@ -381,7 +381,7 @@ namespace gm{
         status="2nd BA";
         std::cout<<status<<std::endl;
         optimize_BA(map, true);
-        optimize_BA(map, true);
+        //optimize_BA(map, true);
         status="culling";
         std::cout<<status<<std::endl;
         FLAGS_cull_frame_rate=0.8;

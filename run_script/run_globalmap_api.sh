@@ -1,4 +1,4 @@
-ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/office_9_demo
+ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test
 MAP_ADDR=${ROOT_ADDR}/global
 RELEASE_ADDR=${ROOT_ADDR}/release
 REJECT_ADDR=${ROOT_ADDR}/reject
