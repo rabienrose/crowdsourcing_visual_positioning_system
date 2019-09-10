@@ -232,7 +232,7 @@ namespace ORB_SLAM2
                         cv::Point2f d_pt=obs_pt-pt;
                         //std::cout<<pt.x<<","<<pt.y<<" "<<obs_pt.x<<","<<obs_pt.y<<std::endl;
                         total_error=total_error+sqrt(d_pt.x*d_pt.x + d_pt.y*d_pt.y);
-                        cv::circle(img_rgb, obs_pt ,3 ,cv::Scalar(0, 255, 255), 1, 1 ,0);
+                        cv::circle(img_rgb, obs_pt ,3 ,cv::Scalar(0, 0, 255, 255), 1, 1 ,0);
                         count++;
                     }
                 }

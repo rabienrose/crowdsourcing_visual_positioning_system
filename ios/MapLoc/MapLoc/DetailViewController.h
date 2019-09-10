@@ -16,5 +16,7 @@
 @property (nonatomic, weak) IBOutlet UILabel *iso_label;
 @property (nonatomic, weak) IBOutlet UILabel *offset_label;
 @property (weak, nonatomic) IBOutlet UILabel *gps_accu_l;
+@property (weak, nonatomic) IBOutlet UILabel *time_loc_label;
+@property (weak, nonatomic) IBOutlet UILabel *match_time_label;
 
 @end

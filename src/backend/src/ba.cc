@@ -59,7 +59,7 @@ namespace g2o {
 }
 
 
-void optimize_BA(gm::GlobalMap& map, bool re_triangle){
+void optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector3d>& debug_kf_posi, std::vector<Eigen::Vector3d>& debug_mp_posi, bool& map_is_change, std::string& status){
     map.AssignKpToMp();
     map.CalConnections();
     map.FilterTrack();
@@ -371,20 +371,50 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
     for(int i=0; i<proj_edges.size(); i++){
         proj_edges[i]->computeError();
         avg_error=avg_error+sqrt(proj_edges[i]->chi2())/proj_edges.size();
-        //std::cout<<"avg_error: "<<avg_error<<"||"<<sqrt(proj_edges[i]->chi2())<<std::endl;
         if(avg_error<0){
             return;
         }
-        
     }
     std::cout<<"project edge err before: "<<avg_error<<std::endl;
-    clock_t time;
-    time = clock();
     optimizer.initializeOptimization();
-    optimizer.optimize(FLAGS_opti_count);
-    time = clock() - time;
-    //std::cout<<"cam after: "<<vCam->estimate().transpose()<<std::endl;
-    std::cout<<"opt time: "<<((float)time)/CLOCKS_PER_SEC<<std::endl;
+    optimizer.optimize(1, false);
+    for(int i=0; i<FLAGS_opti_count; i++){
+        float gps_avg_error=0;
+        for(int i=0; i<lidar_edges.size(); i++){
+            lidar_edges[i]->computeError();
+            gps_avg_error=gps_avg_error+sqrt(lidar_edges[i]->chi2())/lidar_edges.size();
+        }
+        float vis_avg_error=0;
+        for(int i=0; i<proj_edges.size(); i++){
+            proj_edges[i]->computeError();
+            vis_avg_error=vis_avg_error+sqrt(proj_edges[i]->chi2())/proj_edges.size();
+            if(avg_error<0){
+                return;
+            }
+        }
+        std::stringstream ss_temp;
+        ss_temp<<"BA: "<<std::setprecision(2)<<gps_avg_error<<"/"<<vis_avg_error<<std::endl;
+        status=ss_temp.str();
+        optimizer.optimize(1, true);
+        for(int i=0; i<mp_verts.size(); i++){
+            if(mp_verts[i]!=0){
+                map.mappoints[i]->position=mp_verts[i]->estimate();
+            }
+        }
+        for(int i=0; i<kf_verts.size(); i++){
+            v_2_frames[i]->setPose(kf_verts[i]->estimate().inverse().to_homogeneous_matrix());
+        }
+        debug_mp_posi.clear();
+        debug_kf_posi.clear();
+        for(int i=0; i<map.frames.size(); i++){
+            debug_kf_posi.push_back(map.frames[i]->position);
+        }
+        for(int i=0; i<map.mappoints.size(); i++){
+            debug_mp_posi.push_back(map.mappoints[i]->position);
+        }
+        map_is_change=true;
+    }
+    
     avg_error=0;
     for(int i=0; i<lidar_edges.size(); i++){
         lidar_edges[i]->computeError();
@@ -397,15 +427,7 @@ void optimize_BA(gm::GlobalMap& map, bool re_triangle){
         avg_error=avg_error+sqrt(proj_edges[i]->chi2())/proj_edges.size();
     }
     std::cout<<"project edge err after: "<<avg_error<<std::endl;
-    
-    for(int i=0; i<mp_verts.size(); i++){
-        if(mp_verts[i]!=0){
-            map.mappoints[i]->position=mp_verts[i]->estimate();
-        }
-    }
-    for(int i=0; i<kf_verts.size(); i++){
-        v_2_frames[i]->setPose(kf_verts[i]->estimate().inverse().to_homogeneous_matrix());
-    }
+
     int del_edge_count=0;
     for(int i=0; i<map.frames.size(); i++){
         for(int j=0; j<map.frames[i]->obss.size(); j++){

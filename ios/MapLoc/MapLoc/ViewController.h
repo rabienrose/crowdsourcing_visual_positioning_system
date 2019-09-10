@@ -13,6 +13,7 @@
      std::vector<Eigen::Vector3d> kfs;
     std::vector<Eigen::Vector3d> traj;
     std::vector<Eigen::Vector3d> matches;
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> line_matches_;
     cv::Mat backgound_img;
     cv::Mat scene_img;
     double rot_;
