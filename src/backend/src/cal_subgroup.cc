@@ -97,4 +97,5 @@ void cal_subgroup_remove(gm::GlobalMap& map, int N, std::vector<std::vector<std:
         }
     }
     map.AssignKpToMp();
+    map.CalConnections();
 }

@@ -31,7 +31,8 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
                         std::vector<Eigen::Vector3d>& debug_kf_posi, std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& debug_matches,
                         bool& map_is_change, bool& match_is_change){
     chamo::GlobalMatch global_matcher;
-    
+    std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
+    cal_subgroup_remove(map, 100, ranked_group_frames);
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
     std::vector<std::vector<Eigen::Matrix4d>> posess;
@@ -70,8 +71,6 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     
     bool do_sim3_trans=true;
     if(do_sim3_trans){
-        std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
-        cal_subgroup_remove(map, 100, ranked_group_frames);
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
         for(int i=0; i<ranked_group_frames.size(); i++){
             for(int j=0; j<ranked_group_frames[i].size(); j++){

@@ -435,7 +435,10 @@ namespace gm{
         FLAGS_gps_weight=0.01;
         status="1st BA";
         std::cout<<status<<std::endl;
-        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        if (ba_re==false){
+            return false;
+        }
         //vis_map(map);
         //FLAGS_max_repro_err=50;
         //status="2nd BA";
