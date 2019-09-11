@@ -377,10 +377,7 @@ bool optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector
             return false;
         }
     }
-    if(avg_error>5){
-        return false;
-    }
-    
+
     std::cout<<"project edge err before: "<<avg_error<<std::endl;
     optimizer.initializeOptimization();
     optimizer.optimize(1, false);
@@ -441,7 +438,9 @@ bool optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector
         avg_error=avg_error+sqrt(proj_edges[i]->chi2())/proj_edges.size();
     }
     std::cout<<"project edge err after: "<<avg_error<<std::endl;
-
+    if(avg_error>5){
+        return false;
+    }
     int del_edge_count=0;
     for(int i=0; i<map.frames.size(); i++){
         for(int j=0; j<map.frames[i]->obss.size(); j++){
