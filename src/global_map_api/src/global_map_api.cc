@@ -59,7 +59,7 @@ namespace gm{
         std::string img_topic="img";
         int min_frame=2;
         int max_frame=10000;
-        int step=1;
+        int step=3;
         LOG(INFO)<<"max frame:"<<max_frame;
         ORB_SLAM2::System* sys_p=nullptr;
         rosbag::Bag bag;
@@ -407,7 +407,10 @@ namespace gm{
         std::cout<<status<<std::endl;
         do_vslam(cache_addr, config_addr, bag_addr, status);
         std::vector<unsigned int> block_ids;
-        //block_ids.push_back(112224160);
+// //         block_ids.push_back(112224160);
+// //         block_ids.push_back(112224161);
+// //         block_ids.push_back(112260160);
+// //         block_ids.push_back(112260161);
 //         block_ids.push_back(112260160);
         status="align";
         std::cout<<status<<std::endl;
@@ -418,6 +421,10 @@ namespace gm{
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         map.AssignKpToMp();
+        map.CheckConsistence();
+        map.CalConnections();
+        std::cout<<"aaaa"<<std::endl;
+        map.CheckConnections();
         vis_map(map);
         status="match";
         std::cout<<status<<std::endl;
@@ -426,9 +433,10 @@ namespace gm{
             return false;
         }
         vis_map(map);
-        reset_all_status(map, "doMatch", true);
+        //reset_all_status(map, "doMatch", true);
         status="pose opt";
         std::cout<<status<<std::endl;
+        FLAGS_gps_weight=100;
         pose_graph_opti_se3(map);
         vis_map(map);
         FLAGS_max_repro_err=100;
@@ -437,7 +445,7 @@ namespace gm{
         std::cout<<status<<std::endl;
         bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
         if (ba_re==false){
-            return false;
+            //return false;
         }
         //vis_map(map);
         //FLAGS_max_repro_err=50;
@@ -447,10 +455,10 @@ namespace gm{
         vis_map(map);
         status="culling";
         std::cout<<status<<std::endl;
-        FLAGS_cull_frame_rate=0.8;
+        FLAGS_cull_frame_rate=0.6;
         culling_frame(map);
         //vis_map(map);
-        //optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change);
+//         optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change);
         vis_map(map);
         reset_all_status(map, "all", false);
         status="save";

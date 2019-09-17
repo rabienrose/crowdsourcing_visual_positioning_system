@@ -229,7 +229,7 @@ void pose_graph_opti_sim3(gm::GlobalMap& map){
 
 void pose_graph_opti_se3(gm::GlobalMap& map){
     g2o::SparseOptimizer optimizer;
-    optimizer.setVerbose(false);
+    optimizer.setVerbose(true);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(
         new g2o::BlockSolverX(
             new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>()));
@@ -300,6 +300,18 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
         g2o::EdgeSE3* e = new g2o::EdgeSE3();
         //std::cout<<"v1: "<<frame_to_vertex[map.pose_graph_v1[i]]->estimate().inverse().translation().transpose()<<std::endl;
         //std::cout<<"obs: "<<(frame_to_vertex[map.pose_graph_v2[i]]->estimate().inverse().rotation().toRotationMatrix()*Sji.translation()+frame_to_vertex[map.pose_graph_v2[i]]->estimate().inverse().translation()).transpose()<<std::endl;
+        if(map.pose_graph_v1.size() != map.pose_graph_v2.size()){
+            std::cout<<"connection frame null!!"<<std::endl;
+            exit(0);
+        }
+        if(map.pose_graph_v1[i]==nullptr ||map.pose_graph_v2[i]==nullptr){
+            std::cout<<"connection frame null!!"<<std::endl;
+            exit(0);
+        }
+        if(frame_to_vertex.find(map.pose_graph_v1[i])==frame_to_vertex.end()||frame_to_vertex.find(map.pose_graph_v2[i])==frame_to_vertex.end()){
+            std::cout<<"non exist frame!!"<<std::endl;
+            exit(0);
+        }
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(frame_to_vertex[map.pose_graph_v1[i]]));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(frame_to_vertex[map.pose_graph_v2[i]]));
         e->setMeasurement(Sji);

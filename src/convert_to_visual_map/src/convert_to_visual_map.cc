@@ -453,8 +453,14 @@ void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::Glo
     }
 
     alignToIMU(map);
+    map.AssignKpToMp();
+    map.CheckConsistence();
+    map.CalConnections();
+    std::cout<<"cccc"<<std::endl;
+    map.CheckConnections();
     //out_maps.push_back(map);
     alignToGPS(map, out_maps);
+    
 }
 
 void convert_to_visual_map(std::string config_root, std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {
@@ -496,6 +502,11 @@ void convert_to_visual_map(std::string config_root, std::string res_root, std::s
         }
         map.ReleaseMap();
     }
+    global_map.AssignKpToMp();
+    global_map.CheckConsistence();
+    global_map.CalConnections();
+    std::cout<<"dddd"<<std::endl;
+    global_map.CheckConnections();
     gm::get_blockid_list(global_map, ids);
     if(global_map.frames.size()>3){
         gm::save_global_map(global_map, globalmap_root);

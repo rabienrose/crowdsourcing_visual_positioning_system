@@ -51,6 +51,17 @@ namespace gm{
         }
     }
     
+    void GlobalMap::CheckConnections(){
+            std::set<std::shared_ptr<gm::Frame>> all_frame_set;
+            for(int i=0; i<frames.size(); i++){
+                all_frame_set.insert(frames[i]);
+            }
+            for(int i=0; i<pose_graph_v1.size(); i++){
+                if(all_frame_set.find(pose_graph_v1[i])==all_frame_set.end()||all_frame_set.find(pose_graph_v2[i])==all_frame_set.end()){
+                    std::cout<<"non exist frame!!"<<std::endl;
+                }
+            }
+    }
     
     std::shared_ptr<MapPoint> GlobalMap::getMPById(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
@@ -81,8 +92,13 @@ namespace gm{
             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
             for(int j=0; j<frames[i]->obss.size(); j++){
                 if(frames[i]->obss[j]!=nullptr){
-                    
+//                     if(!checkMPExist(frames[i]->obss[j])){
+//                         std::cout<<"checkMPExist failed!!aaa"<<std::endl;
+//                     }
                     for(int k=0; k<frames[i]->obss[j]->track.size(); k++){
+//                         if(!checkFrameExist(frames[i]->obss[j]->track[k].frame)){
+//                             std::cout<<"checkFrameExist failed!!bbb"<<std::endl;
+//                         }
                         frame_list[frames[i]->obss[j]->track[k].frame]++;
                     }
                 }
@@ -98,11 +114,31 @@ namespace gm{
                 Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*mit->first->getPose();
                 Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
                 Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
+//                 if(!checkFrameExist(mit->first)){
+//                     std::cout<<"checkFrameExist failed!!aaa"<<std::endl;
+//                 }
                 AddConnection(mit->first, frames[i] , posi, rot, 1, mit->second*0.5);
             }
         }
     }
+    
+    bool GlobalMap::checkFrameExist(std::shared_ptr<gm::Frame> query_frame){
+        for(int i=0; i<frames.size(); i++){
+            if(frames[i]->id==query_frame->id){
+                return true;
+            }
+        }
+        return false;
+    }
 
+    bool GlobalMap::checkMPExist(std::shared_ptr<gm::MapPoint> query_mp){
+        for(int i=0; i<mappoints.size(); i++){
+            if(mappoints[i]->id==query_mp->id){
+                return true;
+            }
+        }
+        return false;
+    }
     
     void GlobalMap::AddConnection(std::shared_ptr<Frame> v1, std::shared_ptr<Frame> v2, Eigen::Vector3d& posi, Eigen::Matrix3d& rot,
         double scale, double weight){
@@ -227,9 +263,16 @@ namespace gm{
     }
     
     void GlobalMap::CheckConsistence(){
+        std::set<std::shared_ptr<gm::Frame>> all_frame_set;
+        for(int i=0; i<frames.size(); i++){
+            all_frame_set.insert(frames[i]);
+        }
         for(size_t i=0; i<mappoints.size(); i++){
             for(size_t j=0; j<mappoints[i]->track.size(); j++){
                 std::shared_ptr< Frame> frame_p = mappoints[i]->track[j].frame;
+                if(all_frame_set.find(frame_p)==all_frame_set.end()){
+                    std::cout<<"[CheckConsistence]non exist frame!!"<<std::endl;
+                }
                 if(frame_p==nullptr){
                     LOG(INFO)<<"frame_p==nullptr";
                 }
@@ -261,6 +304,7 @@ namespace gm{
                 }
             }
         }
+        
     }
     
     void GlobalMap::GetCovisi(std::shared_ptr< Frame> frame_p, std::map<std::shared_ptr< Frame>, int>& connections){

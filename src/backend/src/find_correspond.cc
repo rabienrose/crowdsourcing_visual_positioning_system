@@ -32,6 +32,12 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
                         bool& map_is_change, bool& match_is_change){
     chamo::GlobalMatch global_matcher;
     std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
+    map.AssignKpToMp();
+    map.CheckConsistence();
+    map.CalConnections();
+    std::cout<<"bbbb"<<std::endl;
+    map.CheckConnections();
+    
     cal_subgroup_remove(map, 100, ranked_group_frames);
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
@@ -66,10 +72,10 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     }
     std::cout<<"done raw match!!"<<std::endl;
     if(frame_inliers_kps.size()<20){
-        return false;
+        //return false;
     }
     
-    bool do_sim3_trans=true;
+    bool do_sim3_trans=false;
     if(do_sim3_trans){
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
         for(int i=0; i<ranked_group_frames.size(); i++){
@@ -336,9 +342,8 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
         }
     }
     if(add_conn_count<80){
-        return false;
+        //return false;
     }
-
     int merge_count=0;
     int new_match_count=0;
     std::vector<std::set<long unsigned int >> to_merge_mps;

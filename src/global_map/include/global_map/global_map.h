@@ -24,7 +24,9 @@ public:
     std::vector<Eigen::Matrix3d> pose_graph_e_rot;
     std::vector<double> pose_graph_e_scale;
     std::vector<double> pose_graph_weight;
-
+    bool checkFrameExist(std::shared_ptr<gm::Frame> query_frame);
+    bool checkMPExist(std::shared_ptr<gm::MapPoint> query_mp);
+    void CheckConnections();
     void DelMappoint(long unsigned int id);
     bool DelFrame(long unsigned int id);
     void GetMPPosiList(std::vector<Eigen::Vector3d>& mp_posis);

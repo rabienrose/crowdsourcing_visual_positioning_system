@@ -34,15 +34,21 @@ int main(int argc, char* argv[]) {
     gm::GlobalMap map;
     gm::load_global_map(map, res_root,map_ids);
     map.AssignKpToMp();
+    std::vector<Eigen::Vector3d> debug_kf_posi;
+    std::vector<Eigen::Vector3d> debug_mp_posi;
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> debug_matches;
+    bool map_is_change; 
+    bool match_is_change; 
+    std::string status;
     std::cout<<"backend op: "<<FLAGS_op_type<<std::endl;
     if(FLAGS_op_type=="BA_rt"){
-        optimize_BA(map, true);
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
     }else if(FLAGS_op_type=="BA"){
-        optimize_BA(map, false);
+        optimize_BA(map, false,debug_kf_posi, debug_mp_posi, map_is_change, status);
     }else if(FLAGS_op_type=="pose_opt"){
         pose_graph_opti_se3(map);
     }else if(FLAGS_op_type=="Match"){
-        update_corresponds(map, FLAGS_project_mat_file);
+        update_corresponds(map, FLAGS_project_mat_file, debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
     }else if(FLAGS_op_type=="CullingFrame"){
         culling_frame(map);
     }else if(FLAGS_op_type=="Reset"){

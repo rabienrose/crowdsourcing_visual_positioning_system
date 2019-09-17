@@ -1,13 +1,13 @@
-ROOT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test
+ROOT_ADDR=/home/chamo/Documents/data/workspace_block4
 MAP_ADDR=${ROOT_ADDR}/global
 RELEASE_ADDR=${ROOT_ADDR}/release
 REJECT_ADDR=${ROOT_ADDR}/reject
-BAG_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/iphone_bag/office_9/09-05-15-02-10
+BAG_ADDR=/home/chamo/Documents/data/build_right
 CONFIG_ADDR=${ROOT_ADDR}/config
 CACHE_ROOT=${ROOT_ADDR}/cache
 LOCAL_ROOT=${ROOT_ADDR}/local
 
-EXE_ROOT=/home/chamo/Documents/work/chamo_vps
+EXE_ROOT=/home/chamo/Documents/chamo_vps
 GLOBAL_MAP_ADDR=${EXE_ROOT}/devel/lib/global_map_api/global_map_api 
 
 mkdir ${MAP_ADDR}
