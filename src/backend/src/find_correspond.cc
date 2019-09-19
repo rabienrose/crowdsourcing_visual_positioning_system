@@ -138,7 +138,7 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
                         pc2.push_back(posi_1[k]);
                     }
                 }
-                if(pc1.size()<200){
+                if(pc1.size()<2000){
                     continue;
                 }
                 Eigen::Matrix4d T12;

@@ -43,7 +43,7 @@ void cal_subgroup(gm::GlobalMap& map, std::vector<std::vector<std::shared_ptr<gm
         }
     }
     for(int i=0;i<group_frames_temp.size(); i++){
-        if(group_frames_temp[i].size()>20){
+        if(group_frames_temp[i].size()>0){
             group_frames.push_back(group_frames_temp[i]);
         }
     }

@@ -441,6 +441,14 @@ bool optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector
     if(avg_error>5){
         return false;
     }
+    for(int i=0; i<mp_verts.size(); i++){
+        if(mp_verts[i]!=0){
+            map.mappoints[i]->position=mp_verts[i]->estimate();
+        }
+    }
+    for(int i=0; i<kf_verts.size(); i++){
+        v_2_frames[i]->setPose(kf_verts[i]->estimate().inverse().to_homogeneous_matrix());
+    }
     int del_edge_count=0;
     for(int i=0; i<map.frames.size(); i++){
         for(int j=0; j<map.frames[i]->obss.size(); j++){

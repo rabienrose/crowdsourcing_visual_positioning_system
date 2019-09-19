@@ -438,7 +438,7 @@ namespace gm{
         reset_all_status(map, "doMatch", true);
         status="pose opt";
         std::cout<<status<<std::endl;
-        FLAGS_gps_weight=100;
+        //FLAGS_gps_weight=100;
         pose_graph_opti_se3(map);
         vis_map(map);
         FLAGS_max_repro_err=100;

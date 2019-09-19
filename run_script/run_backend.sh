@@ -1,7 +1,7 @@
-IN_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test/matched
+IN_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test/opt
 OUT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test/opt
 MAP_IDS=112224160
-OP_TYPE=BA
+OP_TYPE=BA_rt
 EXE_ROOT=/home/chamo/Documents/work/chamo_vps
 
 BACKEND_ADDR=${EXE_ROOT}/devel/lib/backend/backend
