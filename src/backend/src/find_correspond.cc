@@ -35,7 +35,6 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     map.AssignKpToMp();
     map.CheckConsistence();
     map.CalConnections();
-    std::cout<<"bbbb"<<std::endl;
     map.CheckConnections();
     
     cal_subgroup_remove(map, 100, ranked_group_frames);
@@ -71,11 +70,8 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
         }
     }
     std::cout<<"done raw match!!"<<std::endl;
-    if(frame_inliers_kps.size()<20){
-        //return false;
-    }
     
-    bool do_sim3_trans=false;
+    bool do_sim3_trans=true;
     if(do_sim3_trans){
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
         for(int i=0; i<ranked_group_frames.size(); i++){
@@ -166,8 +162,9 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
             }
         }
         std::set<long unsigned int> transformed_frames;
+        bool succ_trans=false;
         for(int i=1; i<ranked_group_frames.size(); i++){ //s
-            bool succ_trans=false;
+            
             for(int k=0; k<i; k++){ //l
                 int trans_ind=-1;
                 Eigen::Matrix4d T_1_t;
@@ -219,9 +216,11 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
                 }
                 break;
             }
-            if(succ_trans==false){
-                 return false;
-            }
+            
+        }
+        if(succ_trans==false){
+            std::cout<<"transform match failed"<<std::endl;
+            return false;
         }
 
         debug_mp_posi.clear();
@@ -342,7 +341,8 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
         }
     }
     if(add_conn_count<80){
-        //return false;
+        std::cout<<"too few connections."<<std::endl;
+        return false;
     }
     int merge_count=0;
     int new_match_count=0;

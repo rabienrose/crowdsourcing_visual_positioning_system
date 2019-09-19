@@ -404,7 +404,6 @@ namespace chamo
                     best_inlier=ninliers_final;                                                             
                     best_T12=temp_T12;
                     best_scale_12=temp_scale_12;
-                    std::cout<<best_inlier/(float)match_size<<std::endl;
                 }
                 if(best_inlier>ransac_max_inliers){
                     break;
