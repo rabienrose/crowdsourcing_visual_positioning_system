@@ -445,20 +445,23 @@ namespace gm{
         FLAGS_gps_weight=0.01;
         status="1st BA";
         std::cout<<status<<std::endl;
-        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
-        
+        bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        if (ba_re==false){
+            std::cout<<"BA failed"<<std::endl;
+            return false;
+        }
         vis_map(map);
         FLAGS_max_repro_err=50;
         status="2nd BA";
         std::cout<<status<<std::endl;
-        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        //optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
         vis_map(map);
         status="culling";
         std::cout<<status<<std::endl;
         FLAGS_cull_frame_rate=0.8;
         culling_frame(map);
         vis_map(map);
-        bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        //bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
         if (ba_re==false){
             std::cout<<"BA failed"<<std::endl;
             return false;

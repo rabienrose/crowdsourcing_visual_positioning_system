@@ -47,5 +47,6 @@ public:
                        double weight);
     void CalConnections();
     void FilterTrack(); //remove the track that connect to the same frame. Keep the one with smallest reprojection error.
+    //std::set<unsigned int> GetNearBlock(std::vector<unsigned int> block_ids);
 };
 }  // namespace gm

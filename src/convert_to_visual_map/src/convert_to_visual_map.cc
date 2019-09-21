@@ -458,8 +458,8 @@ void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::Glo
     map.CalConnections();
     std::cout<<"cccc"<<std::endl;
     map.CheckConnections();
-    //out_maps.push_back(map);
-    alignToGPS(map, out_maps);
+    out_maps.push_back(map);
+    //alignToGPS(map, out_maps);
     
 }
 

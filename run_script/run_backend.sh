@@ -1,6 +1,6 @@
 IN_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test/opt
 OUT_ADDR=/media/chamo/095d3ecf-bef8-469d-86a3-fe170aec49db/globalmap_api_test/opt
-MAP_IDS=112224160
+MAP_IDS=900888464
 OP_TYPE=BA_rt
 EXE_ROOT=/home/chamo/Documents/work/chamo_vps
 
@@ -12,7 +12,7 @@ ${BACKEND_ADDR} \
     --map_ids=${MAP_IDS}\
     --project_mat_file=${IN_ADDR}/../config/words_projmat.fstream \
     --op_type=${OP_TYPE} \
-    --max_repro_err=100 \
+    --max_repro_err=50 \
     --gps_weight=0.000001 \
     --reset_type=doMatch \
     --reset_val=true \

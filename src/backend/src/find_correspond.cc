@@ -37,7 +37,7 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     map.CalConnections();
     map.CheckConnections();
     
-    cal_subgroup_remove(map, 100, ranked_group_frames);
+    cal_subgroup_remove(map, 2, ranked_group_frames);
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
     std::vector<std::vector<Eigen::Matrix4d>> posess;
@@ -71,7 +71,7 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     }
     std::cout<<"done raw match!!"<<std::endl;
     
-    bool do_sim3_trans=true;
+    bool do_sim3_trans=false;
     if(do_sim3_trans){
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
         for(int i=0; i<ranked_group_frames.size(); i++){
@@ -162,9 +162,9 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
             }
         }
         std::set<long unsigned int> transformed_frames;
-        bool succ_trans=false;
+        
         for(int i=1; i<ranked_group_frames.size(); i++){ //s
-            
+            bool succ_trans=false;
             for(int k=0; k<i; k++){ //l
                 int trans_ind=-1;
                 Eigen::Matrix4d T_1_t;
@@ -216,13 +216,12 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
                 }
                 break;
             }
-            
+            if(succ_trans==false){
+                std::cout<<"transform match failed"<<std::endl;
+                return false;
+            }
         }
-        if(succ_trans==false){
-            std::cout<<"transform match failed"<<std::endl;
-            return false;
-        }
-
+        
         debug_mp_posi.clear();
         debug_kf_posi.clear();
         for(int i=0; i<map.frames.size(); i++){
