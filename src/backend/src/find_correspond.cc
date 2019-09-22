@@ -37,7 +37,7 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     map.CalConnections();
     map.CheckConnections();
     
-    cal_subgroup_remove(map, 2, ranked_group_frames);
+    cal_subgroup_remove(map, 100, ranked_group_frames);
     std::vector<std::vector<std::vector<int>>> frame_inliers_mps;
     std::vector<std::vector<std::vector<int>>> frame_inliers_kps;
     std::vector<std::vector<Eigen::Matrix4d>> posess;

@@ -17,7 +17,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 DEFINE_bool(use_orb, false, "Choose use orb or freak descriptor. Set to true if use orb.");
 DEFINE_string(camera_config, "", "Config file of camera calibiration.");
-DEFINE_int32(max_step_KF, 25, "The max number of frame between two KeyFrames.");
+DEFINE_int32(max_step_KF, 2025, "The max number of frame between two KeyFrames.");
 DEFINE_int32(feature_count, 2000, "Number of feature to extract.");
 DEFINE_double(feature_scale_factor, 1.2, "Scale factor between levels.");
 DEFINE_int32(feature_level, 8, "Pyramid levels");

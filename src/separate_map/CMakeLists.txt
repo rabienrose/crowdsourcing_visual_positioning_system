@@ -7,8 +7,8 @@ catkin_simple(ALL_DEPS_REQUIRED)
 add_definitions(--std=c++14 -Wno-unknown-pragmas)
 
 set(SEPARATE_MAP
-	#src/separate_map.cc
-	src/separate_map_S2.cc
+	src/separate_map.cc
+	#src/separate_map_S2.cc
 )
 
 cs_add_library(separate_map ${SEPARATE_MAP})
