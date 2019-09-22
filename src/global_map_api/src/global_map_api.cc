@@ -50,6 +50,7 @@ DECLARE_double(max_repro_err);
 DECLARE_double(cull_frame_rate);
 DECLARE_double(gps_weight);
 DECLARE_string(map_addr);
+DECLARE_bool(use_sim3);
 namespace gm{
     
     void GlobalMapApi::do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr, std::string& status){
@@ -397,6 +398,31 @@ namespace gm{
             sys_p=nullptr;
         }
         return true;
+    }
+    
+    bool GlobalMapApi::final_proc(std::string in_addr,std::string final_addr, std::vector<unsigned int> block_ids){
+        std::string status;
+        gm::GlobalMap map;
+        gm::load_global_map(map, in_addr,block_ids);
+        reset_all_status(map, "doMatch", true);
+        FLAGS_use_sim3=false;
+        update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+        FLAGS_max_repro_err=50;
+        FLAGS_gps_weight=0.01;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+        FLAGS_max_repro_err=5;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
+        map.AssignKpToMp();
+        map.CheckConnections();
+        cal_subgroup_remove(map, 1, ranked_group_frames);
+        reset_all_status(map, "all", false);
+        status="save";
+        std::cout<<status<<std::endl;
+        gm::save_global_map(map, final_addr);
+        status="done";
+        std::cout<<status<<std::endl;
     }
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){

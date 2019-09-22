@@ -379,6 +379,10 @@ bool optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector
     }
 
     std::cout<<"project edge err before: "<<avg_error<<std::endl;
+    if(avg_error>50){
+        std::cout<<"too large init err!!!"<<std::endl;
+        return false;
+    }
     optimizer.initializeOptimization();
     optimizer.optimize(100, false);
 //     float last_err=9999;

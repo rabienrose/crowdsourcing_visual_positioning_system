@@ -11,6 +11,7 @@
 DEFINE_double(match_project_range, 20, "");
 DEFINE_double(match_project_desc_diff, 50, "");
 DEFINE_bool(use_se3, true, "");
+DEFINE_bool(use_sim3, true, "");
 void MergeMP(std::shared_ptr<gm::MapPoint> base_mp, std::shared_ptr<gm::MapPoint> to_merge_mp){
     for(int k=0; k<to_merge_mp->track.size(); k++){
         CHECK_GT(to_merge_mp->track[k].frame->obss.size(), to_merge_mp->track[k].kp_ind);
@@ -71,7 +72,7 @@ bool update_corresponds(gm::GlobalMap& map, std::string project_mat_file, std::v
     }
     std::cout<<"done raw match!!"<<std::endl;
     
-    bool do_sim3_trans=false;
+    bool do_sim3_trans=FLAGS_use_sim3;
     if(do_sim3_trans){
         std::map<std::shared_ptr<gm::Frame>, int> frame_to_groupid;
         for(int i=0; i<ranked_group_frames.size(); i++){
