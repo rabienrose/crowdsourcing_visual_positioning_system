@@ -447,51 +447,42 @@ namespace gm{
         gm::load_global_map(map_t, map_addr,block_ids);
         int before_map_frames=map_t.frames.size();
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
-        if(before_map_frames==0){
-            return true;
-        }
+        
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
         vis_map(map);
-        status="match";
-        std::cout<<status<<std::endl;
-        bool match_re = update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
-        if (match_re==false){
-            std::cout<<"match failed"<<std::endl;
-            return false;
+        if(before_map_frames==0){
+        }else{
+            status="match";
+            std::cout<<status<<std::endl;
+            bool match_re = update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+            if (match_re==false){
+                std::cout<<"match failed"<<std::endl;
+                return false;
+            }
+            vis_map(map);
+            reset_all_status(map, "doMatch", true);
+            status="pose opt";
+            std::cout<<status<<std::endl;
+            //FLAGS_gps_weight=100;
+            pose_graph_opti_se3(map);
+            vis_map(map);
+            FLAGS_max_repro_err=100;
+            FLAGS_gps_weight=0.01;
+            status="1st BA";
+            std::cout<<status<<std::endl;
+            bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+            if (ba_re==false){
+                std::cout<<"BA failed"<<std::endl;
+                return false;
+            }
+            vis_map(map);
         }
-        vis_map(map);
-        reset_all_status(map, "doMatch", true);
-        status="pose opt";
-        std::cout<<status<<std::endl;
-        //FLAGS_gps_weight=100;
-        pose_graph_opti_se3(map);
-        vis_map(map);
-        FLAGS_max_repro_err=100;
-        FLAGS_gps_weight=0.01;
-        status="1st BA";
-        std::cout<<status<<std::endl;
-        bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
-        if (ba_re==false){
-            std::cout<<"BA failed"<<std::endl;
-            return false;
-        }
-        vis_map(map);
-        FLAGS_max_repro_err=50;
-        status="2nd BA";
-        std::cout<<status<<std::endl;
-        //optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
-        vis_map(map);
+        
         status="culling";
         std::cout<<status<<std::endl;
         FLAGS_cull_frame_rate=0.8;
         culling_frame(map);
-        vis_map(map);
-        //bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
-        if (ba_re==false){
-            std::cout<<"BA failed"<<std::endl;
-            return false;
-        }
         int after_map_frames=map.frames.size();
         std::cout<<"before_map_frames:"<<before_map_frames<<std::endl;
         std::cout<<"after_map_frames:"<<after_map_frames<<std::endl;
