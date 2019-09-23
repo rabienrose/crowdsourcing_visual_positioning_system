@@ -118,7 +118,7 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
             dispatch_async( dispatch_get_main_queue(), ^{
                 self.status_label.text=[[NSString alloc] initWithUTF8String:status_mapping.c_str()];
                 if( kerr == KERN_SUCCESS ) {
-                    self.mem_label.text=[NSString stringWithFormat:@"%.2f MB", ((CGFloat)info.resident_size / 1048576)];
+                    self.mem_label.text=[NSString stringWithFormat:@"%.3f MB", ((CGFloat)info.resident_size / 1048576)];
                 } else {
                     self.mem_label.text=@"Err";
                 }
