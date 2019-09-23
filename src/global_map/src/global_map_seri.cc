@@ -449,7 +449,7 @@ namespace gm{
                 }
             }
         }
-        
+        input.close();
         return true;
     }
     

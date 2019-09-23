@@ -417,12 +417,19 @@ namespace gm{
         map.AssignKpToMp();
         map.CheckConnections();
         cal_subgroup_remove(map, 1, ranked_group_frames);
+        status="culling";
+        std::cout<<status<<std::endl;
+        FLAGS_cull_frame_rate=0.4;
+        culling_frame(map);
+        FLAGS_max_repro_err=5;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
         reset_all_status(map, "all", false);
         status="save";
         std::cout<<status<<std::endl;
         gm::save_global_map(map, final_addr);
         status="done";
         std::cout<<status<<std::endl;
+        return true;
     }
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
@@ -549,7 +556,7 @@ namespace gm{
         std::vector<std::vector<int>> inliers_mps;
         
         start = clock();
-        matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
+        matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50, false);
         end = clock();
         time_taken = double(end - start) / double(CLOCKS_PER_SEC);
         match_time=time_taken;

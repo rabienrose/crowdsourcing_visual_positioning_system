@@ -1,6 +1,6 @@
 #include "global_map/global_map.h"
-//#include <glog/logging.h>
-#include "s2cell_id.h"
+#include <glog/logging.h>
+//#include "s2cell_id.h"
 #include <set>
 #include <vector>
 #include "separate_map.h"

@@ -128,7 +128,7 @@ namespace chamo {
     
     void GlobalMatch::MatchImg( std::shared_ptr<gm::Frame> query_frame, std::vector<std::vector<int>>& inliers_mps, 
                                 std::vector<std::vector<int>>& inliers_kps, std::vector<Eigen::Matrix4d>& poses,
-                                float project_err_range, float desc_diff_err
+                                float project_err_range, float desc_diff_err, bool do_reproj
     ){
         std::map<int, int> match_count_per_frame;
         std::unordered_map<int, std::vector<Match>> frame_to_match;
@@ -309,7 +309,7 @@ namespace chamo {
             //std::cout<<"before: "<<point3ds.size()<<std::endl;
             cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
             //std::cout<<"after: "<<inliers.rows<<std::endl;
-            if(inliers.rows<40){
+            if(inliers.rows<20){
                 continue;
             }
             cv::Mat rot_m;
@@ -322,8 +322,6 @@ namespace chamo {
             pose_inv.block(0,0,3,3)=rot_m_eigen;
             pose_inv.block(0,3,3,1)=tvec_eigen;
             
-            
-            bool do_reproj=true;
             if(do_reproj){
                 Eigen::Matrix<double, 3, 4> k_mat = Eigen::Matrix<double, 3, 4>::Zero();
                 k_mat(0, 0) = query_frame->fx;
@@ -372,7 +370,7 @@ namespace chamo {
                 inliers=cv::Mat();
                 //std::cout<<"ran before: "<<point3ds.size()<<std::endl;
                 cv::solvePnPRansac(point3ds, point2ds, cam_inter_cv, cam_distort_zero, rvec, tvec, false, 1000, 2.0f, 0.99, inliers, cv::SOLVEPNP_EPNP);
-                if(inliers.rows<40){
+                if(inliers.rows<20){
                     continue;
                 }
                 //std::cout<<"inlier2: "<<inliers.rows<<std::endl;

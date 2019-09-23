@@ -13,11 +13,5 @@ cs_add_library(${PROJECT_NAME} ${PROTO_SRCS}
     src/global_map_seri.cc
 )
 
-cs_add_executable(${PROJECT_NAME}_test
-	src/main.cc
-)
-
-target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
-
 cs_install()
 cs_export()
