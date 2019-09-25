@@ -419,7 +419,7 @@ namespace gm{
         cal_subgroup_remove(map, 1, ranked_group_frames);
         status="culling";
         std::cout<<status<<std::endl;
-        FLAGS_cull_frame_rate=0.4;
+        FLAGS_cull_frame_rate=0.8;
         culling_frame(map);
         FLAGS_max_repro_err=5;
         optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);

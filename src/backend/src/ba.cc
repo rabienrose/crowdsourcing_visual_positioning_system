@@ -275,7 +275,7 @@ bool optimize_BA(gm::GlobalMap& map, bool re_triangle, std::vector<Eigen::Vector
         if(map.frames[i]->doMatch==false || map.frames[i]->isfix==true){
             continue;
         }
-        if(map.frames[i]->gps_accu<30){
+        if(map.frames[i]->gps_accu<30 && map.frames[i]->gps_accu>0){
             g2o::EdgePosiPre* e = new g2o::EdgePosiPre();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(kf_verts[frame_vertex_map[map.frames[i]->id]]));
             e->setMeasurement(map.frames[i]->gps_position);

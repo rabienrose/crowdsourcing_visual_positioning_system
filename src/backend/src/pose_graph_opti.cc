@@ -278,7 +278,7 @@ void pose_graph_opti_se3(gm::GlobalMap& map){
         if(map.frames[i]->isborder==true){
             continue;
         }
-        if(map.frames[i]->gps_accu<30){
+        if(map.frames[i]->gps_accu<30 && map.frames[i]->gps_accu>0){
             g2o::EdgePosiPreSE3* e = new g2o::EdgePosiPreSE3();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(frame_to_vertex[map.frames[i]]));
             e->setMeasurement(map.frames[i]->gps_position);
