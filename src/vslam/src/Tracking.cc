@@ -64,6 +64,7 @@ Tracking::Tracking(ORBVocabulary* pVoc, Map *pMap, KeyFrameDatabase* pKFDB, cons
     DistCoef.at<float>(2) = cam_distort(2);
     DistCoef.at<float>(3) = cam_distort(3);
     DistCoef.copyTo(mDistCoef);
+    cv::initUndistortRectifyMap(K,DistCoef,cv::Mat(),K, cv::Size(1280, 720), CV_32FC1, map1,map2);
     mbf = 0;
     mMinFrames = FLAGS_max_step_KF;
     mMaxFrames = FLAGS_max_step_KF;
@@ -121,6 +122,7 @@ cv::Mat Tracking::GrabImageMonocular(Frame mframe)
 cv::Mat Tracking::Loc(const cv::Mat &im, const double &timestamp, std::string file_name)
 {
     cv::undistort(im, mImGray, mK, mDistCoef);
+    cv::remap(im,mImGray,map1,map2,cv::INTER_CUBIC);
     cv::Mat distCoefZero=cv::Mat::zeros(mDistCoef.rows, mDistCoef.cols, mDistCoef.type());
     mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,distCoefZero,mbf,mThDepth,file_name, FLAGS_use_orb);
     bool bOK=true;

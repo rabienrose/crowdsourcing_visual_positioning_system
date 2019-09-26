@@ -13,7 +13,7 @@ public:
 
     void MatchImg(std::shared_ptr<gm::Frame> query_frame, std::vector<std::vector<int>>& inliers_mps, 
                                 std::vector<std::vector<int>>& inliers_kps, std::vector<Eigen::Matrix4d>& poses,
-                                float project_err_range=20, float desc_diff_err=50
+                                float project_err_range=20, float desc_diff_err=50, bool do_reproj=true
     );
     
     std::shared_ptr<loop_closure::inverted_multi_index::InvertedMultiIndex<5>> index_;

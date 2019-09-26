@@ -93,8 +93,22 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
     self.map_list_ui.delegate = dele_map;
     self.map_list_ui.dataSource = dele_map;
     status_mapping="done";
+    
     dispatch_async( updateQueue, ^{
         while(true){
+            if(api_proc.map_is_change){
+                api_proc.map_is_change=false;
+                [self.sceneDelegate showPC: api_proc.debug_mp_posi kf:api_proc.debug_kf_posi];
+            }
+            if(api_proc.match_is_change){
+                api_proc.match_is_change=false;
+                [self.sceneDelegate set_lines: api_proc.debug_matches];
+            }
+            if(api_proc.img_is_change){
+                api_proc.img_is_change=false;
+                [self.frameDelegate showFrame: api_proc.debug_img];
+            }
+            cv::Mat debug_img;
             struct task_basic_info info;
             mach_msg_type_number_t size = TASK_BASIC_INFO_COUNT;
             kern_return_t kerr = task_info(mach_task_self(),
@@ -104,12 +118,12 @@ static void *ExposureTargetOffsetContext = &ExposureTargetOffsetContext;
             dispatch_async( dispatch_get_main_queue(), ^{
                 self.status_label.text=[[NSString alloc] initWithUTF8String:status_mapping.c_str()];
                 if( kerr == KERN_SUCCESS ) {
-                    self.mem_label.text=[NSString stringWithFormat:@"%.2f MB", ((CGFloat)info.resident_size / 1048576)];
+                    self.mem_label.text=[NSString stringWithFormat:@"%.3f MB", ((CGFloat)info.resident_size / 1048576)];
                 } else {
                     self.mem_label.text=@"Err";
                 }
             });
-            [NSThread sleepForTimeInterval:1.0f];
+            [NSThread sleepForTimeInterval:0.2f];
         }
     });
 }
@@ -318,19 +332,23 @@ void interDouble(double v1, double v2, double t1, double t2, double& v3_out, dou
     if(is_locating){
         locate_count++;
         NSDate *methodStart = [NSDate date];
-        if(locate_count%1==0){
+        if(locate_count%3==0){
             dispatch_async( recordingQueue, ^{
                 NSDate *methodFinish = [NSDate date];
                 NSTimeInterval executionTime = [methodFinish timeIntervalSinceDate:methodStart];
-                if(executionTime<1){
+                if(executionTime<1.0){
                     Eigen::Matrix4d pose;
                     std::vector<cv::Point2f> inliers_kp;
                     std::vector<Eigen::Vector3d> inliers_mp;
                     cv::Mat img_gray;
                     cv::Mat debug_gray;
                     cv::cvtColor(img_cv, img_gray, CV_BGRA2GRAY);
-                    api.locate_img(img_gray, debug_gray, pose, Eigen::Vector3d(-1,-1,-1), inliers_kp, inliers_mp);
-                    
+                    NSDate *loc_before = [NSDate date];
+                    float match_time;
+                    api.locate_img(img_gray, debug_gray, pose, Eigen::Vector3d(-1,-1,-1), inliers_kp, inliers_mp, match_time);
+                    NSDate *loc_after= [NSDate date];
+                    NSTimeInterval locTime = [loc_after timeIntervalSinceDate:loc_before];
+                    [self.frameDelegate showTime: locTime match_time:match_time ];
                     if(inliers_kp.size()>20){
                         cv::cvtColor(debug_gray, debug_gray, CV_GRAY2BGRA);
                         for(int i=0; i<inliers_kp.size(); i++){
@@ -582,7 +600,7 @@ void gps84_To_Gcj02(double& lat, double& lon) {
      int bag_count=[bagFiles count];
     self.bag_label.text=[NSString stringWithFormat:@"Bag: %d", bag_count];
     
-    NSString *full_map_addr = [full_proj_addr stringByAppendingString:@"/global"];
+    NSString *full_map_addr = [full_proj_addr stringByAppendingString:@"/release"];
     std::string map_addr_std=std::string([full_map_addr UTF8String]);
     url = [NSURL URLWithString:full_map_addr];
     dirContents =
@@ -596,6 +614,7 @@ void gps84_To_Gcj02(double& lat, double& lon) {
     for (NSURL* mapfile in dirContents) {
         NSString *mapfile_ns = [mapfile absoluteString];
         std::string filename_std=std::string([mapfile_ns UTF8String]);
+        std::cout<<filename_std<<std::endl;
         std::vector<std::string> splited_addr = chamo::split(filename_std,"/");
         std::vector<std::string> splited_filename = chamo::split(splited_addr.back(),".");
         filename_std=splited_filename[0];
@@ -617,6 +636,50 @@ void gps84_To_Gcj02(double& lat, double& lon) {
     }
 }
 
+-(void) copy_folder:(NSString*) sour dest:(NSString*) dest{
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSArray *sourceFiles = [fileManager contentsOfDirectoryAtPath:sour error:NULL];
+    NSError *copyError = nil;
+    for (NSString *currentFile in sourceFiles)
+    {
+        BOOL isDirectory = NO;
+        NSString* fullFilePath = [NSString stringWithFormat:@"%@/%@",sour,currentFile];
+        if ([fileManager fileExistsAtPath:fullFilePath isDirectory:&isDirectory] && !isDirectory)
+        {
+            if (![fileManager copyItemAtPath:[sour stringByAppendingPathComponent:currentFile] toPath:[dest stringByAppendingPathComponent:currentFile] error:&copyError])
+            {
+                NSLog(@"Error Copying: %@", [copyError description]);
+            }
+        }
+    }
+}
+
+- (unsigned long long) fastFolderSizeAtFSRef:(NSString *)theFilePath
+{
+    unsigned long long totalSize = 0;
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    BOOL  isdirectory;
+    NSError *error;
+    if ([fileManager fileExistsAtPath:theFilePath])
+    {
+        NSMutableArray * directoryContents = [[fileManager contentsOfDirectoryAtPath:theFilePath error:&error] mutableCopy];
+        for (NSString *fileName in directoryContents)
+        {
+            if (([fileName rangeOfString:@".DS_Store"].location != NSNotFound) )
+                continue;
+            NSString *path = [theFilePath stringByAppendingPathComponent:fileName];
+            if([fileManager fileExistsAtPath:path isDirectory:&isdirectory] && isdirectory  )
+            {
+                totalSize =  totalSize + [self fastFolderSizeAtFSRef:path];
+            }else{
+                unsigned long long fileSize = [[fileManager attributesOfItemAtPath:path error:&error] fileSize];
+                totalSize = totalSize + fileSize;
+            }
+        }
+    }
+    return totalSize;
+}
+
 - (IBAction)start_mapping:(id)sender {
     dispatch_async( sessionQueue, ^{
         dispatch_async( dispatch_get_main_queue(), ^{
@@ -633,14 +696,19 @@ void gps84_To_Gcj02(double& lat, double& lon) {
         std::string config_addr_std = std::string([config_addr UTF8String]);
         std::string map_addr_std=std::string([full_map_addr UTF8String]);
         std::string full_bag_std=std::string([full_bag_addr UTF8String]);
-        
+        NSString *full_release_addr = [full_proj_addr stringByAppendingString:@"/release"];
+        std::string map_release_std=std::string([full_release_addr UTF8String]);
         BOOL isDir;
         NSFileManager *fileManager= [NSFileManager defaultManager];
         if(![fileManager fileExistsAtPath:full_map_addr isDirectory:&isDir])
             if(![fileManager createDirectoryAtPath:full_map_addr withIntermediateDirectories:YES attributes:nil error:NULL])
                 NSLog(@"Error: Create folder failed %@", full_map_addr);
+        if(![fileManager fileExistsAtPath:full_release_addr isDirectory:&isDir])
+            if(![fileManager createDirectoryAtPath:full_release_addr withIntermediateDirectories:YES attributes:nil error:NULL])
+                NSLog(@"Error: Create folder failed %@", full_release_addr);
         gm::GlobalMapApi temp_api;
-        temp_api.init(config_addr_std, map_addr_std);
+        api_proc=temp_api;
+        api_proc.init(config_addr_std, map_addr_std);
         NSURL *url = [NSURL URLWithString:full_bag_addr];
         NSArray * dirContents =
         [[NSFileManager defaultManager] contentsOfDirectoryAtURL: url
@@ -650,14 +718,20 @@ void gps84_To_Gcj02(double& lat, double& lon) {
         NSPredicate *predicate = [NSPredicate predicateWithFormat:@"pathExtension='bag'"];
         NSArray *bagFiles = [dirContents filteredArrayUsingPredicate:predicate];
         std::vector<unsigned int> ids;
+        
         for (NSURL* bagfile in bagFiles) {
             NSString *bagfile_ns = [bagfile absoluteString];
             std::string bagfile_std=std::string([bagfile_ns UTF8String]);
             std::vector<std::string> splited_addr = chamo::split(bagfile_std,"/");
             std::string full_bag_name=full_bag_std+"/"+splited_addr.back();
             NSString *full_cache_addr = [full_proj_addr stringByAppendingString:@"/cache"];
+            if([fileManager fileExistsAtPath:full_map_addr isDirectory:&isDir]){
+                [fileManager removeItemAtPath:full_map_addr error:nil];
+            }
+            [fileManager createDirectoryAtPath:full_map_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+            [self copy_folder:  full_release_addr dest:full_map_addr];
             if([fileManager fileExistsAtPath:full_cache_addr isDirectory:&isDir]){
-                [fileManager removeItemAtPath:full_cache_addr error:nil];
+               [fileManager removeItemAtPath:full_cache_addr error:nil];
             }
             [fileManager createDirectoryAtPath:full_cache_addr withIntermediateDirectories:YES attributes:nil error:NULL];
             NSString *full_local_addr = [full_proj_addr stringByAppendingString:@"/local"];
@@ -667,8 +741,17 @@ void gps84_To_Gcj02(double& lat, double& lon) {
             [fileManager createDirectoryAtPath:full_local_addr withIntermediateDirectories:YES attributes:nil error:NULL];
             std::string cache_addr_std=std::string([full_cache_addr UTF8String]);
             std::string local_addr_std=std::string([full_local_addr UTF8String]);
-            temp_api.process_bag(full_bag_name, cache_addr_std, local_addr_std, status_mapping);
-            [fileManager removeItemAtPath:[[NSString alloc] initWithUTF8String:full_bag_name.c_str()] error:nil];
+            unsigned long long size_before =[self fastFolderSizeAtFSRef:full_map_addr];
+            bool update_re = api_proc.process_bag(full_bag_name, cache_addr_std, local_addr_std, status_mapping);
+            unsigned long long size_after =[self fastFolderSizeAtFSRef:full_map_addr];
+            if(update_re==true && size_after>size_before){
+                if([fileManager fileExistsAtPath:full_release_addr isDirectory:&isDir]){
+                    [fileManager removeItemAtPath:full_release_addr error:nil];
+                }
+                [fileManager createDirectoryAtPath:full_release_addr withIntermediateDirectories:YES attributes:nil error:NULL];
+                [self copy_folder:full_map_addr dest:full_release_addr];
+                [fileManager removeItemAtPath:[[NSString alloc] initWithUTF8String:full_bag_name.c_str()] error:nil];
+            }
         }
         dispatch_async( dispatch_get_main_queue(), ^{
             self.proc_label.text=@"None";
@@ -678,7 +761,7 @@ void gps84_To_Gcj02(double& lat, double& lon) {
 - (IBAction)clear_map_btn:(id)sender {
     NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
-    NSString *full_global_addr = [full_map_addr stringByAppendingString:@"/global"];
+    NSString *full_global_addr = [full_map_addr stringByAppendingString:@"/release"];
     BOOL isDir;
     if([[NSFileManager defaultManager] fileExistsAtPath:full_global_addr isDirectory:&isDir]){
         [[NSFileManager defaultManager] removeItemAtPath:full_global_addr error:nil];
@@ -690,7 +773,7 @@ void gps84_To_Gcj02(double& lat, double& lon) {
         NSArray *dirPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *full_map_addr = [[dirPaths objectAtIndex:0] stringByAppendingPathComponent:dele_map.sel_filename];
         NSString *background_map_addr = [full_map_addr stringByAppendingString:@"/background"];
-        full_map_addr = [full_map_addr stringByAppendingString:@"/global"];
+        full_map_addr = [full_map_addr stringByAppendingString:@"/release"];
         
         NSBundle* myBundle = [NSBundle mainBundle];
         NSString*  mycam_str = [myBundle pathForResource:@"camera_config" ofType:@"txt"];
@@ -755,16 +838,6 @@ void gps84_To_Gcj02(double& lat, double& lon) {
         std::vector<Eigen::Vector3d> kf_posis;
         std::vector<Eigen::Quaterniond> kf_rot;
         api.get_pointcloud(out_pointcloud, kf_posis, kf_rot, ids);
-        Eigen::Vector3d av_posi;
-        int mp_count=out_pointcloud.size();
-        for(int i=0; i<out_pointcloud.size(); i++){
-            av_posi=av_posi+out_pointcloud[i]/(double)mp_count;
-        }
-        for(int i=0; i<out_pointcloud.size(); i++){
-            out_pointcloud[i](2)=out_pointcloud[i](2)-av_posi(2);
-        }
-        std::vector<Eigen::Vector3d> matches;
-        [self.sceneDelegate set_cur_posi: av_posi matches:matches update_center:true];
         [self.sceneDelegate showPC: out_pointcloud kf:kf_posis];
         if(!background_img.empty()){
             if(hasTrans==false){

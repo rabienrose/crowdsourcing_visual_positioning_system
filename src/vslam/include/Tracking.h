@@ -206,6 +206,7 @@ protected:
 
     list<MapPoint*> mlpTemporalPoints;
     int reloc_fail_count; //if many frames continue to be failed in relocalization, do the re-initialization
+    cv::Mat map1,map2;
 
 };
 

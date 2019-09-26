@@ -4,7 +4,7 @@ project(global_map)
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
-add_definitions(--std=c++11 -Wno-unknown-pragmas -w)
+add_definitions(--std=c++14 -Wno-unknown-pragmas -w)
 
 cs_add_library(${PROJECT_NAME} ${PROTO_SRCS}
     src/global_map.cc

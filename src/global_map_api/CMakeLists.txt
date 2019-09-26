@@ -4,7 +4,7 @@ project(global_map_api)
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
-add_definitions(--std=c++11 -Wno-unknown-pragmas -DVISUALIZATION)
+add_definitions(--std=c++17 -Wno-unknown-pragmas -DVISUALIZATION)
 
 cs_add_library(${PROJECT_NAME}_lib
     src/global_map_api.cc

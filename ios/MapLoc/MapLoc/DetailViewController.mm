@@ -41,6 +41,17 @@
         }
     });
 }
+- (void) showTime: (float) total_time match_time:(float)match_time{
+    dispatch_async( dispatch_get_main_queue(), ^{
+        if(total_time>0){
+            self.time_loc_label.text = [NSString stringWithFormat: @"T Time: %f", total_time];
+        }
+        if(match_time>0){
+            self.match_time_label.text = [NSString stringWithFormat: @"M Time: %f", match_time];
+        }
+       
+    });
+}
 
 
 @end

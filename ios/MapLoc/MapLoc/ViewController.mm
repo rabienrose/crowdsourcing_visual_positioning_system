@@ -19,6 +19,26 @@
     [self update_scene];
     
 }
+- (IBAction)center_btn:(id)sender {
+    Eigen::Vector3d av_posi;
+    int mp_count=mps.size();
+    for(int i=0; i<mps.size(); i++){
+        av_posi=av_posi+mps[i]/(double)mp_count;
+    }
+    center_posi=av_posi;
+    float min=99999;
+    float max=-99999;
+    for(int i=0; i<mps.size(); i++){
+        if(mps[i](0)<min){
+            min=mps[i](0);
+        }
+        if(mps[i](0)>max){
+            max=mps[i](0);
+        }
+    }
+    pix_per_meter=scene_w/((max-min)*1.5);
+    [self update_scene];
+}
 
 - (void) handleTap:(UIGestureRecognizer*)gestureRecognize{
     //std::cout<<"tap"<<std::endl;
@@ -92,6 +112,7 @@
     pix_per_meter=1;
     scene_w=900;
     scene_h=600;
+    center_posi=Eigen::Vector3d::Zero();
     [self update_scene_img];
     return self;
 }
@@ -121,21 +142,16 @@
     matches=cur_matches;
     [self update_scene];
 }
+
+- (void) set_lines: (std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>&) line_matches {
+    line_matches_=line_matches;
+    [self update_scene];
+}
     
 - (void) showPC: (std::vector<Eigen::Vector3d>&) mp_posis kf:(std::vector<Eigen::Vector3d>&) kf_posis{
+   
     mps=mp_posis;
     kfs = kf_posis;
-    float min=99999;
-    float max=-99999;
-    for(int i=0; i<kf_posis.size(); i++){
-        if(kf_posis[i](0)<min){
-            min=kf_posis[i](0);
-        }
-        if(kf_posis[i](0)>max){
-            max=kf_posis[i](0);
-        }
-    }
-    pix_per_meter=scene_w/((max-min)*1.5);
     [self update_scene];
 }
 
@@ -245,6 +261,17 @@
                         cv::Point2f pt2( pix_posi2(0)+scene_w/2,-pix_posi2(1)+scene_h/2);
                         cv::line(img, pt1, pt2,  cv::Scalar(0,255,0,255), 1);
                     }
+                }
+            }
+        }
+        for(int i=0; i<line_matches_.size(); i++){
+            Eigen::Vector3d pix_posi1;
+            if([self checkPtVisible:line_matches_[i].first pix_pt:pix_posi1]){
+                Eigen::Vector3d pix_posi2;
+                if([self checkPtVisible:line_matches_[i].second pix_pt:pix_posi2]){
+                    cv::Point2f pt1( pix_posi1(0)+scene_w/2,-pix_posi1(1)+scene_h/2);
+                    cv::Point2f pt2( pix_posi2(0)+scene_w/2,-pix_posi2(1)+scene_h/2);
+                    cv::line(img, pt1, pt2,  cv::Scalar(0,255,0,255), 1);
                 }
             }
         }

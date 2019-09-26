@@ -48,6 +48,7 @@
     int last_kf_count;
     BagListDelegate *dele_map;
     gm::GlobalMapApi api;
+    gm::GlobalMapApi api_proc;
     std::string status_mapping;
     int frame_view_update_count;
     int locate_count;

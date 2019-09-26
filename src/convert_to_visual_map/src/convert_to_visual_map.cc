@@ -92,8 +92,8 @@ void alignToIMU(gm::GlobalMap& map){
     Eigen::Matrix3d Rwi_ = Sophus::SO3::exp(vhateig*theta).matrix();
     Eigen::Vector3d bias_a=Eigen::Vector3d::Zero();
     std::cout<<"reafined sstar: "<<sstar<<std::endl;
-    CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
-    std::cout<<"reafined sstar: "<<sstar<<std::endl;
+//     CalAccBias(pose_vec_mat, preints, sstar, gwstar, chamo::Converter::toCvMat(Tbc), Rwi_, bias_a);
+//     std::cout<<"reafined sstar: "<<sstar<<std::endl;
     cv::Mat Tbc_mat=chamo::Converter::toCvMat(Tbc);
     cv::Mat Rwi_mat=chamo::Converter::toCvMat(Rwi_);
     Eigen::Matrix4d Twi = Eigen::Matrix4d::Identity();
@@ -453,8 +453,14 @@ void ConvertFromVisualMap(std::string config_root, std::string res_root, gm::Glo
     }
 
     alignToIMU(map);
-    out_maps.push_back(map);
-    //alignToGPS(map, out_maps);
+    map.AssignKpToMp();
+    map.CheckConsistence();
+    map.CalConnections();
+    std::cout<<"cccc"<<std::endl;
+    map.CheckConnections();
+    //out_maps.push_back(map);
+    alignToGPS(map, out_maps);
+    
 }
 
 void convert_to_visual_map(std::string config_root, std::string res_root, std::string globalmap_root, std::vector<unsigned int>& ids) {
@@ -496,6 +502,11 @@ void convert_to_visual_map(std::string config_root, std::string res_root, std::s
         }
         map.ReleaseMap();
     }
+    global_map.AssignKpToMp();
+    global_map.CheckConsistence();
+    global_map.CalConnections();
+    std::cout<<"dddd"<<std::endl;
+    global_map.CheckConnections();
     gm::get_blockid_list(global_map, ids);
     if(global_map.frames.size()>3){
         gm::save_global_map(global_map, globalmap_root);

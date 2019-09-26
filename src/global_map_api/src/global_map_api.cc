@@ -50,9 +50,10 @@ DECLARE_double(max_repro_err);
 DECLARE_double(cull_frame_rate);
 DECLARE_double(gps_weight);
 DECLARE_string(map_addr);
+DECLARE_bool(use_sim3);
 namespace gm{
     
-    void do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr){
+    void GlobalMapApi::do_vslam(std::string local_addr, std::string config_addr, std::string bag_addr, std::string& status){
         FLAGS_voc_addr=config_addr+"/FreakAll.bin";
         FLAGS_camera_config=config_addr+"/camera_config.txt";
         std::string out_str=local_addr;
@@ -69,10 +70,19 @@ namespace gm{
         //topics.push_back("img");
         rosbag::View view(bag, rosbag::TopicQuery(topics));
         int img_count=-1;
-        rosbag::View::iterator it= view.begin();
+        
         
         int map_count=0;
+        int total_img_count=0;
         bool bReset=false;
+        rosbag::View::iterator it= view.begin();
+        for(;it!=view.end();it++){
+            rosbag::MessageInstance m =*it;
+            if(m.getTopic()=="img"){
+                total_img_count++;
+            }
+        }
+        it= view.begin();
         for(;it!=view.end();it++){
             rosbag::MessageInstance m =*it;
             sensor_msgs::CompressedImagePtr simg = m.instantiate<sensor_msgs::CompressedImage>();
@@ -100,6 +110,9 @@ namespace gm{
                     if(sys_p==nullptr){
                         sys_p=new ORB_SLAM2::System();
                     }
+                    std::stringstream debug_s;
+                    debug_s<<"slam: "<<(img_count/(float)total_img_count)*100<<"%";
+                    status=debug_s.str();
                     bool re = sys_p->TrackMonocular(cv_ptr->image, simg->header.stamp.toSec(), ss.str());
 //                    std::cout<<img_count<<std::endl;
 //                    if(img_count%300==0){
@@ -108,7 +121,7 @@ namespace gm{
 //                        re=true;
 //                    }
                     if(re){
-#ifdef VISUALIZATION
+
                         std::vector<Eigen::Vector3d> pcs;
                         sys_p->getPC(pcs);
                         std::vector<Eigen::Vector3d> posis;
@@ -120,13 +133,33 @@ namespace gm{
                         int kf_count_t;
                         cv::Mat img_display;
                         sys_p->getDebugImg(img_display, reproject_err_t, match_count_t, mp_count_t, kf_count_t);
-
                         if(!img_display.empty()){
+                            debug_kf_posi.clear();
+                            for(int i=0; i<posis.size(); i++){
+                                Eigen::Vector3d temp_pt;
+                                temp_pt(0)=posis[i](0);
+                                temp_pt(1)=posis[i](2);
+                                temp_pt(2)=-posis[i](1);
+                                debug_kf_posi.push_back(temp_pt);
+                            }
+                            debug_mp_posi.clear();
+                            for(int i=0; i<pcs.size(); i++){
+                                Eigen::Vector3d temp_pt;
+                                temp_pt(0)=pcs[i](0);
+                                temp_pt(1)=pcs[i](2);
+                                temp_pt(2)=-pcs[i](1);
+                                debug_mp_posi.push_back(temp_pt);
+                            }
+                            debug_img=img_display;
+                            map_is_change=true;
+                            img_is_change=true;
+#ifdef VISUALIZATION
                             cv::imshow("chamo", img_display);
                             show_mp_as_cloud(posis, "vslam_output_posi");
                             cv::waitKey(1);
-                        }
 #endif
+                        }
+
                     }else{
                         std::vector<Eigen::Vector3d> posis;
                         std::vector<Eigen::Quaterniond> quas;
@@ -177,7 +210,27 @@ namespace gm{
         cam_distort(2)=atof(splited[6].c_str());
         cam_distort(3)=atof(splited[7].c_str());
     }
+    
+    GlobalMapApi::GlobalMapApi(){
+        map_is_change=false;
+        match_is_change=false;
+        img_is_change=false;
+    }
 
+    void GlobalMapApi::vis_map(gm::GlobalMap& map){
+        debug_mp_posi.clear();
+        debug_kf_posi.clear();
+        for(int i=0; i<map.frames.size(); i++){
+            debug_kf_posi.push_back(map.frames[i]->position);
+            
+        }
+        for(int i=0; i<map.mappoints.size(); i++){
+            debug_mp_posi.push_back(map.mappoints[i]->position);
+        }
+        map_is_change=true;
+        std::cout<<"vis_map"<<std::endl;
+    }
+    
     bool GlobalMapApi::init(std::string config_addr_, std::string map_addr_){
         map_addr=map_addr_;
         config_addr=config_addr_;
@@ -344,6 +397,39 @@ namespace gm{
             delete sys_p;
             sys_p=nullptr;
         }
+        return true;
+    }
+    
+    bool GlobalMapApi::final_proc(std::string in_addr,std::string final_addr, std::vector<unsigned int> block_ids){
+        std::string status;
+        gm::GlobalMap map;
+        gm::load_global_map(map, in_addr,block_ids);
+        reset_all_status(map, "doMatch", true);
+        FLAGS_use_sim3=false;
+        update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+        FLAGS_max_repro_err=50;
+        FLAGS_gps_weight=0.01;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+        FLAGS_max_repro_err=5;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        std::vector<std::vector<std::shared_ptr<gm::Frame>>> ranked_group_frames;
+        map.AssignKpToMp();
+        map.CheckConnections();
+        cal_subgroup_remove(map, 1, ranked_group_frames);
+        status="culling";
+        std::cout<<status<<std::endl;
+        FLAGS_cull_frame_rate=0.8;
+        culling_frame(map);
+        FLAGS_max_repro_err=5;
+        optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+        reset_all_status(map, "all", false);
+        status="save";
+        std::cout<<status<<std::endl;
+        gm::save_global_map(map, final_addr);
+        status="done";
+        std::cout<<status<<std::endl;
+        return true;
     }
     
     bool GlobalMapApi::process_bag(std::string bag_addr, std::string cache_addr, std::string localmap_addr, std::string& status){
@@ -352,41 +438,66 @@ namespace gm{
         extract_bag(cache_addr, bag_addr, "img", "imu", "gps", false);
         status="slam"; 
         std::cout<<status<<std::endl;
-        do_vslam(cache_addr, config_addr, bag_addr);
+        do_vslam(cache_addr, config_addr, bag_addr, status);
         std::vector<unsigned int> block_ids;
-        //block_ids.push_back(112224160);
+// //         block_ids.push_back(112224160);
+// //         block_ids.push_back(112224161);
+// //         block_ids.push_back(112260160);
+// //         block_ids.push_back(112260161);
 //         block_ids.push_back(112260160);
         status="align";
         std::cout<<status<<std::endl;
         convert_to_visual_map(config_addr, cache_addr,localmap_addr, block_ids);
         status="merge";
         std::cout<<status<<std::endl;
+        gm::GlobalMap map_t;
+        gm::load_global_map(map_t, map_addr,block_ids);
+        int before_map_frames=map_t.frames.size();
         merge_new(map_addr, localmap_addr, map_addr, block_ids);
+        
         gm::GlobalMap map;
         gm::load_global_map(map, map_addr,block_ids);
-        map.AssignKpToMp();
-        status="match";
-        std::cout<<status<<std::endl;
-        update_corresponds(map, config_addr+"/words_projmat.fstream");
-        reset_all_status(map, "doMatch", true);
-        status="pose opt";
-        std::cout<<status<<std::endl;
-        pose_graph_opti_se3(map);
-        FLAGS_max_repro_err=100;
-        FLAGS_gps_weight=0.00000000000001;
-        status="1st BA";
-        std::cout<<status<<std::endl;
-        optimize_BA(map, true);
-        FLAGS_max_repro_err=50;
-        status="2nd BA";
-        std::cout<<status<<std::endl;
-        optimize_BA(map, true);
-        optimize_BA(map, true);
+        vis_map(map);
+        if(before_map_frames==0){
+        }else{
+            status="match";
+            std::cout<<status<<std::endl;
+            bool match_re = update_corresponds(map, config_addr+"/words_projmat.fstream", debug_mp_posi, debug_kf_posi, debug_matches, map_is_change, match_is_change);
+            if (match_re==false){
+                std::cout<<"match failed"<<std::endl;
+                return false;
+            }
+            vis_map(map);
+            reset_all_status(map, "doMatch", true);
+            status="pose opt";
+            std::cout<<status<<std::endl;
+            //FLAGS_gps_weight=100;
+            pose_graph_opti_se3(map);
+            vis_map(map);
+            FLAGS_max_repro_err=100;
+            FLAGS_gps_weight=0.01;
+            status="1st BA";
+            std::cout<<status<<std::endl;
+            bool ba_re=optimize_BA(map, true, debug_kf_posi, debug_mp_posi, map_is_change, status);
+            if (ba_re==false){
+                std::cout<<"BA failed"<<std::endl;
+                return false;
+            }
+            vis_map(map);
+        }
+        
         status="culling";
         std::cout<<status<<std::endl;
         FLAGS_cull_frame_rate=0.8;
         culling_frame(map);
-        optimize_BA(map, true);
+        int after_map_frames=map.frames.size();
+        std::cout<<"before_map_frames:"<<before_map_frames<<std::endl;
+        std::cout<<"after_map_frames:"<<after_map_frames<<std::endl;
+        if(after_map_frames<=before_map_frames){
+            std::cout<<"map size decreased failed"<<std::endl;
+            return false;
+        }
+        vis_map(map);
         reset_all_status(map, "all", false);
         status="save";
         std::cout<<status<<std::endl;
@@ -402,7 +513,7 @@ namespace gm{
         }
     }
     bool GlobalMapApi::locate_img(cv::Mat img, cv::Mat& debug_img, Eigen::Matrix4d& pose, Eigen::Vector3d gps_position,
-                                  std::vector<cv::Point2f>& inliers_kp, std::vector<Eigen::Vector3d>& inliers_mp){
+                                  std::vector<cv::Point2f>& inliers_kp, std::vector<Eigen::Vector3d>& inliers_mp, float& match_time){
         std::vector<Eigen::Matrix4d> poses;
         std::clock_t start, end;
         double time_taken;
@@ -445,23 +556,26 @@ namespace gm{
         std::vector<std::vector<int>> inliers_mps;
         
         start = clock();
-        matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50);
+        matcher->MatchImg(loc_frame, inliers_mps, inliers_kps, poses, 20, 50, false);
         end = clock();
         time_taken = double(end - start) / double(CLOCKS_PER_SEC);
-        std::cout<<"match time: "<<time_taken<<std::endl;
+        match_time=time_taken;
+        //std::cout<<"match time: "<<time_taken<<std::endl;
         if(poses.size()>0){
             int max_inlier=-1;
             Eigen::Matrix4d max_pose;
+            int max_id=-1;
             for(int i=0; i<poses.size(); i++){
                 max_inlier<inliers_kps[i].size();
                 max_pose=poses[i];
+                max_id=i;
             }
             pose=max_pose;
-            for(int i=0; i<inliers_kps[0].size(); i++){
-                inliers_kp.push_back(loc_frame->kps[inliers_kps[0][i]].pt);
+            for(int i=0; i<inliers_kps[max_id].size(); i++){
+                inliers_kp.push_back(loc_frame->kps[inliers_kps[max_id][i]].pt);
             }
-            for(int i=0; i<inliers_mps[0].size(); i++){
-                inliers_mp.push_back(cur_map->mappoints[inliers_mps[0][i]]->position);
+            for(int i=0; i<inliers_mps[max_id].size(); i++){
+                inliers_mp.push_back(cur_map->mappoints[inliers_mps[max_id][i]]->position);
             }
             return true;
         }else{

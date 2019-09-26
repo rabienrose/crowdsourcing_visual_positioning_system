@@ -343,7 +343,7 @@ namespace chamo
         if(match_size<100){
             ransac_min_inliers=20;
         }
-        int ransac_max_iter = 200;
+        int ransac_max_iter = 20;
         int count_iter = 0;
         int ninliers_final=0;
         Eigen::Matrix4d best_T12;
@@ -404,7 +404,6 @@ namespace chamo
                     best_inlier=ninliers_final;                                                             
                     best_T12=temp_T12;
                     best_scale_12=temp_scale_12;
-                    std::cout<<best_inlier/(float)match_size<<std::endl;
                 }
                 if(best_inlier>ransac_max_inliers){
                     break;

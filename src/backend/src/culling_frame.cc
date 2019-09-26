@@ -93,7 +93,7 @@ void culling_frame(gm::GlobalMap& map){
                             //std::cout<<c1<<":"<<c2<<":"<<merged_cov<<std::endl;
                             //std::cout<<p2.transpose()<<std::endl;
                             //std::cout<<merged_gps.transpose()<<std::endl;
-                            if(c1>100 && c2>100){ 
+                            if(c1>100 && c2>100){ //to-do should consdier c1 <=0 case
                             }else if(c1<100 && c2>100){
                                 map.frames[i]->gps_position=p1;
                                 map.frames[i]->gps_accu=c1;

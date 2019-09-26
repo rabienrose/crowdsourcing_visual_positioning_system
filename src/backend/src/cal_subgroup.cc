@@ -43,13 +43,11 @@ void cal_subgroup(gm::GlobalMap& map, std::vector<std::vector<std::shared_ptr<gm
         }
     }
     for(int i=0;i<group_frames_temp.size(); i++){
-        if(group_frames_temp[i].size()>20){
+        if(group_frames_temp[i].size()>0){
             group_frames.push_back(group_frames_temp[i]);
         }
     }
-    for(int i=0; i<group_frames.size(); i++){
-        std::cout<<group_frames[i].size()<<std::endl;
-    }
+
     std::map<int, int> groupid_to_sizes;
     for(int i=0; i<group_frames.size(); i++){
         groupid_to_sizes[i]=group_frames[i].size();
@@ -74,9 +72,14 @@ void cal_subgroup_remove(gm::GlobalMap& map, int N, std::vector<std::vector<std:
     for(int i=0; i<map.frames.size(); i++){
         map.frames[i]->willDel=true;
     }
+    
     for(int n=0; n<N; n++){
-        if(group_frames.size()>n){
+        if(group_frames.size()<=n){
+            break;
+        }
+        if(group_frames.size()>n && group_frames[n].size()>20){
             ranked_group_frames.push_back(group_frames[n]);
+            std::cout<<group_frames[n].size()<<std::endl;
             for(int i=0; i<group_frames[n].size(); i++){
                 group_frames[n][i]->willDel=false;
             }
@@ -97,4 +100,5 @@ void cal_subgroup_remove(gm::GlobalMap& map, int N, std::vector<std::vector<std:
         }
     }
     map.AssignKpToMp();
+    map.CalConnections();
 }

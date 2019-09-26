@@ -229,4 +229,4 @@ void extract_bag(std::string out_addr_, std::string bag_addr_, std::string img_t
         }
     }
     outfile_gps_align.close();
-};
+}

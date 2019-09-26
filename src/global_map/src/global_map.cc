@@ -1,13 +1,19 @@
 #include "global_map/global_map.h"
 #include <glog/logging.h>
-
+//#include "s2cell_id.h"
+#include <set>
+#include <vector>
+#include "separate_map.h"
 namespace gm{
     
-    void get_map_block_id_from_gps(unsigned int& block_id, Eigen::Vector3d gps_latlon){
-        
-        block_id=floor(gps_latlon(0)*100)*360*100+floor(gps_latlon(1)*100);
-        //std::cout<<gps_latlon(0)<<":"<<floor(gps_latlon(0)*360*100)<<":"<<floor(gps_latlon(1)*100)<<":"<<block_id<<std::endl;
-    }
+    //void get_map_block_id_from_gps(unsigned int& block_id, Eigen::Vector3d gps_latlon){
+
+    //    double lat_degrees,lng_degrees;
+    //    lat_degrees = gps_latlon(0);
+    //    lng_degrees = gps_latlon(1);
+    //    S2CellId id(S2LatLng::FromDegrees(lat_degrees, lng_degrees));
+    //    block_id = id.id() >> 32;
+    //}
 
     void get_new_global_id(long unsigned int& new_id, Eigen::Vector3d gps_latlon){
         unsigned int block_id;
@@ -15,7 +21,7 @@ namespace gm{
         
         new_id=block_id;
        // std::cout<<new_id<<std::endl;
-        new_id=new_id<<32;
+        new_id=new_id << 32;
         //std::cout<<new_id<<std::endl;
         new_id=new_id+std::rand()+std::rand(); //rand belong to 0 : max int, here use two rands to get rand number from 0 to max uint
     }
@@ -24,23 +30,36 @@ namespace gm{
         block_id = id>>32;
     }
     
-    void get_gps_from_block_id(Eigen::Vector3d& gps_latlon, unsigned int block_id){
-        gps_latlon(0)=block_id/(360*100);
-        gps_latlon(0)=gps_latlon(0)/(double)100;
-        gps_latlon(1)=(block_id-gps_latlon(0)*(360*100*100))/(double)100;
-    }
+    //void get_gps_from_block_id(Eigen::Vector3d& gps_latlon, unsigned int block_id){
+    //    int nbr_level = 12;
+
+    //    S2::uint64 id = block_id << 32;
+    //    S2CellId cellId(id);
+
+    //    R2Point point;
+    //    S2LatLng latlng;
+    //    latlng = cellId.ToLatLng();
+
+    //    gps_latlon(0) = latlng.lat().degrees();
+    //    gps_latlon(1) = latlng.lng().degrees();
+    //    gps_latlon(2) = 0;
+    //}
     
     void get_blockids_frome_gps_list(std::vector<Eigen::Vector3d>& gps_list, std::vector<unsigned int>& blockid_list){
         std::set<unsigned int> ids_set;
         for(int i=0; i<gps_list.size(); i++){
             unsigned int block_id;
             get_map_block_id_from_gps(block_id, gps_list[i]);
+			//std::cout << gps_list[i](0) << std::endl;
+			//std::cout << gps_list[i](1) << std::endl;
+			//std::cout << gps_list[i](2) << std::endl;
             ids_set.insert(block_id);
         }
         for(std::set<unsigned int>::iterator it=ids_set.begin(); it!=ids_set.end(); it++){
             blockid_list.push_back(*it);
         }
     }
+
     void GlobalMap::ReleaseMap(){
         for(int i=0; i<frames.size(); i++){
             frames[i]->obss.clear();
@@ -51,6 +70,17 @@ namespace gm{
         }
     }
     
+    void GlobalMap::CheckConnections(){
+            std::set<std::shared_ptr<gm::Frame>> all_frame_set;
+            for(int i=0; i<frames.size(); i++){
+                all_frame_set.insert(frames[i]);
+            }
+            for(int i=0; i<pose_graph_v1.size(); i++){
+                if(all_frame_set.find(pose_graph_v1[i])==all_frame_set.end()||all_frame_set.find(pose_graph_v2[i])==all_frame_set.end()){
+                    std::cout<<"non exist frame!!"<<std::endl;
+                }
+            }
+    }
     
     std::shared_ptr<MapPoint> GlobalMap::getMPById(long unsigned int id){
         for(size_t i=0; i<mappoints.size(); i++){
@@ -80,9 +110,15 @@ namespace gm{
         for(int i=0; i<frames.size(); i++){
             std::map<std::shared_ptr<gm::Frame>, int> frame_list;
             for(int j=0; j<frames[i]->obss.size(); j++){
+                
                 if(frames[i]->obss[j]!=nullptr){
-                    
+//                     if(!checkMPExist(frames[i]->obss[j])){
+//                         std::cout<<"checkMPExist failed!!aaa"<<std::endl;
+//                     }
                     for(int k=0; k<frames[i]->obss[j]->track.size(); k++){
+//                         if(!checkFrameExist(frames[i]->obss[j]->track[k].frame)){
+//                             std::cout<<"checkFrameExist failed!!bbb"<<std::endl;
+//                         }
                         frame_list[frames[i]->obss[j]->track[k].frame]++;
                     }
                 }
@@ -98,11 +134,31 @@ namespace gm{
                 Eigen::Matrix4d T_2_1=frames[i]->getPose().inverse()*mit->first->getPose();
                 Eigen::Matrix3d rot=T_2_1.block(0,0,3,3);
                 Eigen::Vector3d posi=T_2_1.block(0,3,3,1);
+//                 if(!checkFrameExist(mit->first)){
+//                     std::cout<<"checkFrameExist failed!!aaa"<<std::endl;
+//                 }
                 AddConnection(mit->first, frames[i] , posi, rot, 1, mit->second*0.5);
             }
         }
     }
+    
+    bool GlobalMap::checkFrameExist(std::shared_ptr<gm::Frame> query_frame){
+        for(int i=0; i<frames.size(); i++){
+            if(frames[i]->id==query_frame->id){
+                return true;
+            }
+        }
+        return false;
+    }
 
+    bool GlobalMap::checkMPExist(std::shared_ptr<gm::MapPoint> query_mp){
+        for(int i=0; i<mappoints.size(); i++){
+            if(mappoints[i]->id==query_mp->id){
+                return true;
+            }
+        }
+        return false;
+    }
     
     void GlobalMap::AddConnection(std::shared_ptr<Frame> v1, std::shared_ptr<Frame> v2, Eigen::Vector3d& posi, Eigen::Matrix3d& rot,
         double scale, double weight){
@@ -227,9 +283,16 @@ namespace gm{
     }
     
     void GlobalMap::CheckConsistence(){
+        std::set<std::shared_ptr<gm::Frame>> all_frame_set;
+        for(int i=0; i<frames.size(); i++){
+            all_frame_set.insert(frames[i]);
+        }
         for(size_t i=0; i<mappoints.size(); i++){
             for(size_t j=0; j<mappoints[i]->track.size(); j++){
                 std::shared_ptr< Frame> frame_p = mappoints[i]->track[j].frame;
+                if(all_frame_set.find(frame_p)==all_frame_set.end()){
+                    std::cout<<"[CheckConsistence]non exist frame!!"<<std::endl;
+                }
                 if(frame_p==nullptr){
                     LOG(INFO)<<"frame_p==nullptr";
                 }
@@ -261,6 +324,7 @@ namespace gm{
                 }
             }
         }
+        
     }
     
     void GlobalMap::GetCovisi(std::shared_ptr< Frame> frame_p, std::map<std::shared_ptr< Frame>, int>& connections){
@@ -382,4 +446,5 @@ namespace gm{
         }
         std::cout<<"dup_count: "<<dup_count<<std::endl;
     }
+
 }
