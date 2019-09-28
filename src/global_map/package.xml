@@ -13,6 +13,5 @@
   <depend>gps_tool</depend>
   <depend>chamo_common</depend>
   <depend>visualization</depend>
-  <depend>s2geometry</depend>
   <depend>separate_map</depend>
 </package>
