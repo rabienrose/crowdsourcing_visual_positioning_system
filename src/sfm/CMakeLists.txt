@@ -1,0 +1,71 @@
+cmake_minimum_required(VERSION 2.8)
+project(sfm)
+
+find_package(catkin_simple REQUIRED)
+catkin_simple(ALL_DEPS_REQUIRED)
+add_definitions(--std=c++11 -Wno-unknown-pragmas -w)
+
+cs_add_library(${PROJECT_NAME}
+  feature/types.cc
+  feature/utils.cc
+  estimators/absolute_pose.cc
+  estimators/affine_transform.cc
+  estimators/coordinate_frame.cc
+  estimators/essential_matrix.cc
+  estimators/fundamental_matrix.cc
+  estimators/generalized_absolute_pose.cc
+  estimators/generalized_absolute_pose_coeffs.cc
+  estimators/generalized_relative_pose.cc
+  estimators/homography_matrix.cc
+  estimators/pose.cc
+  estimators/triangulation.cc
+  estimators/two_view_geometry.cc
+  base/camera.cc
+  base/camera_database.cc
+  base/camera_models.cc
+  base/camera_rig.cc
+  base/correspondence_graph.cc
+  base/database.cc
+  base/database_cache.cc
+  base/essential_matrix.cc
+  base/gps.cc
+  base/graph_cut.cc
+  base/homography_matrix.cc
+  base/image.cc
+  base/image_reader.cc
+  base/line.cc
+  base/point2d.cc
+  base/point3d.cc
+  base/polynomial.cc
+  base/pose.cc
+  base/projection.cc
+  base/reconstruction.cc
+  base/scene_clustering.cc
+  base/similarity_transform.cc
+  base/track.cc
+  base/triangulation.cc
+  base/undistortion.cc
+  base/visibility_pyramid.cc
+  base/warp.cc
+  util/bitmap.cc
+  util/camera_specs.cc
+  util/logging.cc
+  util/math.cc
+  util/misc.cc
+  util/ply.cc
+  util/random.cc
+  util/string.cc
+  util/threading.cc
+  util/timer.cc
+  util/version.cc
+  optim/bundle_adjustment.cc
+  optim/combination_sampler.cc
+  optim/least_absolute_deviations.cc
+  optim/progressive_sampler.cc
+  optim/random_sampler.cc
+  optim/sprt.cc
+  optim/support_measurement.cc
+)
+
+cs_install()
+cs_export()
