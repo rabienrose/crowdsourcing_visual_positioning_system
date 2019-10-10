@@ -19,4 +19,5 @@
   <depend>Graclus_catkin</depend>
   <depend>LSD_catkin</depend>
   <depend>VLFeat_catkin</depend>
+  <depend>PoissonRecon_catkin</depend>
 </package>

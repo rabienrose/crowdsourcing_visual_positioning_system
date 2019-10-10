@@ -35,7 +35,7 @@
 #include "base/database.h"
 #include "base/image_reader.h"
 #include "feature/sift.h"
-#include "util/opengl_utils.h"
+//#include "util/opengl_utils.h"
 #include "util/threading.h"
 
 namespace colmap {

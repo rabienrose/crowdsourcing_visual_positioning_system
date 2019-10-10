@@ -5,7 +5,7 @@ find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 add_definitions(--std=c++11 -Wno-unknown-pragmas -w)
 
-cs_add_library(${PROJECT_NAME}
+set(CPP_SRC 
   feature/types.cc
   feature/utils.cc
   estimators/absolute_pose.cc
@@ -65,7 +65,38 @@ cs_add_library(${PROJECT_NAME}
   optim/random_sampler.cc
   optim/sprt.cc
   optim/support_measurement.cc
+  mvs/consistency_graph.cc
+  mvs/depth_map.cc
+  mvs/fusion.cc
+  mvs/image.cc
+  mvs/meshing.cc
+  mvs/model.cc
+  mvs/normal_map.cc
+  mvs/workspace.cc
+  sfm/incremental_mapper.cc
+  sfm/incremental_triangulator.cc
+  controllers/automatic_reconstruction.cc
+  controllers/bundle_adjustment.cc
+  controllers/hierarchical_mapper.cc
+  controllers/incremental_mapper.cc
 )
+
+set(CUDA_SRC
+  mvs/gpu_mat_prng.cu
+  mvs/gpu_mat_ref_image.cu
+  mvs/patch_match.cc
+  mvs/patch_match_cuda.cu 
+)
+
+if(CUDA_ENABLED)
+  #cuda_add_library(${PROJECT_NAME}
+  #  ${CPP_SRC} ${CUDA_SRC}
+  #)
+else()
+  cs_add_library(${PROJECT_NAME}
+    ${CPP_SRC}
+  )
+endif()
 
 cs_install()
 cs_export()

@@ -40,7 +40,7 @@
 #include "feature/sift.h"
 #include "util/alignment.h"
 #include "util/cache.h"
-#include "util/opengl_utils.h"
+//#include "util/opengl_utils.h"
 #include "util/threading.h"
 #include "util/timer.h"
 
