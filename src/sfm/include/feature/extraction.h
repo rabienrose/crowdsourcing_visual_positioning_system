@@ -129,8 +129,6 @@ class SiftFeatureExtractorThread : public Thread {
   const SiftExtractionOptions sift_options_;
   std::shared_ptr<Bitmap> camera_mask_;
 
-  std::unique_ptr<OpenGLContextManager> opengl_context_;
-
   JobQueue<ImageData>* input_queue_;
   JobQueue<ImageData>* output_queue_;
 };

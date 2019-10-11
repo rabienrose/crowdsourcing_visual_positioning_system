@@ -1,8 +1,43 @@
 cmake_minimum_required(VERSION 2.8)
 project(sfm)
-
+option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
+set(CUDA_ARCHS "Auto" CACHE STRING "List of CUDA architectures for which to generate code, e.g., Auto, All, Maxwell, Pascal, ...")
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
+set(CUDA_MIN_VERSION "7.0")
+if(CUDA_ENABLED)
+    find_package(CUDA ${CUDA_MIN_VERSION} QUIET)
+endif()
+if(CUDA_FOUND)
+    if(CUDA_ENABLED)
+        add_definitions("-DCUDA_ENABLED")
+
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SelectCudaComputeArch.cmake)
+
+        CUDA_SELECT_NVCC_ARCH_FLAGS(CUDA_ARCH_FLAGS ${CUDA_ARCHS})
+
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} ${CUDA_ARCH_FLAGS}")
+
+        # Fix for some combinations of CUDA and GCC (e.g. under Ubuntu 16.04).
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -D_FORCE_INLINES")
+        # Do not show warnings if the architectures are deprecated.
+        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wno-deprecated-gpu-targets" -std=c++11)
+
+        message(STATUS "Enabling CUDA support (version: ${CUDA_VERSION_STRING},"
+                       " archs: ${CUDA_ARCH_FLAGS_readable})")
+    else()
+        set(CUDA_FOUND OFF)
+        message(STATUS "Disabling CUDA support")
+    endif()
+else()
+    set(CUDA_ENABLED OFF)
+    if(CUDA_VERSION_STRING)
+        message(STATUS "Disabling CUDA support (found version "
+                "${CUDA_VERSION_STRING} but >= ${CUDA_MIN_VERSION} required)")
+    else()
+        message(STATUS "Disabling CUDA support")
+    endif()
+endif()
 add_definitions(--std=c++11 -Wno-unknown-pragmas -w)
 
 set(CPP_SRC 
@@ -79,6 +114,8 @@ set(CPP_SRC
   controllers/bundle_adjustment.cc
   controllers/hierarchical_mapper.cc
   controllers/incremental_mapper.cc
+  retrieval/vote_and_verify.cc
+  retrieval/geometry.cc
 )
 
 set(CUDA_SRC
@@ -89,9 +126,9 @@ set(CUDA_SRC
 )
 
 if(CUDA_ENABLED)
-  #cuda_add_library(${PROJECT_NAME}
-  #  ${CPP_SRC} ${CUDA_SRC}
-  #)
+  cuda_add_library(${PROJECT_NAME}
+    ${CPP_SRC} ${CUDA_SRC}
+  )
 else()
   cs_add_library(${PROJECT_NAME}
     ${CPP_SRC}

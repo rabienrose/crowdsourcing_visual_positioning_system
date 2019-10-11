@@ -335,11 +335,6 @@ SiftFeatureExtractorThread::SiftFeatureExtractorThread(
       output_queue_(output_queue) {
   CHECK(sift_options_.Check());
 
-#ifndef CUDA_ENABLED
-  if (sift_options_.use_gpu) {
-    opengl_context_.reset(new OpenGLContextManager());
-  }
-#endif
 }
 
 void SiftFeatureExtractorThread::Run() {

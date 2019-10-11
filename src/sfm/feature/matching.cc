@@ -367,17 +367,9 @@ SiftGPUFeatureMatcher::SiftGPUFeatureMatcher(const SiftMatchingOptions& options,
 
   prev_uploaded_image_ids_[0] = kInvalidImageId;
   prev_uploaded_image_ids_[1] = kInvalidImageId;
-
-#ifndef CUDA_ENABLED
-  opengl_context_.reset(new OpenGLContextManager());
-#endif
 }
 
 void SiftGPUFeatureMatcher::Run() {
-#ifndef CUDA_ENABLED
-  CHECK(opengl_context_);
-  opengl_context_->MakeCurrent();
-#endif
 
   SiftMatchGPU sift_match_gpu;
   if (!CreateSiftGPUMatcher(options_, &sift_match_gpu)) {
@@ -481,10 +473,6 @@ GuidedSiftGPUFeatureMatcher::GuidedSiftGPUFeatureMatcher(
 }
 
 void GuidedSiftGPUFeatureMatcher::Run() {
-#ifndef CUDA_ENABLED
-  CHECK(opengl_context_);
-  opengl_context_->MakeCurrent();
-#endif
 
   SiftMatchGPU sift_match_gpu;
   if (!CreateSiftGPUMatcher(options_, &sift_match_gpu)) {
