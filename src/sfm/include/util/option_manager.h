@@ -50,7 +50,6 @@ struct SpatialMatchingOptions;
 struct TransitiveMatchingOptions;
 struct BundleAdjustmentOptions;
 struct IncrementalMapperOptions;
-struct RenderOptions;
 
 namespace mvs {
 struct PatchMatchOptions;
@@ -95,7 +94,6 @@ class OptionManager {
   void AddStereoFusionOptions();
   void AddPoissonMeshingOptions();
   void AddDelaunayMeshingOptions();
-  void AddRenderOptions();
 
   template <typename T>
   void AddRequiredOption(const std::string& name, T* option,
@@ -136,8 +134,6 @@ class OptionManager {
   std::shared_ptr<mvs::PoissonMeshingOptions> poisson_meshing;
   std::shared_ptr<mvs::DelaunayMeshingOptions> delaunay_meshing;
 
-  std::shared_ptr<RenderOptions> render;
-
  private:
   template <typename T>
   void AddAndRegisterRequiredOption(const std::string& name, T* option,
@@ -172,7 +168,6 @@ class OptionManager {
   bool added_stereo_fusion_options_;
   bool added_poisson_meshing_options_;
   bool added_delaunay_meshing_options_;
-  bool added_render_options_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -70,9 +70,11 @@ class AutomaticReconstructionController : public Thread {
 
     // Which camera model to use for images.
     std::string camera_model = "SIMPLE_RADIAL";
+    std::string camera_params="";
 
     // Whether to perform sparse mapping.
     bool sparse = true;
+    std::string snapshot_path="";
 
 // Whether to perform dense mapping.
 #ifdef CUDA_ENABLED
@@ -99,15 +101,15 @@ class AutomaticReconstructionController : public Thread {
   AutomaticReconstructionController(
       const Options& options, ReconstructionManager* reconstruction_manager);
 
-  void Stop() override;
+  void Stop();
 
- private:
-  void Run() override;
+
+  void Run();
   void RunFeatureExtraction();
   void RunFeatureMatching();
   void RunSparseMapper();
   void RunDenseMapper();
-
+private:
   const Options options_;
   OptionManager option_manager_;
   ReconstructionManager* reconstruction_manager_;

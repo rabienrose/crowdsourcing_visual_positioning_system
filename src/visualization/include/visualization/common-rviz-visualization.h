@@ -54,7 +54,9 @@ void publish3DPointsAsPointCloud(
     const Eigen::Matrix3Xf& points, const Eigen::VectorXf& intensities,
     const std::string& frame, const std::string& topic);
 
-
+void publish3DPointsAsPointCloud(
+    const Eigen::Matrix3Xd& points_G, std::vector<visualization::Color>& colors,
+    double alpha, const std::string& frame, const std::string& topic);
 void deleteMarker(const std::string& topic, size_t marker_id);
 
 ///////////////////////

@@ -335,6 +335,44 @@ void publish3DPointsAsPointCloud(
 }
 
 void publish3DPointsAsPointCloud(
+    const Eigen::Matrix3Xd& points_G, std::vector<visualization::Color>& colors,
+    double alpha, const std::string& frame, const std::string& topic) {
+  CHECK(!topic.empty());
+  if (points_G.cols() == 0u) {
+    return;
+  }
+
+  CHECK(ros::isInitialized())
+      << "ROS hasn't been initialized. Call "
+      << "RVizVisualizationSink::init() in your application code if you intend"
+      << " to use RViz visualizations.";
+
+  const size_t num_points = static_cast<size_t>(points_G.cols());
+  VLOG(5) << "Converting " << num_points << " points to point cloud.";
+
+  pcl::PointCloud<pcl::PointXYZRGB> cloud;
+  cloud.reserve(num_points);
+  for (size_t idx = 0u; idx < num_points; ++idx) {
+    pcl::PointXYZRGB point;
+    point.x = points_G(0, idx);
+    point.y = points_G(1, idx);
+    point.z = points_G(2, idx);
+    point.r = colors[idx].red;
+    point.g = colors[idx].green;
+    point.b = colors[idx].blue;
+    point.a = 1.0;
+    cloud.push_back(point);
+  }
+  sensor_msgs::PointCloud2 point_cloud;
+  pcl::toROSMsg(cloud, point_cloud);
+
+  point_cloud.header.frame_id = frame;
+  point_cloud.header.stamp = ros::Time::now();
+
+  RVizVisualizationSink::publish<sensor_msgs::PointCloud2>(topic, point_cloud);
+}
+
+void publish3DPointsAsPointCloud(
     const Eigen::Matrix3Xf& points, const Eigen::VectorXf& intensities,
     const std::string& frame, const std::string& topic) {
   CHECK(!topic.empty());

@@ -34,7 +34,7 @@ void RVizVisualizationSink::initImpl() {
   }
 
   node_handle_.reset(new ros::NodeHandle());
-  image_transport_.reset(new image_transport::ImageTransport(*node_handle_));
+  //image_transport_.reset(new image_transport::ImageTransport(*node_handle_));
 
   is_initialized_ = true;
 }

@@ -33,7 +33,7 @@
 
 #include <numeric>
 
-#include "SiftGPU/SiftGPU.h"
+#include "SiftGPU.h"
 #include "feature/sift.h"
 #include "util/cuda.h"
 #include "util/misc.h"
@@ -340,11 +340,6 @@ SiftFeatureExtractorThread::SiftFeatureExtractorThread(
 void SiftFeatureExtractorThread::Run() {
   std::unique_ptr<SiftGPU> sift_gpu;
   if (sift_options_.use_gpu) {
-#ifndef CUDA_ENABLED
-    CHECK(opengl_context_);
-    opengl_context_->MakeCurrent();
-#endif
-
     sift_gpu.reset(new SiftGPU);
     if (!CreateSiftGPUExtractor(sift_options_, sift_gpu.get())) {
       std::cerr << "ERROR: SiftGPU not fully supported." << std::endl;

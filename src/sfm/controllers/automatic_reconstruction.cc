@@ -67,6 +67,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   } else {
     LOG(FATAL) << "Data type not supported";
   }
+  option_manager_.mapper->snapshot_path =  options_.snapshot_path;
 
   CHECK(ExistsCameraModelWithName(options_.camera_model));
 
@@ -94,6 +95,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   }
   reader_options.single_camera = options_.single_camera;
   reader_options.camera_model = options_.camera_model;
+  reader_options.camera_params=options_.camera_params;
 
   option_manager_.sift_extraction->use_gpu = options_.use_gpu;
   option_manager_.sift_matching->use_gpu = options_.use_gpu;

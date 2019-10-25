@@ -1,30 +1,26 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>global_match_test</name>
+  <name>scene_recon</name>
   <version>0.0.0</version>
   <description>
 
-	chamo
+    chamo
 
   </description>
   <url></url>
   <author>bloeschm</author>
   <maintainer email="bloeschm@ethz.ch">bloeschm</maintainer>
   <license>BSD License</license>
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
   <buildtool_depend>catkin</buildtool_depend>
   <depend>opencv3_catkin</depend>
   <depend>eigen_catkin</depend>
   <depend>visualization</depend>
   <depend>roscpp</depend>
-  <depend>cv_bridge</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>vslam</depend>
-  <depend>global_match</depend>
-  <depend>global_map</depend>
-  <depend>bag_tool</depend>
-  <depend>global_map_api</depend>
+  <depend>sfm</depend>
+  
 </package>

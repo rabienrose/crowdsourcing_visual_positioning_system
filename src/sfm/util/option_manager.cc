@@ -43,7 +43,6 @@
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "optim/bundle_adjustment.h"
-#include "ui/render_options.h"
 #include "util/misc.h"
 #include "util/version.h"
 
@@ -70,7 +69,6 @@ OptionManager::OptionManager(bool add_project_options) {
   stereo_fusion.reset(new mvs::StereoFusionOptions());
   poisson_meshing.reset(new mvs::PoissonMeshingOptions());
   delaunay_meshing.reset(new mvs::DelaunayMeshingOptions());
-  render.reset(new RenderOptions());
 
   Reset();
 
@@ -179,7 +177,6 @@ void OptionManager::AddAllOptions() {
   AddStereoFusionOptions();
   AddPoissonMeshingOptions();
   AddDelaunayMeshingOptions();
-  AddRenderOptions();
 }
 
 void OptionManager::AddLogOptions() {
@@ -672,23 +669,6 @@ void OptionManager::AddDelaunayMeshingOptions() {
                               &delaunay_meshing->num_threads);
 }
 
-void OptionManager::AddRenderOptions() {
-  if (added_render_options_) {
-    return;
-  }
-  added_render_options_ = true;
-
-  AddAndRegisterDefaultOption("Render.min_track_len", &render->min_track_len);
-  AddAndRegisterDefaultOption("Render.max_error", &render->max_error);
-  AddAndRegisterDefaultOption("Render.refresh_rate", &render->refresh_rate);
-  AddAndRegisterDefaultOption("Render.adapt_refresh_rate",
-                              &render->adapt_refresh_rate);
-  AddAndRegisterDefaultOption("Render.image_connections",
-                              &render->image_connections);
-  AddAndRegisterDefaultOption("Render.projection_type",
-                              &render->projection_type);
-}
-
 void OptionManager::Reset() {
   FLAGS_logtostderr = false;
   FLAGS_v = 2;
@@ -719,7 +699,6 @@ void OptionManager::Reset() {
   added_stereo_fusion_options_ = false;
   added_poisson_meshing_options_ = false;
   added_delaunay_meshing_options_ = false;
-  added_render_options_ = false;
 }
 
 void OptionManager::ResetOptions(const bool reset_paths) {
@@ -742,7 +721,6 @@ void OptionManager::ResetOptions(const bool reset_paths) {
   *stereo_fusion = mvs::StereoFusionOptions();
   *poisson_meshing = mvs::PoissonMeshingOptions();
   *delaunay_meshing = mvs::DelaunayMeshingOptions();
-  *render = RenderOptions();
 }
 
 bool OptionManager::Check() {
@@ -774,8 +752,6 @@ bool OptionManager::Check() {
   if (stereo_fusion) success = success && stereo_fusion->Check();
   if (poisson_meshing) success = success && poisson_meshing->Check();
   if (delaunay_meshing) success = success && delaunay_meshing->Check();
-
-  if (render) success = success && render->Check();
 
   return success;
 }

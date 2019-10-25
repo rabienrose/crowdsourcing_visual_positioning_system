@@ -34,7 +34,7 @@
 #include <fstream>
 #include <numeric>
 
-#include "SiftGPU/SiftGPU.h"
+#include "SiftGPU.h"
 #include "base/gps.h"
 #include "feature/utils.h"
 #include "retrieval/visual_index.h"
@@ -467,9 +467,6 @@ GuidedSiftGPUFeatureMatcher::GuidedSiftGPUFeatureMatcher(
   prev_uploaded_image_ids_[0] = kInvalidImageId;
   prev_uploaded_image_ids_[1] = kInvalidImageId;
 
-#ifndef CUDA_ENABLED
-  opengl_context_.reset(new OpenGLContextManager());
-#endif
 }
 
 void GuidedSiftGPUFeatureMatcher::Run() {

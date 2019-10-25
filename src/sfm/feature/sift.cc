@@ -34,8 +34,11 @@
 #include <array>
 #include <fstream>
 #include <memory>
+#include <map>
+#include <mutex>
 
-#include "SiftGPU/SiftGPU.h"
+
+#include "SiftGPU.h"
 #include "VLFeat/covdet.h"
 #include "VLFeat/sift.h"
 #include "feature/utils.h"
@@ -43,7 +46,6 @@
 #include "util/logging.h"
 #include "util/math.h"
 #include "util/misc.h"
-#include "util/opengl_utils.h"
 
 namespace colmap {
 namespace {
@@ -713,7 +715,7 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
   const std::vector<uint8_t> bitmap_raw_bits = bitmap.ConvertToRawBits();
   const int code =
       sift_gpu->RunSIFT(bitmap.ScanWidth(), bitmap.Height(),
-                        bitmap_raw_bits.data(), GL_LUMINANCE, GL_UNSIGNED_BYTE);
+                        bitmap_raw_bits.data(), 0x1909, 0x1401);
 
   const int kSuccessCode = 1;
   if (code != kSuccessCode) {

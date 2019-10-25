@@ -20,4 +20,7 @@
   <depend>LSD_catkin</depend>
   <depend>VLFeat_catkin</depend>
   <depend>PoissonRecon_catkin</depend>
+  <depend>FLANN_catkin</depend>
+  <depend>visualization</depend>
+  <depend>boost_ros_pkg</depend>
 </package>
