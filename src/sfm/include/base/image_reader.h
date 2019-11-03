@@ -104,9 +104,9 @@ class ImageReader {
     CAMERA_EXIST_DIM_ERROR,
     CAMERA_PARAM_ERROR
   };
-
+  ImageReader();
   ImageReader(const ImageReaderOptions& options, Database* database);
-
+  Eigen::Vector3d GetGPS(std::string img_addr);
   Status Next(Camera* camera, Image* image, Bitmap* bitmap, Bitmap* mask);
   size_t NextIndex() const;
   size_t NumImages() const;

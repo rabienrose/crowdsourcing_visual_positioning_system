@@ -14,6 +14,12 @@
 #include "visualization/common-rviz-visualization.h"
 #include "util/ply.h"
 #include "opencv2/highgui/highgui.hpp"
+#include "base/image_reader.h"
+#include "base/gps.h"
+#include "base/pose.h"
+#include "CoorConv.h"
+#include "sim3_ransac/sim3_match.h"
+#include "chamo_common/common.h"
 void show_mp_as_cloud(std::vector<Eigen::Vector3d>& mp_posis, std::string topic){
     Eigen::Matrix3Xd points;
     points.resize(3,mp_posis.size());
@@ -40,7 +46,7 @@ int main(int argc, char **argv){
         options.image_path=FLAGS_image_path;
         options.vocab_tree_path=FLAGS_vocab_tree_path;
         options.data_type = colmap::AutomaticReconstructionController::DataType::INDIVIDUAL;
-        options.quality = colmap::AutomaticReconstructionController::Quality::HIGH;
+        options.quality = colmap::AutomaticReconstructionController::Quality::EXTREME;
         options.single_camera = true;
         options.camera_model = "OPENCV";
         options.camera_params = "1000, 1000, 645, 464, 0.0256, -0.0284, -0.0025, 0.0022";
@@ -54,6 +60,65 @@ int main(int argc, char **argv){
         colmap::ReconstructionManager reconstruction_manager;
         colmap::AutomaticReconstructionController app(options, &reconstruction_manager);
         app.Run();
+    }else if(FLAGS_op_type=="gps"){
+        visualization::RVizVisualizationSink::init();
+        colmap::Reconstruction reconstruction;
+        reconstruction.Read(FLAGS_workspace_path);
+        std::vector<Eigen::Vector3d> gps_list;
+        std::vector<Eigen::Vector3d> posi_list;
+        Eigen::Vector3d anchor_gps(-1, -1 ,-1);
+        for(auto id: reconstruction.RegImageIds()){
+            colmap::Image& image_t= reconstruction.Image(id);
+            //std::cout<<image_t.Name()<<std::endl;
+            std::string full_image_addr = FLAGS_image_path+"/"+image_t.Name();
+            colmap::ImageReader reader;
+            Eigen::Vector3d gps = reader.GetGPS(full_image_addr);
+            Eigen::Vector3d coor_gps;
+            if(anchor_gps(0)==-1){
+                anchor_gps=gps;
+            }
+            convert_to_coor(gps, coor_gps, anchor_gps);
+            gps_list.push_back(coor_gps);
+            posi_list.push_back(image_t.ProjectionCenter());
+            //std::cout<<std::setprecision(15)<<coor_gps.transpose()<<std::endl;
+        }
+        Eigen::Matrix4d T12i_eig;
+        double scale;
+        chamo::ComputeSim3(gps_list, posi_list, T12i_eig, scale);
+        float avg_err=0;
+        std::vector<Eigen::Vector3d> pc_frame_transformed_temp;
+        std::vector<Eigen::Vector3d> trans_posis;
+        std::vector<Eigen::Vector3d> trans_mps;
+        for(int i=0; i<reconstruction.RegImageIds().size(); i++){
+            colmap::Image& image_t= reconstruction.Image(reconstruction.RegImageIds()[i]);
+            Eigen::Matrix4d pose_transformed_temp;
+            Eigen::Matrix4d temp_pose=Eigen::Matrix4d::Identity();
+            temp_pose.block(0,0,3,3)=image_t.RotationMatrix();
+            temp_pose.block(0,3,3,1)=image_t.ProjectionCenter();
+            chamo::transformPoseUseSim3(T12i_eig, temp_pose, pose_transformed_temp);
+            image_t.SetTvec(pose_transformed_temp.block(0,3,3,1));
+            image_t.SetQvec(colmap::RotationMatrixToQuaternion(pose_transformed_temp.block(0,0,3,3)));
+            trans_posis.push_back(pose_transformed_temp.block(0,3,3,1));
+        }
+        for (auto id: reconstruction.Point3DIds()){
+            colmap::Point3D pt= reconstruction.Point3D(id);
+            Eigen::Vector3d temp_3d(pt.X(), pt.Z(), -pt.Y());
+            Eigen::Vector4d posi_homo;
+            posi_homo.block(0,0,3,1)=temp_3d;
+            posi_homo(3)=1;
+            Eigen::Vector4d posi_gps_homo = T12i_eig*posi_homo;
+            reconstruction.Point3D(id).SetXYZ(posi_gps_homo.block(0,0,3,1));
+            trans_mps.push_back(posi_gps_homo.block(0,0,3,1));
+        }
+        show_mp_as_cloud(gps_list, "gps_cloud");
+        show_mp_as_cloud(trans_posis, "trans_posi");
+        show_mp_as_cloud(trans_mps, "trans_mp");
+        ros::spin();
+    }else if(FLAGS_op_type=="loc"){
+        visualization::RVizVisualizationSink::init();
+        colmap::Reconstruction reconstruction;
+        reconstruction.Read(FLAGS_workspace_path);
+        
     }else if(FLAGS_op_type=="show"){
         visualization::RVizVisualizationSink::init();
         colmap::Reconstruction reconstruction;
@@ -61,7 +126,7 @@ int main(int argc, char **argv){
         std::cout<<reconstruction.NumPoints3D()<<std::endl;
         std::vector<Eigen::Vector3d> mp_posis;
         std::vector<Eigen::Vector3d> cam_verts;
-        double cam_scale=0.5;
+        double cam_scale=0.3;
         double cam_w_2=1*cam_scale;
         double cam_h_2=0.5*cam_scale;
         double cam_d =1.5*cam_scale;
@@ -87,17 +152,6 @@ int main(int argc, char **argv){
             colors[i] = visualization::kCommonRed;
         }
         for(auto id: reconstruction.RegImageIds()){
-//             if(img_count!=38){
-//                 img_count++;
-//                 continue;
-//             }
-//             img_count=0;
-//             pt_from.resize(3,8);
-//             pt_to.resize(3,8);
-//             colors.resize(8);
-//             for(int i=0; i<colors.size(); i++){
-//                 colors[i] = visualization::kCommonRed;
-//             }
             colmap::Image& image_t= reconstruction.Image(id);
             std::vector<Eigen::Vector3d> cam_verts_g;
             for(int i=0; i<cam_verts.size(); i++){
@@ -130,7 +184,7 @@ int main(int argc, char **argv){
             img_count++;
             
         }
-        visualization::publishLines(pt_from, pt_to, colors, 1, 0.1, 1, "map", "cam", "cam_marker");
+        visualization::publishLines(pt_from, pt_to, colors, 1, 0.01, 1, "map", "cam", "cam_marker");
         ros::spin();
     }else if(FLAGS_op_type=="ply"){
         visualization::RVizVisualizationSink::init();

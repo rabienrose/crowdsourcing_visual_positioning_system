@@ -23,4 +23,6 @@
   <depend>FLANN_catkin</depend>
   <depend>visualization</depend>
   <depend>boost_ros_pkg</depend>
+  <depend>gps_tool</depend>
+  <depend>sim3_ransac</depend>
 </package>

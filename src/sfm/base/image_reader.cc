@@ -47,6 +47,8 @@ bool ImageReaderOptions::Check() const {
   return true;
 }
 
+ImageReader::ImageReader(){};
+
 ImageReader::ImageReader(const ImageReaderOptions& options, Database* database)
     : options_(options), database_(database), image_index_(0) {
   CHECK(options_.Check());
@@ -77,6 +79,18 @@ ImageReader::ImageReader(const ImageReaderOptions& options, Database* database)
       prev_camera_.SetPriorFocalLength(true);
     }
   }
+}
+
+Eigen::Vector3d ImageReader::GetGPS(std::string img_addr){
+    Bitmap bitmap;
+    bitmap.Read(img_addr, false);
+    double focal_length;
+    bitmap.ExifFocalLength(&focal_length);
+    double lat, lon, alt;
+    bitmap.ExifLatitude(&lat);
+    bitmap.ExifLongitude(&lon);
+    bitmap.ExifAltitude(&alt);
+    return Eigen::Vector3d(lat, lon, alt);
 }
 
 ImageReader::Status ImageReader::Next(Camera* camera, Image* image,
