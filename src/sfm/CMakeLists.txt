@@ -147,7 +147,7 @@ else()
 endif()
 
 cuda_add_executable(${PROJECT_NAME}_exe app/main.cc)
-set devel_addr /home/chamo/Documents/code/chamo_vps/devel/lib
+set (devel_addr /root/chamo_vps/devel/lib)
 target_link_libraries(${PROJECT_NAME}_exe 
 ${devel_addr}/libgflags.so
 ${devel_addr}/libsfm.so
