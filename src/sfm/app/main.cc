@@ -46,10 +46,10 @@ int main(int argc, char **argv){
         options.image_path=FLAGS_image_path;
         options.vocab_tree_path=FLAGS_vocab_tree_path;
         options.data_type = colmap::AutomaticReconstructionController::DataType::INDIVIDUAL;
-        options.quality = colmap::AutomaticReconstructionController::Quality::EXTREME;
+        options.quality = colmap::AutomaticReconstructionController::Quality::LOW;
         options.single_camera = true;
-        options.camera_model = "OPENCV";
-        options.camera_params = "1000, 1000, 645, 464, 0.0256, -0.0284, -0.0025, 0.0022";
+        //options.camera_model = "OPENCV";
+        //options.camera_params = "1000, 1000, 645, 464, 0.0256, -0.0284, -0.0025, 0.0022";
         options.sparse = true;
         options.dense = true;
         options.mesher = colmap::AutomaticReconstructionController::Mesher::POISSON;
