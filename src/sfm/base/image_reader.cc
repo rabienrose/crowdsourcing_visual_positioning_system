@@ -203,6 +203,8 @@ ImageReader::Status ImageReader::Next(Camera* camera, Image* image,
       // Extract focal length.
       double focal_length = 0.0;
       if (bitmap->ExifFocalLength(&focal_length)) {
+          focal_length=focal_length/4;
+          std::cout<<"focal_length: "<<focal_length<<std::endl;
         prev_camera_.SetPriorFocalLength(true);
       } else {
         focal_length = options_.default_focal_length_factor *
